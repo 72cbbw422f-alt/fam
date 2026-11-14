@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct FamilyCalendarView: View {
     @StateObject private var model = FamilyCalendarViewModel()
@@ -150,6 +151,9 @@ private struct FamilyItemEditor: View {
     @State private var isRecurringYearly: Bool
     @State private var isSaving = false
     @State private var errorMessage: String?
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var isReadingImage = false
+    @State private var importMessage: String?
 
     init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, Date, FamilyItemKind, UUID?, Bool) async -> Bool) {
         self.item = item
@@ -166,6 +170,23 @@ private struct FamilyItemEditor: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Fyll i från bild") {
+                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                        Label("Välj skärmdump eller bild", systemImage: "text.viewfinder")
+                    }
+                    .disabled(isReadingImage)
+                    if isReadingImage {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text("Läser text från bilden …").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    if let importMessage {
+                        Text(importMessage).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Text("Bilden läses på den här iPhone-enheten. Kontrollera alltid uppgifterna innan du sparar.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Section("Aktivitet") {
                     TextField("Rubrik", text: $title)
                     Picker("Typ", selection: $kind) {
@@ -191,6 +212,10 @@ private struct FamilyItemEditor: View {
                     Section { Text(errorMessage).font(.footnote).foregroundStyle(.red) }
                 }
             }
+            .onChange(of: selectedPhoto) { _, photo in
+                guard let photo else { return }
+                Task { await readAppointmentImage(photo) }
+            }
             .navigationTitle(item == nil ? "Ny aktivitet" : "Redigera aktivitet")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -200,6 +225,32 @@ private struct FamilyItemEditor: View {
                         .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
                 }
             }
+        }
+    }
+
+    private func readAppointmentImage(_ photo: PhotosPickerItem) async {
+        isReadingImage = true
+        importMessage = nil
+        defer { isReadingImage = false }
+        do {
+            guard let data = try await photo.loadTransferable(type: Data.self) else {
+                importMessage = "Bilden kunde inte läsas. Prova en annan bild."
+                return
+            }
+            let result = try await AppointmentImageReader.read(data: data, familyMembers: members)
+            if let suggestedTitle = result.title, title.isEmpty { title = suggestedTitle }
+            if let suggestedDate = result.date { startsAt = suggestedDate }
+            if result.isHealthVisit { kind = .healthVisit }
+            if let member = result.member { memberSelection = member.id.uuidString }
+            if !result.text.isEmpty {
+                let existing = details.trimmingCharacters(in: .whitespacesAndNewlines)
+                details = existing.isEmpty ? result.text : existing + "\n\n" + result.text
+            }
+            importMessage = result.date == nil
+                ? "Texten är avläst, men jag hittade inget säkert datum och klockslag. Kontrollera och fyll i manuellt."
+                : "Texten är avläst. Kontrollera rubrik, datum, tid och person innan du sparar."
+        } catch {
+            importMessage = "Det gick inte att läsa bilden. Prova en tydligare skärmdump."
         }
     }
 

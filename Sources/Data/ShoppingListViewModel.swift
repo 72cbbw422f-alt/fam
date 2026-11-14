@@ -74,11 +74,9 @@ final class ShoppingListViewModel: ObservableObject {
                 UpdateAction.self, schema: "public", table: "shopping_items",
                 filter: .eq("list_id", value: listID.uuidString)
             )
-            // Postgres Changes does not support row filters for DELETE events.
-            // The RLS-protected channel may therefore trigger a harmless list reload
-            // after a delete anywhere in this table.
             let deletes = channel.postgresChange(
-                DeleteAction.self, schema: "public", table: "shopping_items"
+                DeleteAction.self, schema: "public", table: "shopping_items",
+                filter: .eq("list_id", value: listID.uuidString)
             )
             await channel.subscribe()
             realtimeChannel = channel

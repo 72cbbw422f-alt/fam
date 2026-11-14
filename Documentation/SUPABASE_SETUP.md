@@ -12,6 +12,7 @@
    - `supabase/migrations/006_child_profiles.sql`
    - `supabase/migrations/007_shopping_change_notifications.sql`
    - `supabase/migrations/008_yearly_birthdays.sql`
+   - `supabase/migrations/009_manage_child_profiles.sql`
 3. In Project Settings / API, copy the project URL and anon/publishable key.
 4. Copy `Sources/Config.swift.example` to `Sources/Config.swift` locally and fill in those two public client values.
 5. Keep `Config.swift` untracked; it is excluded by `.gitignore`. Never put a service-role key in the iOS app or repository.
@@ -31,7 +32,7 @@
 - Shared shopping list supports adding, checking off and deleting items.
 - Shopping-list contents subscribe to Supabase Realtime while the list is open, including inserts, updates and deletes from other family members. Migration 005 adds the table to the Realtime publication. Supabase DELETE change events are subscribed without row filters; the app reloads only the currently selected list.
 - Family calendar supports creating, editing, deleting and filtering family items. Birthday entries can optionally repeat yearly; recurring birthdays are shown at their next upcoming month/day even when the original date is in the past. February 29 birthdays are observed on February 28 in non-leap years.
-- Family members screen lists linked adult accounts and child profiles; authenticated family members can add child profiles without login accounts.
+- Family members screen lists linked adult accounts and child profiles; authenticated family members can add, rename and remove child profiles without login accounts. Linked birthday dates are shown under each family profile. Child profile update/delete RPCs verify that the target is a child profile in the caller's own family.
 - Optional local reminders can be enabled per device for family-calendar activities: one day and one hour before the activity. They use iOS local notifications and do not require APNs.
 - Family calendar subscribes to Realtime while open and reloads when another family member adds, edits or deletes an activity.
 - Notification inbox loads the current user's notification records, marks them read, and subscribes to new notification inserts through Supabase Realtime while the app is open.

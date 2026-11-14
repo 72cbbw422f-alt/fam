@@ -67,6 +67,10 @@ struct DashboardView: View {
                 await model.load()
                 await notificationsModel.startListening()
             }
+            .onAppear {
+                // Refresh the badge after returning from the notifications inbox.
+                Task { await notificationsModel.load() }
+            }
             .onDisappear {
                 Task { await notificationsModel.stopListening() }
             }

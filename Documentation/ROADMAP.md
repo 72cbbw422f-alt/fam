@@ -14,7 +14,8 @@
 - [x] Dashboard loads the signed-in user's family name and upcoming family items
 - [x] Dashboard shows the next booking and the coming week's events from Supabase
 - [ ] Configure Apple provider and Supabase project values
-- [ ] Compile and run on a physical iPhone
+- [x] Automated iOS Simulator compilation in GitHub Actions (unsigned build; latest successful baseline: 14 Nov 2026)
+- [ ] Compile, sign and run on a physical iPhone
 
 ## Core features
 - [x] Connect dashboard birthday, event and health cards to family calendar; persistent selected family context remains open

@@ -23,7 +23,9 @@
 - [x] Birthdays and events: create, edit and delete (same calendar flow; recurring birthday handling still needs design)
 - [x] Shared shopping list screen with add, check off and remove (Supabase-backed; manual refresh)
 - [x] Realtime updates for shopping-list inserts, updates and deletes while the list is open (pending device verification)
-- [x] Notification event records for calendar additions/changes, shopping additions and new family members, plus an in-app notification inbox\n- [x] Realtime notification delivery while app is open, with unread badge\n- [ ] APNs push notifications when app is backgrounded or closed (requires Apple push capability and server credentials)\n- [ ] Local notifications and reminders
+- [x] Realtime updates for family-calendar additions, edits and deletions while the calendar is open (pending device verification)
+- [x] Notification event records for calendar additions/changes, shopping additions and new family members, plus an in-app notification inbox
+- [x] Realtime notification delivery while app is open, with unread badge\n- [ ] APNs push notifications when app is backgrounded or closed (requires Apple push capability and server credentials)\n- [ ] Local notifications and reminders
 
 ## Apple integrations and migration
 - [ ] Optional Apple Calendar integration via EventKit

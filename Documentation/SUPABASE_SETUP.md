@@ -30,6 +30,7 @@
 - Shopping-list contents subscribe to Supabase Realtime while the list is open, including inserts, updates and deletes from other family members. Migration 005 adds the table to the Realtime publication and enables filtered delete events.
 - Family calendar supports creating, editing, deleting and filtering family items.
 - Family members screen lists linked adult accounts and child profiles; authenticated family members can add child profiles without login accounts.
+- Optional local reminders can be enabled per device for family-calendar activities: one day and one hour before the activity. They use iOS local notifications and do not require APNs.
 - Family calendar subscribes to Realtime while open and reloads when another family member adds, edits or deletes an activity.
 - Notification inbox loads the current user's notification records, marks them read, and subscribes to new notification inserts through Supabase Realtime while the app is open.
 - Dashboard displays an unread notification count badge.

@@ -10,6 +10,7 @@
    - `supabase/migrations/004_family_notifications.sql`
    - `supabase/migrations/005_push_devices.sql`
    - `supabase/migrations/006_child_profiles.sql`
+   - `supabase/migrations/007_shopping_change_notifications.sql`
 3. In Project Settings / API, copy the project URL and anon/publishable key.
 4. Copy `Sources/Config.swift.example` to `Sources/Config.swift` locally and fill in those two public client values.
 5. Keep `Config.swift` untracked; it is excluded by `.gitignore`. Never put a service-role key in the iOS app or repository.
@@ -33,6 +34,7 @@
 - Optional local reminders can be enabled per device for family-calendar activities: one day and one hour before the activity. They use iOS local notifications and do not require APNs.
 - Family calendar subscribes to Realtime while open and reloads when another family member adds, edits or deletes an activity.
 - Notification inbox loads the current user's notification records, marks them read, and subscribes to new notification inserts through Supabase Realtime while the app is open.
+- Shopping-list additions, check-offs, un-checks and deletions create notifications for the other signed-in family members.
 - Dashboard displays an unread notification count badge.
 - Pull-to-refresh reloads dashboard and list data.
 

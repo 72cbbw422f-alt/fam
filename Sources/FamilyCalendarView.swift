@@ -5,6 +5,7 @@ struct FamilyCalendarView: View {
     @State private var selectedKind: FamilyItemKind?
     @State private var showingEditor = false
     @State private var editingItem: FamilyItem?
+    @AppStorage("familjen.localRemindersEnabled") private var localRemindersEnabled = false
 
     private var visibleItems: [FamilyItem] {
         guard let selectedKind else { return model.items }
@@ -14,6 +15,11 @@ struct FamilyCalendarView: View {
     var body: some View {
         List {
             Section {
+                Toggle(isOn: $localRemindersEnabled) {
+                    Label("Påminnelser på den här enheten", systemImage: "bell.badge")
+                        .font(.subheadline.weight(.medium))
+                }
+                .tint(FamiljenTheme.navy)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         filterChip("Alla", kind: nil)
@@ -85,7 +91,31 @@ struct FamilyCalendarView: View {
             }
         }
         .refreshable { await model.load() }
-        .task { await model.load() }
+        .task {
+            await model.load()
+            if localRemindersEnabled {
+                await LocalReminderScheduler.schedule(for: model.items)
+            }
+        }
+        .onChange(of: localRemindersEnabled) { _, enabled in
+            Task {
+                if enabled {
+                    let granted = await LocalReminderScheduler.requestPermission()
+                    if granted {
+                        await LocalReminderScheduler.schedule(for: model.items)
+                    } else {
+                        localRemindersEnabled = false
+                    }
+                } else {
+                    await LocalReminderScheduler.clearAll()
+                }
+            }
+        }
+        .onChange(of: model.items) { _, items in
+            if localRemindersEnabled {
+                Task { await LocalReminderScheduler.schedule(for: items) }
+            }
+        }
         .onDisappear { Task { await model.stopRealtime() } }
     }
 

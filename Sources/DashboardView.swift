@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @StateObject private var model = DashboardViewModel()
+    @StateObject private var notificationsModel = NotificationsViewModel()
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
 
     var body: some View {
@@ -58,7 +59,13 @@ struct DashboardView: View {
             .background(FamiljenTheme.paper.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .refreshable { await model.load() }
-            .task { await model.load() }
+            .task {
+                await model.load()
+                await notificationsModel.startListening()
+            }
+            .onDisappear {
+                Task { await notificationsModel.stopListening() }
+            }
         }
     }
 
@@ -84,6 +91,17 @@ struct DashboardView: View {
                     .foregroundStyle(FamiljenTheme.navy)
                     .frame(width: 44, height: 44)
                     .background(.white, in: Circle())
+                    .overlay(alignment: .topTrailing) {
+                        if notificationsModel.unreadCount > 0 {
+                            Text(notificationsModel.unreadCount > 99 ? "99+" : "\(notificationsModel.unreadCount)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 5)
+                                .frame(minWidth: 17, minHeight: 17)
+                                .background(.red, in: Capsule())
+                                .offset(x: 3, y: -3)
+                        }
+                    }
             }
             .accessibilityLabel("Öppna notiser")
         }

@@ -48,7 +48,7 @@ final class FamilyCalendarViewModel: ObservableObject {
     func startRealtimeIfNeeded() async {
         guard realtimeChannel == nil, let familyID else { return }
         do {
-            let channel = client.channel("family-calendar-\\(familyID.uuidString)")
+            let channel = client.channel("family-calendar-\(familyID.uuidString)")
             let inserts = channel.postgresChange(
                 InsertAction.self, schema: "public", table: "family_items",
                 filter: .eq("family_id", value: familyID.uuidString)

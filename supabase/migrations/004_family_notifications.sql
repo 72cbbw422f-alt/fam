@@ -164,3 +164,19 @@ $$;
 
 revoke all on function public.mark_family_notification_read(uuid) from public;
 grant execute on function public.mark_family_notification_read(uuid) to authenticated;
+
+
+-- Enable Postgres Changes delivery for the in-app notification stream.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'family_notifications'
+  ) then
+    alter publication supabase_realtime add table public.family_notifications;
+  end if;
+end;
+$$;

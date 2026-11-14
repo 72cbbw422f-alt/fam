@@ -69,7 +69,7 @@ struct NotificationsView: View {
     private func symbol(for type: String) -> String {
         switch type {
         case "calendar_item_added", "calendar_item_updated": return "calendar"
-        case "shopping_item_added": return "basket"
+        case "shopping_item_added", "shopping_item_checked", "shopping_item_deleted": return "basket"
         case "member_joined": return "person.2"
         default: return "bell"
         }

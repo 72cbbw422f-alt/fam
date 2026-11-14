@@ -44,6 +44,65 @@ final class SupabaseFamilyRepository: FamilyDataRepository {
         return try Self.decoder.decode([FamilyItem].self, from: response.data)
     }
 
+    func createFamilyItem(familyID: UUID, title: String, details: String?, startsAt: Date, kind: FamilyItemKind, memberID: UUID?) async throws {
+        let session = try await client.auth.session
+        let payload = FamilyItemInsert(
+            familyID: familyID,
+            title: title,
+            details: details,
+            startsAt: ISO8601DateFormatter().string(from: startsAt),
+            kind: kind.rawValue,
+            memberID: memberID,
+            createdBy: session.user.id
+        )
+        try await client.from("family_items").insert(payload).execute()
+    }
+
+    func updateFamilyItem(id: UUID, title: String, details: String?, startsAt: Date, kind: FamilyItemKind, memberID: UUID?) async throws {
+        let payload = FamilyItemUpdate(
+            title: title,
+            details: details,
+            startsAt: ISO8601DateFormatter().string(from: startsAt),
+            kind: kind.rawValue,
+            memberID: memberID
+        )
+        try await client.from("family_items").update(payload).eq("id", value: id.uuidString).execute()
+    }
+
+    func deleteFamilyItem(id: UUID) async throws {
+        try await client.from("family_items").delete().eq("id", value: id.uuidString).execute()
+    }
+
+    private struct FamilyItemInsert: Encodable {
+        let familyID: UUID
+        let title: String
+        let details: String?
+        let startsAt: String
+        let kind: String
+        let memberID: UUID?
+        let createdBy: UUID
+        enum CodingKeys: String, CodingKey {
+            case title, details, kind
+            case familyID = "family_id"
+            case startsAt = "starts_at"
+            case memberID = "member_id"
+            case createdBy = "created_by"
+        }
+    }
+
+    private struct FamilyItemUpdate: Encodable {
+        let title: String
+        let details: String?
+        let startsAt: String
+        let kind: String
+        let memberID: UUID?
+        enum CodingKeys: String, CodingKey {
+            case title, details, kind
+            case startsAt = "starts_at"
+            case memberID = "member_id"
+        }
+    }
+
     private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .custom { value in

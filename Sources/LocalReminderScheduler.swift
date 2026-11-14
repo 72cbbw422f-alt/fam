@@ -15,7 +15,7 @@ enum LocalReminderScheduler {
 
     static func schedule(for items: [FamilyItem]) async {
         let pending = await center.pendingNotificationRequests()
-        let oldIDs = pending.map(\\.identifier).filter { $0.hasPrefix(identifierPrefix) }
+        let oldIDs = pending.map(\.identifier).filter { $0.hasPrefix(identifierPrefix) }
         center.removePendingNotificationRequests(withIdentifiers: oldIDs)
 
         for item in items {
@@ -25,7 +25,7 @@ enum LocalReminderScheduler {
 
                 let content = UNMutableNotificationContent()
                 content.title = offset == 3600 ? "Påminnelse: om en timme" : "Påminnelse: imorgon"
-                content.body = "\\(item.title) · \\(item.startsAt.formatted(.dateTime.hour().minute()))"
+                content.body = "\(item.title) · \(item.startsAt.formatted(.dateTime.hour().minute()))"
                 content.sound = .default
 
                 let components = Calendar.current.dateComponents(
@@ -34,7 +34,7 @@ enum LocalReminderScheduler {
                 )
                 let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
                 let request = UNNotificationRequest(
-                    identifier: "\\(identifierPrefix)\\(item.id.uuidString)-\\(offset)",
+                    identifier: "\(identifierPrefix)\(item.id.uuidString)-\(offset)",
                     content: content,
                     trigger: trigger
                 )
@@ -49,7 +49,7 @@ enum LocalReminderScheduler {
 
     static func clearAll() async {
         let pending = await center.pendingNotificationRequests()
-        let ids = pending.map(\\.identifier).filter { $0.hasPrefix(identifierPrefix) }
+        let ids = pending.map(\.identifier).filter { $0.hasPrefix(identifierPrefix) }
         center.removePendingNotificationRequests(withIdentifiers: ids)
     }
 }

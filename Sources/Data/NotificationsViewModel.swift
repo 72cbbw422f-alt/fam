@@ -24,7 +24,7 @@ final class NotificationsViewModel: ObservableObject {
         do {
             let session = try await client.auth.session
             let userID = session.user.id
-            let channel = client.channel("family-notifications-\\(userID.uuidString)")
+            let channel = client.channel("family-notifications-\(userID.uuidString)")
             let changes = channel.postgresChange(
                 InsertAction.self,
                 schema: "public",

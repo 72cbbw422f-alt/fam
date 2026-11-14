@@ -28,6 +28,7 @@
 - Shared shopping list supports adding, checking off and deleting items.
 - Shopping-list contents subscribe to Supabase Realtime while the list is open, including inserts, updates and deletes from other family members. Migration 005 adds the table to the Realtime publication and enables filtered delete events.
 - Family calendar supports creating, editing, deleting and filtering family items.
+- Family calendar subscribes to Realtime while open and reloads when another family member adds, edits or deletes an activity.
 - Notification inbox loads the current user's notification records, marks them read, and subscribes to new notification inserts through Supabase Realtime while the app is open.
 - Dashboard displays an unread notification count badge.
 - Pull-to-refresh reloads dashboard and list data.
@@ -45,4 +46,4 @@ The SQL is an initial foundation and must receive a security review and integrat
 
 Apply `004_family_notifications.sql` after migrations 001–003. It creates recipient-scoped notification records when another signed-in family member adds or edits a calendar item, adds a shopping-list item, or joins the family. The app includes an in-app notification inbox and a read-state RPC.
 
-This migration does not send operating-system push notifications. Migration 005 adds a user-scoped device-token registry as backend groundwork and enables the shopping-items Realtime publication. The iOS APNs registration callback, token upload, APNs signing key and trusted Edge Function sender remain pending until an Apple Developer account and APNs credentials are available. Never store the APNs private key in the iOS app or Git repository. These steps remain separate from FlareStore signing.
+This migration does not send operating-system push notifications. Migration 005 adds a user-scoped device-token registry as backend groundwork and enables Realtime publications for shopping items and family calendar items. The iOS APNs registration callback, token upload, APNs signing key and trusted Edge Function sender remain pending until an Apple Developer account and APNs credentials are available. Never store the APNs private key in the iOS app or Git repository. These steps remain separate from FlareStore signing.

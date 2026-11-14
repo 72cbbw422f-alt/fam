@@ -7,6 +7,7 @@
    - `supabase/migrations/001_initial_schema.sql`
    - `supabase/migrations/002_family_onboarding.sql`
    - `supabase/migrations/003_integrity_hardening.sql`
+   - `supabase/migrations/004_family_notifications.sql`
 3. In Project Settings / API, copy the project URL and anon/publishable key.
 4. Copy `Sources/Config.swift.example` to `Sources/Config.swift` locally and fill in those two public client values.
 5. Keep `Config.swift` untracked; it is excluded by `.gitignore`. Never put a service-role key in the iOS app or repository.
@@ -23,16 +24,15 @@
 - Invitation acceptance through `accept_family_invite(invite_code, member_display_name)`.
 - Existing authenticated family members are routed to the dashboard; accounts without a family are routed to onboarding.
 - Dashboard resolves the signed-in user's family membership, loads the family name and upcoming items, and displays the next booking plus the next seven days of activities.
-- Pull-to-refresh reloads dashboard data.
+- Shared shopping list supports adding, checking off and deleting items.
+- Family calendar supports creating, editing, deleting and filtering family items.
+- Notification inbox loads the current user's notification records, marks them read, and subscribes to new notification inserts through Supabase Realtime while the app is open.
+- Dashboard displays an unread notification count badge.
+- Pull-to-refresh reloads dashboard and list data.
 
 ## Data access currently in the app
 
-`SupabaseFamilyRepository` implements the family data contract and supports:
-- Loading a family by ID.
-- Loading family member profiles.
-- Loading upcoming family items from a date.
-
-The dashboard data model currently uses this repository. Dedicated create/edit/delete screens and shopping-list operations remain to be implemented.
+`SupabaseFamilyRepository` implements the family data contract and supports loading a family, member profiles and upcoming items, plus family-item create/update/delete operations. Shopping-list and notification operations are implemented in their respective view models.
 
 ## Security and release status
 

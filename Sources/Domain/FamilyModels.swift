@@ -29,7 +29,7 @@ enum MemberRole: String, Codable {
     case owner, member, child
 }
 
-enum FamilyItemKind: String, Codable {
+enum FamilyItemKind: String, Codable, Hashable {
     case appointment
     case birthday
     case event

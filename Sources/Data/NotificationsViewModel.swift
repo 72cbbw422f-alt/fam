@@ -62,7 +62,7 @@ final class NotificationsViewModel: ObservableObject {
             if let date = fractional.date(from: string) { return date }
             let standard = ISO8601DateFormatter()
             guard let date = standard.date(from: string) else {
-                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid ISO-8601 date: \\(string)")
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid ISO-8601 date: \(string)")
             }
             return date
         }

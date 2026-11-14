@@ -16,14 +16,14 @@
 ## Implemented app flows
 
 - Native Sign in with Apple using AuthenticationServices.
-- A per-request cryptographic nonce: the SHA-256 hash is sent to Apple and the original nonce is verified by Supabase.
+- Per-request cryptographic nonce: the SHA-256 hash is sent to Apple and the original nonce is verified by Supabase.
 - Session restoration when the app launches.
 - Family creation through `create_family(family_name, owner_display_name)`.
 - One-time partner invitation creation through `create_family_invite(target_family)`.
 - Invitation acceptance through `accept_family_invite(invite_code, member_display_name)`.
 - Existing authenticated family members are routed to the dashboard; accounts without a family are routed to onboarding.
-
-The onboarding currently opens the dashboard after the family is created or an invitation is accepted. The dashboard itself is still a visual scaffold and is not yet connected to live family data.
+- Dashboard resolves the signed-in user's family membership, loads the family name and upcoming items, and displays the next booking plus the next seven days of activities.
+- Pull-to-refresh reloads dashboard data.
 
 ## Data access currently in the app
 
@@ -31,6 +31,8 @@ The onboarding currently opens the dashboard after the family is created or an i
 - Loading a family by ID.
 - Loading family member profiles.
 - Loading upcoming family items from a date.
+
+The dashboard data model currently uses this repository. Dedicated create/edit/delete screens and shopping-list operations remain to be implemented.
 
 ## Security and release status
 

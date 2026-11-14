@@ -34,3 +34,21 @@ using (user_id = auth.uid());
 
 -- No client-side sender credentials or APNs secrets are stored in this table.
 -- A trusted Edge Function will use these records after Apple setup is complete.
+
+-- Enable filtered DELETE events and publish shopping-list changes for Realtime.
+-- With RLS enabled, Supabase only sends the primary key from DELETE records.
+alter table public.shopping_items replica identity full;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'shopping_items'
+  ) then
+    alter publication supabase_realtime add table public.shopping_items;
+  end if;
+end;
+$$;

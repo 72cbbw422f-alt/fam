@@ -1,0 +1,91 @@
+import Combine
+import Foundation
+import Supabase
+
+@MainActor
+final class FamilyCalendarViewModel: ObservableObject {
+    @Published private(set) var items: [FamilyItem] = []
+    @Published private(set) var members: [FamilyMember] = []
+    @Published private(set) var isLoading = false
+    @Published var errorMessage: String?
+
+    private let client: SupabaseClient
+    private let repository: FamilyDataRepository
+    private var familyID: UUID?
+
+    init(client: SupabaseClient = SupabaseClientProvider.makeClient()) {
+        self.client = client
+        self.repository = SupabaseFamilyRepository(client: client)
+    }
+
+    func load() async {
+        guard !isLoading else { return }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let session = try await client.auth.session
+            let response = try await client
+                .from("family_members")
+                .select("family_id")
+                .eq("user_id", value: session.user.id.uuidString)
+                .single()
+                .execute()
+            let membership = try JSONDecoder().decode(MembershipRecord.self, from: response.data)
+            familyID = membership.familyID
+            async let loadedItems = repository.loadUpcomingItems(familyID: membership.familyID, from: .now)
+            async let loadedMembers = repository.loadMembers(familyID: membership.familyID)
+            items = try await loadedItems
+            members = try await loadedMembers
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func save(id: UUID?, title: String, details: String?, startsAt: Date, kind: FamilyItemKind, memberID: UUID?) async -> Bool {
+        guard let familyID else {
+            errorMessage = "Familjens uppgifter har inte hämtats ännu."
+            return false
+        }
+        let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanTitle.isEmpty, cleanTitle.count <= 160 else {
+            errorMessage = "Ange en rubrik på 1–160 tecken."
+            return false
+        }
+        do {
+            if let id {
+                try await repository.updateFamilyItem(id: id, title: cleanTitle, details: details, startsAt: startsAt, kind: kind, memberID: memberID)
+            } else {
+                try await repository.createFamilyItem(familyID: familyID, title: cleanTitle, details: details, startsAt: startsAt, kind: kind, memberID: memberID)
+            }
+            await loadItems()
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    func delete(_ item: FamilyItem) async {
+        do {
+            try await repository.deleteFamilyItem(id: item.id)
+            items.removeAll { $0.id == item.id }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func loadItems() async {
+        guard let familyID else { return }
+        do {
+            items = try await repository.loadUpcomingItems(familyID: familyID, from: .now)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private struct MembershipRecord: Decodable {
+        let familyID: UUID
+        enum CodingKeys: String, CodingKey { case familyID = "family_id" }
+    }
+}

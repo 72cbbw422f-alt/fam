@@ -9,6 +9,7 @@
    - `supabase/migrations/003_integrity_hardening.sql`
    - `supabase/migrations/004_family_notifications.sql`
    - `supabase/migrations/005_push_devices.sql`
+   - `supabase/migrations/006_child_profiles.sql`
 3. In Project Settings / API, copy the project URL and anon/publishable key.
 4. Copy `Sources/Config.swift.example` to `Sources/Config.swift` locally and fill in those two public client values.
 5. Keep `Config.swift` untracked; it is excluded by `.gitignore`. Never put a service-role key in the iOS app or repository.
@@ -28,6 +29,7 @@
 - Shared shopping list supports adding, checking off and deleting items.
 - Shopping-list contents subscribe to Supabase Realtime while the list is open, including inserts, updates and deletes from other family members. Migration 005 adds the table to the Realtime publication and enables filtered delete events.
 - Family calendar supports creating, editing, deleting and filtering family items.
+- Family members screen lists linked adult accounts and child profiles; authenticated family members can add child profiles without login accounts.
 - Family calendar subscribes to Realtime while open and reloads when another family member adds, edits or deletes an activity.
 - Notification inbox loads the current user's notification records, marks them read, and subscribes to new notification inserts through Supabase Realtime while the app is open.
 - Dashboard displays an unread notification count badge.

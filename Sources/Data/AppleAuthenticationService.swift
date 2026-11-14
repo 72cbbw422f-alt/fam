@@ -1,11 +1,13 @@
 import AuthenticationServices
 import CryptoKit
 import Foundation
+import Combine
+import Security
 import Supabase
 
 @MainActor
 final class AppleAuthenticationService: ObservableObject {
-    @Published private(set) var isSignedIn = false
+    @Published var isSignedIn = false
     @Published var errorMessage: String?
 
     private let client: SupabaseClient

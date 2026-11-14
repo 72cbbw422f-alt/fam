@@ -17,10 +17,10 @@
 - [ ] Compile and run on a physical iPhone
 
 ## Core features
-- [ ] Persist selected family context and connect remaining dashboard cards to dedicated screens
+- [x] Connect dashboard birthday, event and health cards to family calendar; persistent selected family context remains open
 - [ ] Family profiles, including children without login accounts
-- [ ] Appointments and health visits: create, edit and delete
-- [ ] Birthdays and events: create, edit and delete
+- [x] Appointments and health visits: create, edit and delete (calendar UI and Supabase CRUD; pending device verification)
+- [x] Birthdays and events: create, edit and delete (same calendar flow; recurring birthday handling still needs design)
 - [x] Shared shopping list screen with add, check off and remove (Supabase-backed; manual refresh)
 - [ ] Realtime updates between family members (current list reloads on open, pull-to-refresh and after local changes)
 - [ ] Local notifications and reminders

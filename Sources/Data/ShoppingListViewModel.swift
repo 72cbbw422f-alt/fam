@@ -13,6 +13,8 @@ final class ShoppingListViewModel: ObservableObject {
 
     private let client: SupabaseClient
     private var listID: UUID?
+    private var realtimeChannel: RealtimeChannelV2?
+    private var realtimeTasks: [Task<Void, Never>] = []
 
     init(client: SupabaseClient = SupabaseClientProvider.makeClient()) {
         self.client = client
@@ -54,9 +56,67 @@ final class ShoppingListViewModel: ObservableObject {
                 .order("created_at", ascending: true)
                 .execute()
             items = try Self.decoder.decode([ShoppingItem].self, from: itemsResponse.data)
+            await startRealtimeIfNeeded()
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func startRealtimeIfNeeded() async {
+        guard realtimeChannel == nil, let listID else { return }
+        do {
+            let channel = client.channel("shopping-list-\\(listID.uuidString)")
+            let inserts = channel.postgresChange(
+                InsertAction.self, schema: "public", table: "shopping_items",
+                filter: .eq("list_id", value: listID.uuidString)
+            )
+            let updates = channel.postgresChange(
+                UpdateAction.self, schema: "public", table: "shopping_items",
+                filter: .eq("list_id", value: listID.uuidString)
+            )
+            let deletes = channel.postgresChange(
+                DeleteAction.self, schema: "public", table: "shopping_items",
+                filter: .eq("list_id", value: listID.uuidString)
+            )
+            await channel.subscribe()
+            realtimeChannel = channel
+            realtimeTasks = [
+                Task { [weak self] in
+                    for await _ in inserts {
+                        guard !Task.isCancelled else { break }
+                        await self?.reloadItemsFromRealtime()
+                    }
+                },
+                Task { [weak self] in
+                    for await _ in updates {
+                        guard !Task.isCancelled else { break }
+                        await self?.reloadItemsFromRealtime()
+                    }
+                },
+                Task { [weak self] in
+                    for await _ in deletes {
+                        guard !Task.isCancelled else { break }
+                        await self?.reloadItemsFromRealtime()
+                    }
+                }
+            ]
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func stopRealtime() async {
+        realtimeTasks.forEach { $0.cancel() }
+        realtimeTasks.removeAll()
+        if let realtimeChannel {
+            await client.removeChannel(realtimeChannel)
+            self.realtimeChannel = nil
+        }
+    }
+
+    private func reloadItemsFromRealtime() async {
+        guard let listID else { return }
+        await loadItems(for: listID)
     }
 
     func addItem() async {

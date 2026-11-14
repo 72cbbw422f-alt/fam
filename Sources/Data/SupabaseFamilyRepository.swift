@@ -55,7 +55,7 @@ final class SupabaseFamilyRepository: FamilyDataRepository {
         calendar.timeZone = .current
         let original = calendar.dateComponents([.month, .day, .hour, .minute, .second], from: originalDate)
         let reference = calendar.dateComponents([.year], from: referenceDate)
-        let nowDay = calendar.dateComponents([.month, .day], from: referenceDate)
+        let startOfToday = calendar.startOfDay(for: referenceDate)
         var year = reference.year ?? calendar.component(.year, from: referenceDate)
 
         func occurrence(in year: Int) -> Date {
@@ -78,7 +78,9 @@ final class SupabaseFamilyRepository: FamilyDataRepository {
         }
 
         var candidate = occurrence(in: year)
-        if candidate < referenceDate || (nowDay.month == original.month && nowDay.day == original.day && candidate < referenceDate) {
+        // A birthday remains today's birthday for the entire local calendar day,
+        // even when its stored time of day has already passed.
+        if candidate < startOfToday {
             year += 1
             candidate = occurrence(in: year)
         }

@@ -10,6 +10,7 @@ packages:
 settings:
   base:
     SWIFT_VERSION: "5.9"
+    GENERATE_INFOPLIST_FILE: YES
     CODE_SIGN_ENTITLEMENTS: Sources/Familjen.entitlements
     PRODUCT_BUNDLE_IDENTIFIER: se.familjen.app
     INFOPLIST_KEY_CFBundleDisplayName: Familjen

@@ -34,6 +34,24 @@ enum FamilyItemKind: String, Codable {
     case birthday
     case event
     case healthVisit = "health_visit"
+
+    var displayName: String {
+        switch self {
+        case .appointment: return "Bokning"
+        case .birthday: return "Födelsedag"
+        case .event: return "Evenemang"
+        case .healthVisit: return "Vårdbesök"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .appointment: return "calendar"
+        case .birthday: return "gift"
+        case .event: return "sparkles"
+        case .healthVisit: return "heart.text.square"
+        }
+    }
 }
 
 struct FamilyItem: Identifiable, Codable, Equatable {

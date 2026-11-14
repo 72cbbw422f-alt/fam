@@ -47,7 +47,10 @@ struct DashboardView: View {
                         }
                     }
 
-                    weekSection
+                    scheduleSection(title: "Idag", items: model.todayItems, emptyText: "Inget inplanerat idag.")
+                    scheduleSection(title: "Imorgon", items: model.tomorrowItems, emptyText: "Inget inplanerat imorgon.")
+                    birthdaysSection
+                    upcomingSection
 
                     if let error = model.errorMessage {
                         Text(error)
@@ -161,43 +164,22 @@ struct DashboardView: View {
         .background(FamiljenTheme.navy, in: RoundedRectangle(cornerRadius: 22))
     }
 
-    private var weekSection: some View {
+    private func scheduleSection(title: String, items: [FamilyItem], emptyText: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Den här veckan")
+            Text(title)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(FamiljenTheme.ink)
 
-            if model.thisWeekItems.isEmpty {
-                Text(model.isLoading ? "Hämtar aktiviteter …" : "Inget inplanerat den närmaste veckan.")
+            if items.isEmpty {
+                Text(model.isLoading ? "Hämtar aktiviteter …" : emptyText)
                     .font(.subheadline)
                     .foregroundStyle(FamiljenTheme.muted)
+                    .padding(.vertical, 4)
             } else {
                 VStack(spacing: 0) {
-                    ForEach(model.thisWeekItems) { item in
-                        HStack(alignment: .top, spacing: 12) {
-                            VStack(spacing: 2) {
-                                Text(item.startsAt.formatted(.dateTime.day()))
-                                    .font(.title3.weight(.semibold))
-                                Text(item.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased())
-                                    .font(.caption2.weight(.bold))
-                            }
-                            .foregroundStyle(FamiljenTheme.navy)
-                            .frame(width: 42)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(item.title)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(FamiljenTheme.ink)
-                                Text(item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
-                                    .font(.caption)
-                                    .foregroundStyle(FamiljenTheme.muted)
-                            }
-                            Spacer()
-                            Image(systemName: icon(for: item.kind))
-                                .foregroundStyle(FamiljenTheme.navy)
-                        }
-                        .padding(.vertical, 14)
-                        if item.id != model.thisWeekItems.last?.id {
+                    ForEach(items) { item in
+                        activityRow(item)
+                        if item.id != items.last?.id {
                             Divider().overlay(FamiljenTheme.sand)
                         }
                     }
@@ -206,6 +188,114 @@ struct DashboardView: View {
                 .background(.white, in: RoundedRectangle(cornerRadius: 16))
             }
         }
+    }
+
+    private var birthdaysSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Kommande födelsedagar", systemImage: "gift.fill")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(FamiljenTheme.ink)
+                Spacer()
+                NavigationLink("Visa alla") { FamilyCalendarView() }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(FamiljenTheme.navy)
+            }
+            if model.upcomingBirthdays.isEmpty {
+                Text("Inga födelsedagar inlagda ännu.")
+                    .font(.subheadline)
+                    .foregroundStyle(FamiljenTheme.muted)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(model.upcomingBirthdays) { item in
+                        HStack(spacing: 12) {
+                            Image(systemName: "gift.fill")
+                                .font(.title2)
+                                .foregroundStyle(FamiljenTheme.champagne)
+                                .frame(width: 42, height: 42)
+                                .background(FamiljenTheme.paper, in: RoundedRectangle(cornerRadius: 13))
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(FamiljenTheme.ink)
+                                Text(item.startsAt.formatted(.dateTime.day().month(.wide)))
+                                    .font(.caption)
+                                    .foregroundStyle(FamiljenTheme.muted)
+                            }
+                            Spacer()
+                        }
+                        .padding(.vertical, 11)
+                        if item.id != model.upcomingBirthdays.last?.id {
+                            Divider().overlay(FamiljenTheme.sand)
+                        }
+                    }
+                }
+                .padding(.horizontal, 14)
+                .background(.white, in: RoundedRectangle(cornerRadius: 16))
+            }
+        }
+    }
+
+    private var upcomingSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Kommande händelser")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(FamiljenTheme.ink)
+                Spacer()
+                NavigationLink("Visa kalender") { FamilyCalendarView() }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(FamiljenTheme.navy)
+            }
+            if model.upcomingEvents.isEmpty {
+                Text("Här visas familjens kommande bokningar och evenemang.")
+                    .font(.subheadline)
+                    .foregroundStyle(FamiljenTheme.muted)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(model.upcomingEvents) { item in
+                        activityRow(item)
+                        if item.id != model.upcomingEvents.last?.id {
+                            Divider().overlay(FamiljenTheme.sand)
+                        }
+                    }
+                }
+                .padding(.horizontal, 14)
+                .background(.white, in: RoundedRectangle(cornerRadius: 16))
+            }
+        }
+    }
+
+    private func activityRow(_ item: FamilyItem) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(spacing: 2) {
+                Text(item.startsAt.formatted(.dateTime.day()))
+                    .font(.title3.weight(.semibold))
+                Text(item.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased())
+                    .font(.caption2.weight(.bold))
+            }
+            .foregroundStyle(FamiljenTheme.navy)
+            .frame(width: 42)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(FamiljenTheme.ink)
+                Text(item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
+                    .font(.caption)
+                    .foregroundStyle(FamiljenTheme.muted)
+                if let details = item.details, !details.isEmpty {
+                    Text(details)
+                        .font(.caption2)
+                        .foregroundStyle(FamiljenTheme.muted)
+                        .lineLimit(1)
+                }
+            }
+            Spacer()
+            Image(systemName: icon(for: item.kind))
+                .foregroundStyle(FamiljenTheme.navy)
+        }
+        .padding(.vertical, 13)
     }
 
     private func overviewCard(_ title: String, detail: String, symbol: String) -> some View {

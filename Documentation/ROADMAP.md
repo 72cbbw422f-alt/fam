@@ -11,11 +11,13 @@
 - [x] Apple Sign In entitlement declared for the Xcode project
 - [x] Family creation and one-time invitation acceptance screens connected to Supabase RPCs
 - [x] Restore signed-in session and route existing family members to the dashboard
+- [x] Dashboard loads the signed-in user's family name and upcoming family items
+- [x] Dashboard shows the next booking and the coming week's events from Supabase
 - [ ] Configure Apple provider and Supabase project values
 - [ ] Compile and run on a physical iPhone
 
 ## Core features
-- [ ] Persist selected family context and connect live data to dashboard
+- [ ] Persist selected family context and connect dashboard cards to dedicated screens
 - [ ] Family profiles, including children without login accounts
 - [ ] Appointments and health visits: create, edit and delete
 - [ ] Birthdays and events: create, edit and delete

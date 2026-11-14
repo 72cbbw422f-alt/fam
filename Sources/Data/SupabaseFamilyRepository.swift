@@ -66,10 +66,11 @@ final class SupabaseFamilyRepository: FamilyDataRepository {
             components.hour = original.hour
             components.minute = original.minute
             components.second = original.second
-            if let date = calendar.date(from: components) { return date }
-            // For 29 February birthdays, use 28 February in non-leap years.
-            components.month = 2
-            components.day = 28
+            // Use 28 February for a 29 February birthday in non-leap years.
+            if original.month == 2 && original.day == 29 && !calendar.range(of: .day, in: .month, for: calendar.date(from: DateComponents(year: year, month: 2, day: 1))!)!.contains(29) {
+                components.month = 2
+                components.day = 28
+            }
             return calendar.date(from: components) ?? originalDate
         }
 

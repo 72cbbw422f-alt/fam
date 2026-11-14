@@ -9,7 +9,8 @@ packages:
     from: 2.0.0
 settings:
   base:
-    SWIFT_VERSION: "5.9"\n    CODE_SIGN_ENTITLEMENTS: Sources/Familjen.entitlements
+    SWIFT_VERSION: "5.9"
+    CODE_SIGN_ENTITLEMENTS: Sources/Familjen.entitlements
     PRODUCT_BUNDLE_IDENTIFIER: se.familjen.app
     INFOPLIST_KEY_CFBundleDisplayName: Familjen
     INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: Familjen kan lägga till valda bokningar i din kalender.

@@ -8,7 +8,7 @@ struct FamilyOnboardingView: View {
     @State private var mode: Mode = .create
     @State private var isWorking = false
     @State private var message: String?
-    @State private var createdInviteCode: String?
+    @State private var createdInviteCode: String?\n    @State private var isReadyToContinue = false\n    @State private var isComplete = false
 
     private let client = SupabaseClientProvider.makeClient()
 
@@ -111,7 +111,7 @@ struct FamilyOnboardingView: View {
                         params: ["target_family": familyID.uuidString]
                     ).execute()
                     createdInviteCode = try JSONDecoder().decode(String.self, from: inviteResponse.data)
-                    message = "Familjen är skapad. Spara koden och dela den med din partner."
+                    message = "Familjen är skapad. Spara koden och dela den med din partner."\n                    isReadyToContinue = true
                 } else {
                     _ = try await client.rpc(
                         "accept_family_invite",
@@ -120,7 +120,7 @@ struct FamilyOnboardingView: View {
                             "member_display_name": displayName.trimmingCharacters(in: .whitespacesAndNewlines)
                         ]
                     ).execute()
-                    message = "Du är nu ansluten till familjen."
+                    message = "Du är nu ansluten till familjen."\n                    isReadyToContinue = true
                 }
             } catch {
                 message = error.localizedDescription

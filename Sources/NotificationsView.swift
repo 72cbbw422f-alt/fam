@@ -62,7 +62,8 @@ struct NotificationsView: View {
             }
         }
         .refreshable { await model.load() }
-        .task { await model.load() }
+        .task { await model.startListening() }
+        .onDisappear { Task { await model.stopListening() } }
     }
 
     private func symbol(for type: String) -> String {

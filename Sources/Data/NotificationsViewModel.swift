@@ -9,12 +9,49 @@ final class NotificationsViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let client: SupabaseClient
+    private var realtimeChannel: RealtimeChannelV2?
+    private var realtimeTask: Task<Void, Never>?
 
     init(client: SupabaseClient = SupabaseClientProvider.makeClient()) {
         self.client = client
     }
 
     var unreadCount: Int { notifications.filter { !$0.isRead }.count }
+
+    func startListening() async {
+        await load()
+        guard realtimeChannel == nil else { return }
+        do {
+            let session = try await client.auth.session
+            let userID = session.user.id
+            let channel = client.channel("family-notifications-\\(userID.uuidString)")
+            let changes = channel.postgresChange(
+                InsertAction.self,
+                schema: "public",
+                table: "family_notifications",
+                filter: .eq("recipient_user_id", value: userID.uuidString)
+            )
+            await channel.subscribe()
+            realtimeChannel = channel
+            realtimeTask = Task { [weak self] in
+                for await _ in changes {
+                    guard !Task.isCancelled else { break }
+                    await self?.load()
+                }
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func stopListening() async {
+        realtimeTask?.cancel()
+        realtimeTask = nil
+        if let realtimeChannel {
+            await client.removeChannel(realtimeChannel)
+            self.realtimeChannel = nil
+        }
+    }
 
     func load() async {
         guard !isLoading else { return }

@@ -29,7 +29,7 @@
 - [x] APNs backend groundwork: user-scoped device-token registry and migration
 - [ ] iOS APNs registration, secure token upload and Edge Function sender (requires Apple Developer account and APNs credentials)
 - [ ] APNs push notifications when app is backgrounded or closed (requires physical-device testing)
-- [ ] Local notifications and reminders
+- [x] Optional local calendar reminders on each device (one day and one hour before; pending physical-device verification)
 
 ## Apple integrations and migration
 - [ ] Optional Apple Calendar integration via EventKit

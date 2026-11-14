@@ -40,6 +40,10 @@ struct DashboardView: View {
                                 overviewCard("Inköpslista", detail: "Gemensam lista", symbol: "basket")
                             }
                             .buttonStyle(.plain)
+                            NavigationLink { FamilyMembersView() } label: {
+                                overviewCard("Familjen", detail: "Familjemedlemmar", symbol: "person.2")
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
 

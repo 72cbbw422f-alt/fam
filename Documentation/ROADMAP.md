@@ -18,7 +18,7 @@
 
 ## Core features
 - [x] Connect dashboard birthday, event and health cards to family calendar; persistent selected family context remains open
-- [x] Family profiles: list adult accounts and create child profiles without login accounts (pending device verification)
+- [x] Family profiles: list adult accounts; add, rename and remove child profiles without login accounts; show birthdays linked to each profile (migration 009; pending device verification)
 - [x] Appointments and health visits: create, edit and delete (calendar UI and Supabase CRUD; pending device verification)
 - [x] Birthdays and events: create, edit and delete; birthdays can optionally repeat yearly and resolve to the next upcoming date (migration 008; pending device verification)
 - [x] Shared shopping list screen with add, check off and remove (Supabase-backed; manual refresh)

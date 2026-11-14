@@ -12,6 +12,8 @@ final class FamilyCalendarViewModel: ObservableObject {
     private let client: SupabaseClient
     private let repository: FamilyDataRepository
     private var familyID: UUID?
+    private var realtimeChannel: RealtimeChannelV2?
+    private var realtimeTasks: [Task<Void, Never>] = []
 
     init(client: SupabaseClient = SupabaseClientProvider.makeClient()) {
         self.client = client
@@ -37,6 +39,69 @@ final class FamilyCalendarViewModel: ObservableObject {
             async let loadedMembers = repository.loadMembers(familyID: membership.familyID)
             items = try await loadedItems
             members = try await loadedMembers
+            await startRealtimeIfNeeded()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func startRealtimeIfNeeded() async {
+        guard realtimeChannel == nil, let familyID else { return }
+        do {
+            let channel = client.channel("family-calendar-\\(familyID.uuidString)")
+            let inserts = channel.postgresChange(
+                InsertAction.self, schema: "public", table: "family_items",
+                filter: .eq("family_id", value: familyID.uuidString)
+            )
+            let updates = channel.postgresChange(
+                UpdateAction.self, schema: "public", table: "family_items",
+                filter: .eq("family_id", value: familyID.uuidString)
+            )
+            // Supabase does not support filters on DELETE events; RLS limits
+            // visible rows and the reload itself is scoped to this family.
+            let deletes = channel.postgresChange(
+                DeleteAction.self, schema: "public", table: "family_items"
+            )
+            await channel.subscribe()
+            realtimeChannel = channel
+            realtimeTasks = [
+                Task { [weak self] in
+                    for await _ in inserts {
+                        guard !Task.isCancelled else { break }
+                        await self?.reloadItemsFromRealtime()
+                    }
+                },
+                Task { [weak self] in
+                    for await _ in updates {
+                        guard !Task.isCancelled else { break }
+                        await self?.reloadItemsFromRealtime()
+                    }
+                },
+                Task { [weak self] in
+                    for await _ in deletes {
+                        guard !Task.isCancelled else { break }
+                        await self?.reloadItemsFromRealtime()
+                    }
+                }
+            ]
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func stopRealtime() async {
+        realtimeTasks.forEach { $0.cancel() }
+        realtimeTasks.removeAll()
+        if let realtimeChannel {
+            await client.removeChannel(realtimeChannel)
+            self.realtimeChannel = nil
+        }
+    }
+
+    private func reloadItemsFromRealtime() async {
+        guard let familyID else { return }
+        do {
+            items = try await repository.loadUpcomingItems(familyID: familyID, from: .now)
         } catch {
             errorMessage = error.localizedDescription
         }

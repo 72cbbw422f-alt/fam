@@ -8,6 +8,7 @@
    - `supabase/migrations/002_family_onboarding.sql`
    - `supabase/migrations/003_integrity_hardening.sql`
    - `supabase/migrations/004_family_notifications.sql`
+   - `supabase/migrations/005_push_devices.sql`
 3. In Project Settings / API, copy the project URL and anon/publishable key.
 4. Copy `Sources/Config.swift.example` to `Sources/Config.swift` locally and fill in those two public client values.
 5. Keep `Config.swift` untracked; it is excluded by `.gitignore`. Never put a service-role key in the iOS app or repository.
@@ -25,6 +26,7 @@
 - Existing authenticated family members are routed to the dashboard; accounts without a family are routed to onboarding.
 - Dashboard resolves the signed-in user's family membership, loads the family name and upcoming items, and displays the next booking plus the next seven days of activities.
 - Shared shopping list supports adding, checking off and deleting items.
+- Shopping-list contents subscribe to Supabase Realtime while the list is open, including inserts, updates and deletes from other family members.
 - Family calendar supports creating, editing, deleting and filtering family items.
 - Notification inbox loads the current user's notification records, marks them read, and subscribes to new notification inserts through Supabase Realtime while the app is open.
 - Dashboard displays an unread notification count badge.
@@ -43,4 +45,4 @@ The SQL is an initial foundation and must receive a security review and integrat
 
 Apply `004_family_notifications.sql` after migrations 001–003. It creates recipient-scoped notification records when another signed-in family member adds or edits a calendar item, adds a shopping-list item, or joins the family. The app includes an in-app notification inbox and a read-state RPC.
 
-This migration does not send operating-system push notifications. Remote notifications while the app is backgrounded or closed require Apple Push Notification service (APNs), an Apple Developer configuration, device-token registration, and a trusted server-side sender. Those steps remain separate from FlareStore signing and are not yet implemented.
+This migration does not send operating-system push notifications. Migration 005 adds a user-scoped device-token registry as backend groundwork. The iOS APNs registration callback, token upload, APNs signing key and trusted Edge Function sender remain pending until an Apple Developer account and APNs credentials are available. Never store the APNs private key in the iOS app or Git repository. These steps remain separate from FlareStore signing.

@@ -28,7 +28,7 @@
 - Existing authenticated family members are routed to the dashboard; accounts without a family are routed to onboarding.
 - Dashboard resolves the signed-in user's family membership, loads the family name and upcoming items, and displays the next booking plus the next seven days of activities.
 - Shared shopping list supports adding, checking off and deleting items.
-- Shopping-list contents subscribe to Supabase Realtime while the list is open, including inserts, updates and deletes from other family members. Migration 005 adds the table to the Realtime publication and enables filtered delete events.
+- Shopping-list contents subscribe to Supabase Realtime while the list is open, including inserts, updates and deletes from other family members. Migration 005 adds the table to the Realtime publication. Supabase DELETE change events are subscribed without row filters; the app reloads only the currently selected list.
 - Family calendar supports creating, editing, deleting and filtering family items.
 - Family members screen lists linked adult accounts and child profiles; authenticated family members can add child profiles without login accounts.
 - Optional local reminders can be enabled per device for family-calendar activities: one day and one hour before the activity. They use iOS local notifications and do not require APNs.
@@ -49,6 +49,6 @@ The SQL is an initial foundation and must receive a security review and integrat
 
 ## Family notifications
 
-Apply `004_family_notifications.sql` after migrations 001–003. It creates recipient-scoped notification records when another signed-in family member adds or edits a calendar item, adds a shopping-list item, or joins the family. The app includes an in-app notification inbox and a read-state RPC.
+Apply `004_family_notifications.sql` after migrations 001–003. It creates recipient-scoped notification records when another signed-in family member adds, edits or deletes a calendar item; adds, checks off or deletes a shopping-list item; or joins the family. Migration 007 adds the shopping check-off/deletion and calendar deletion notification triggers. The app includes an in-app notification inbox and a read-state RPC.
 
 This migration does not send operating-system push notifications. Migration 005 adds a user-scoped device-token registry as backend groundwork and enables Realtime publications for shopping items and family calendar items. The iOS APNs registration callback, token upload, APNs signing key and trusted Edge Function sender remain pending until an Apple Developer account and APNs credentials are available. Never store the APNs private key in the iOS app or Git repository. These steps remain separate from FlareStore signing.

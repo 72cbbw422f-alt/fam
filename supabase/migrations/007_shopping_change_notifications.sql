@@ -8,6 +8,7 @@ alter table public.family_notifications
   check (event_type in (
     'calendar_item_added',
     'calendar_item_updated',
+    'calendar_item_deleted',
     'shopping_item_added',
     'shopping_item_checked',
     'shopping_item_deleted',
@@ -87,3 +88,38 @@ drop trigger if exists shopping_items_notify_delete on public.shopping_items;
 create trigger shopping_items_notify_delete
 after delete on public.shopping_items
 for each row execute function public.notify_shopping_item_change();
+
+-- Notify the other signed-in family members when a calendar activity is removed.
+create or replace function public.notify_family_item_deleted()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+declare
+  actor_name text;
+begin
+  select display_name into actor_name
+  from public.family_members
+  where family_id = old.family_id and user_id = auth.uid()
+  limit 1;
+  actor_name := coalesce(actor_name, 'En familjemedlem');
+
+  insert into public.family_notifications (
+    family_id, recipient_user_id, actor_user_id, event_type, title, body
+  )
+  select old.family_id, member.user_id, auth.uid(), 'calendar_item_deleted',
+         'Aktivitet borttagen', actor_name || ' tog bort ' || old.title || '.'
+  from public.family_members member
+  where member.family_id = old.family_id
+    and member.user_id is not null
+    and member.user_id <> auth.uid();
+
+  return old;
+end;
+$$;
+
+drop trigger if exists family_items_notify_delete on public.family_items;
+create trigger family_items_notify_delete
+after delete on public.family_items
+for each row execute function public.notify_family_item_deleted();

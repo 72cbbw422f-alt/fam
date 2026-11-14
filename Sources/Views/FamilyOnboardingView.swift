@@ -8,7 +8,9 @@ struct FamilyOnboardingView: View {
     @State private var mode: Mode = .create
     @State private var isWorking = false
     @State private var message: String?
-    @State private var createdInviteCode: String?\n    @State private var isReadyToContinue = false\n    @State private var isComplete = false
+    @State private var createdInviteCode: String?
+    @State private var isReadyToContinue = false
+    @State private var isComplete = false
 
     private let client = SupabaseClientProvider.makeClient()
 
@@ -33,7 +35,7 @@ struct FamilyOnboardingView: View {
                     field("Ditt namn", text: $displayName, placeholder: "Förnamn")
 
                     if mode == .create {
-                        field("Familjens namn", text: $familyName, placeholder: "Exempelvis Familjen Andersson")
+                        field("Familjens namn", text: $familyName, placeholder: "Exempelvis Familjen")
                     } else {
                         field("Inbjudningskod", text: $inviteCode, placeholder: "Ange engångskoden")
                             .textInputAutocapitalization(.characters)
@@ -50,12 +52,11 @@ struct FamilyOnboardingView: View {
                         .foregroundStyle(.white)
                         .background(FamiljenTheme.navy, in: RoundedRectangle(cornerRadius: 14))
                     }
-                    .disabled(isWorking || displayName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(isWorking || !canSubmit)
 
                     if let code = createdInviteCode {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Er inbjudningskod")
-                                .font(.headline)
+                            Text("Er inbjudningskod").font(.headline)
                             Text(code)
                                 .font(.system(size: 25, weight: .bold, design: .rounded))
                                 .tracking(2)
@@ -73,17 +74,39 @@ struct FamilyOnboardingView: View {
                             .font(.footnote)
                             .foregroundStyle(FamiljenTheme.muted)
                     }
+
+                    if isReadyToContinue {
+                        Button("Öppna Familjen") { isComplete = true }
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 15)
+                            .foregroundStyle(.white)
+                            .background(FamiljenTheme.navy, in: RoundedRectangle(cornerRadius: 14))
+                    }
                 }
                 .padding(20)
             }
             .background(FamiljenTheme.paper.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
         }
+        .fullScreenCover(isPresented: $isComplete) {
+            DashboardView()
+        }
+    }
+
+    private var canSubmit: Bool {
+        let nameIsValid = !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if mode == .create {
+            return nameIsValid && !familyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+        return nameIsValid && !inviteCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func field(_ title: String, text: Binding<String>, placeholder: String) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(title).font(.subheadline.weight(.medium)).foregroundStyle(FamiljenTheme.ink)
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(FamiljenTheme.ink)
             TextField(placeholder, text: text)
                 .textFieldStyle(.plain)
                 .padding(14)
@@ -96,22 +119,24 @@ struct FamilyOnboardingView: View {
             isWorking = true
             message = nil
             defer { isWorking = false }
+
             do {
                 if mode == .create {
-                    let familyIDResponse = try await client.rpc(
+                    let familyResponse = try await client.rpc(
                         "create_family",
                         params: [
                             "family_name": familyName.trimmingCharacters(in: .whitespacesAndNewlines),
                             "owner_display_name": displayName.trimmingCharacters(in: .whitespacesAndNewlines)
                         ]
                     ).execute()
-                    let familyID = try JSONDecoder().decode(UUID.self, from: familyIDResponse.data)
+                    let familyID = try JSONDecoder().decode(UUID.self, from: familyResponse.data)
+
                     let inviteResponse = try await client.rpc(
                         "create_family_invite",
                         params: ["target_family": familyID.uuidString]
                     ).execute()
                     createdInviteCode = try JSONDecoder().decode(String.self, from: inviteResponse.data)
-                    message = "Familjen är skapad. Spara koden och dela den med din partner."\n                    isReadyToContinue = true
+                    message = "Familjen är skapad. Spara koden och dela den med din partner."
                 } else {
                     _ = try await client.rpc(
                         "accept_family_invite",
@@ -120,8 +145,9 @@ struct FamilyOnboardingView: View {
                             "member_display_name": displayName.trimmingCharacters(in: .whitespacesAndNewlines)
                         ]
                     ).execute()
-                    message = "Du är nu ansluten till familjen."\n                    isReadyToContinue = true
+                    message = "Du är nu ansluten till familjen."
                 }
+                isReadyToContinue = true
             } catch {
                 message = error.localizedDescription
             }

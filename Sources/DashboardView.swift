@@ -26,7 +26,7 @@ struct DashboardView: View {
                             overviewCard("Födelsedagar", detail: countText(.birthday), symbol: "gift")
                             overviewCard("Evenemang", detail: countText(.event), symbol: "sparkles")
                             overviewCard("Hälsa", detail: countText(.healthVisit), symbol: "heart.text.square")
-                            overviewCard("Inköpslista", detail: "Gemensam lista", symbol: "basket")
+                            NavigationLink { ShoppingListView() } label: {\n                                overviewCard("Inköpslista", detail: "Gemensam lista", symbol: "basket")\n                            }\n                            .buttonStyle(.plain)
                         }
                     }
 

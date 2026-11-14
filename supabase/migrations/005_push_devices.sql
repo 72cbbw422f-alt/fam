@@ -52,3 +52,18 @@ begin
   end if;
 end;
 $$;
+
+-- Publish family calendar changes for in-app Realtime updates.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'family_items'
+  ) then
+    alter publication supabase_realtime add table public.family_items;
+  end if;
+end;
+$$;

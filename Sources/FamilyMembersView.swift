@@ -4,6 +4,10 @@ import Supabase
 struct FamilyMembersView: View {
     @State private var members: [FamilyMember] = []
     @State private var newChildName = ""
+    @State private var editingChild: FamilyMember?
+    @State private var showingEditor = false
+    @State private var childToDelete: FamilyMember?
+    @State private var showingDeleteConfirmation = false
     @State private var isLoading = false
     @State private var isSaving = false
     @State private var errorMessage: String?
@@ -34,12 +38,35 @@ struct FamilyMembersView: View {
                             Image(systemName: "checkmark.icloud")
                                 .foregroundStyle(FamiljenTheme.muted)
                                 .accessibilityLabel("Har ett konto")
+                        } else if member.role == .child {
+                            Image(systemName: "ellipsis").foregroundStyle(FamiljenTheme.muted)
                         }
                     }
                     .padding(.vertical, 3)
+                    .contentShape(Rectangle())
+                    .contextMenu {
+                        if member.role == .child {
+                            Button {
+                                editingChild = member
+                                showingEditor = true
+                            } label: { Label("Redigera namn", systemImage: "pencil") }
+                            Button(role: .destructive) {
+                                childToDelete = member
+                                showingDeleteConfirmation = true
+                            } label: { Label("Ta bort barnprofil", systemImage: "trash") }
+                        }
+                    }
+                    .onTapGesture {
+                        if member.role == .child {
+                            editingChild = member
+                            showingEditor = true
+                        }
+                    }
                 }
             } header: {
                 Text("Familjemedlemmar")
+            } footer: {
+                Text("Tryck på en barnprofil för att ändra namnet. Håll in för fler alternativ.")
             }
 
             Section {
@@ -55,7 +82,7 @@ struct FamilyMembersView: View {
                     .foregroundStyle(FamiljenTheme.navy)
                 }
                 .disabled(isSaving || newChildName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                Text("Barnprofiler behöver inget eget konto. De kan kopplas till födelsedagar, bokningar och aktiviteter.")
+                Text("Barnprofiler behöver inget eget konto. Koppla dem till födelsedagar, bokningar och aktiviteter i kalendern.")
                     .font(.caption)
                     .foregroundStyle(FamiljenTheme.muted)
             } header: {
@@ -73,11 +100,24 @@ struct FamilyMembersView: View {
         .background(FamiljenTheme.paper)
         .navigationTitle("Familjen")
         .navigationBarTitleDisplayMode(.inline)
-        .overlay {
-            if isLoading { ProgressView("Hämtar familjen …") }
-        }
+        .overlay { if isLoading { ProgressView("Hämtar familjen …") } }
         .task { await loadMembers() }
         .refreshable { await loadMembers() }
+        .sheet(isPresented: $showingEditor, onDismiss: { editingChild = nil }) {
+            if let editingChild {
+                ChildProfileEditor(member: editingChild) { newName in
+                    await updateChild(editingChild, name: newName)
+                }
+            }
+        }
+        .confirmationDialog("Ta bort barnprofilen?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
+            Button("Ta bort", role: .destructive) {
+                if let childToDelete { Task { await deleteChild(childToDelete) } }
+            }
+            Button("Avbryt", role: .cancel) { childToDelete = nil }
+        } message: {
+            Text("Profilen tas bort från familjen. Kalenderaktiviteter som är kopplade till profilen blir kvar men kopplas loss.")
+        }
     }
 
     private func loadMembers() async {
@@ -87,27 +127,21 @@ struct FamilyMembersView: View {
         defer { isLoading = false }
         do {
             let session = try await client.auth.session
-            let response = try await client
-                .from("family_members")
+            let response = try await client.from("family_members")
                 .select("id,family_id,display_name,role,user_id")
                 .eq("user_id", value: session.user.id.uuidString)
-                .limit(1)
-                .execute()
+                .limit(1).execute()
             let ownMemberships = try JSONDecoder().decode([FamilyMember].self, from: response.data)
             guard let familyID = ownMemberships.first?.familyID else {
                 members = []
                 return
             }
-            let familyResponse = try await client
-                .from("family_members")
+            let familyResponse = try await client.from("family_members")
                 .select("id,family_id,display_name,role,user_id")
                 .eq("family_id", value: familyID.uuidString)
-                .order("created_at", ascending: true)
-                .execute()
+                .order("created_at", ascending: true).execute()
             members = try JSONDecoder().decode([FamilyMember].self, from: familyResponse.data)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        } catch { errorMessage = error.localizedDescription }
     }
 
     private func addChild() async {
@@ -118,16 +152,37 @@ struct FamilyMembersView: View {
         infoMessage = nil
         defer { isSaving = false }
         do {
-            try await client.rpc(
-                "create_family_child_profile",
-                params: ["child_display_name": name]
-            ).execute()
+            try await client.rpc("create_family_child_profile", params: ["child_display_name": name]).execute()
             newChildName = ""
             infoMessage = "Barnprofilen har lagts till."
             await loadMembers()
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    private func updateChild(_ child: FamilyMember, name: String) async -> Bool {
+        do {
+            try await client.rpc("update_family_child_profile", params: [
+                "target_member_id": child.id.uuidString,
+                "new_display_name": name
+            ]).execute()
+            infoMessage = "Barnprofilen har uppdaterats."
+            await loadMembers()
+            return true
         } catch {
             errorMessage = error.localizedDescription
+            return false
         }
+    }
+
+    private func deleteChild(_ child: FamilyMember) async {
+        do {
+            try await client.rpc("delete_family_child_profile", params: [
+                "target_member_id": child.id.uuidString
+            ]).execute()
+            infoMessage = "Barnprofilen har tagits bort."
+            childToDelete = nil
+            await loadMembers()
+        } catch { errorMessage = error.localizedDescription }
     }
 
     private func roleName(_ role: MemberRole) -> String {
@@ -136,5 +191,54 @@ struct FamilyMembersView: View {
         case .member: return "Vuxen"
         case .child: return "Barnprofil"
         }
+    }
+}
+
+private struct ChildProfileEditor: View {
+    @Environment(\.dismiss) private var dismiss
+    let member: FamilyMember
+    let onSave: (String) async -> Bool
+    @State private var name: String
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    init(member: FamilyMember, onSave: @escaping (String) async -> Bool) {
+        self.member = member
+        self.onSave = onSave
+        _name = State(initialValue: member.displayName)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Barnprofil") {
+                    TextField("Namn", text: $name).textInputAutocapitalization(.words)
+                }
+                if let errorMessage {
+                    Section { Text(errorMessage).font(.footnote).foregroundStyle(.red) }
+                }
+            }
+            .navigationTitle("Redigera profil")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Avbryt") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Spara") { Task { await save() } }
+                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+                }
+            }
+        }
+    }
+
+    private func save() async {
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard cleanName.count <= 80 else {
+            errorMessage = "Namnet får vara högst 80 tecken."
+            return
+        }
+        isSaving = true
+        defer { isSaving = false }
+        if await onSave(cleanName) { dismiss() }
+        else { errorMessage = "Det gick inte att spara ändringen." }
     }
 }

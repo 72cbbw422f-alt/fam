@@ -84,15 +84,14 @@ enum AppointmentImageReader {
                 if let month = months[monthName] { dateComponents = DateComponents(year: year, month: month, day: day) }
             }
         }
-        guard var components = dateComponents else { return nil }
-
-        if let timeMatch = firstMatch(#"(?<!\\d)([01]?\\d|2[0-3])[:.]([0-5]\\d)(?!\\d)"#, in: text) {
-            components.hour = Int(capture(timeMatch, 1, in: text))
-            components.minute = Int(capture(timeMatch, 2, in: text))
-        } else {
-            components.hour = 9
-            components.minute = 0
+        // Only suggest a date when an explicit clock time was also found.
+        // Never invent a default time for a medical appointment.
+        guard var components = dateComponents,
+              let timeMatch = firstMatch(#"(?<!\d)([01]?\d|2[0-3])[:.]([0-5]\d)(?!\d)"#, in: text) else {
+            return nil
         }
+        components.hour = Int(capture(timeMatch, 1, in: text))
+        components.minute = Int(capture(timeMatch, 2, in: text))
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .current
         guard let date = calendar.date(from: components) else { return nil }

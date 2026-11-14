@@ -32,6 +32,24 @@ final class DashboardViewModel: ObservableObject {
         return upcomingItems.filter { $0.startsAt < endOfWeek }
     }
 
+    var todayItems: [FamilyItem] {
+        upcomingItems.filter { Calendar.current.isDateInToday($0.startsAt) }
+    }
+
+    var tomorrowItems: [FamilyItem] {
+        upcomingItems.filter { Calendar.current.isDateInTomorrow($0.startsAt) }
+    }
+
+    var upcomingBirthdays: [FamilyItem] {
+        upcomingItems.filter { $0.kind == .birthday }.prefix(3).map { $0 }
+    }
+
+    var upcomingEvents: [FamilyItem] {
+        upcomingItems.filter { $0.kind == .event || $0.kind == .appointment || $0.kind == .healthVisit }
+            .filter { !Calendar.current.isDateInToday($0.startsAt) && !Calendar.current.isDateInTomorrow($0.startsAt) }
+            .prefix(4).map { $0 }
+    }
+
     func load() async {
         guard !isLoading else { return }
         isLoading = true

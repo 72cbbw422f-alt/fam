@@ -156,11 +156,11 @@ struct FamilyMembersView: View {
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
             let standardFormatter = ISO8601DateFormatter()
-            birthdays = Dictionary(uniqueKeysWithValues: birthdayRows.compactMap { row in
+            birthdays = birthdayRows.reduce(into: [UUID: Date]()) { result, row in
                 guard let memberID = row.memberID,
-                      let date = formatter.date(from: row.startsAt) ?? standardFormatter.date(from: row.startsAt) else { return nil }
-                return (memberID, date)
-            })
+                      let date = formatter.date(from: row.startsAt) ?? standardFormatter.date(from: row.startsAt) else { return }
+                result[memberID] = date
+            }
         } catch { errorMessage = error.localizedDescription }
     }
 

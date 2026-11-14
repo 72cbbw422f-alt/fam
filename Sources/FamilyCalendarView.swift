@@ -86,6 +86,7 @@ struct FamilyCalendarView: View {
         }
         .refreshable { await model.load() }
         .task { await model.load() }
+        .onDisappear { Task { await model.stopRealtime() } }
     }
 
     private func filterChip(_ title: String, kind: FamilyItemKind?) -> some View {

@@ -23,9 +23,9 @@ struct DashboardView: View {
                         }
 
                         LazyVGrid(columns: columns, spacing: 12) {
-                            overviewCard("Födelsedagar", detail: countText(.birthday), symbol: "gift")
-                            overviewCard("Evenemang", detail: countText(.event), symbol: "sparkles")
-                            overviewCard("Hälsa", detail: countText(.healthVisit), symbol: "heart.text.square")
+                            NavigationLink { FamilyCalendarView() } label: {\n                                overviewCard("Födelsedagar", detail: countText(.birthday), symbol: "gift")\n                            }\n                            .buttonStyle(.plain)
+                            NavigationLink { FamilyCalendarView() } label: {\n                                overviewCard("Evenemang", detail: countText(.event), symbol: "sparkles")\n                            }\n                            .buttonStyle(.plain)
+                            NavigationLink { FamilyCalendarView() } label: {\n                                overviewCard("Hälsa", detail: countText(.healthVisit), symbol: "heart.text.square")\n                            }\n                            .buttonStyle(.plain)
                             NavigationLink { ShoppingListView() } label: {
                                 overviewCard("Inköpslista", detail: "Gemensam lista", symbol: "basket")
                             }

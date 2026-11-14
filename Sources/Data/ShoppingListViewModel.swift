@@ -74,9 +74,10 @@ final class ShoppingListViewModel: ObservableObject {
                 UpdateAction.self, schema: "public", table: "shopping_items",
                 filter: .eq("list_id", value: listID.uuidString)
             )
+            // Supabase Postgres Changes does not support DELETE filters.
+            // The subsequent SELECT remains scoped to the active list/family.
             let deletes = channel.postgresChange(
-                DeleteAction.self, schema: "public", table: "shopping_items",
-                filter: .eq("list_id", value: listID.uuidString)
+                DeleteAction.self, schema: "public", table: "shopping_items"
             )
             await channel.subscribe()
             realtimeChannel = channel

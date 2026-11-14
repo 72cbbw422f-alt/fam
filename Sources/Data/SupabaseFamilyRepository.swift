@@ -3,7 +3,7 @@ import Supabase
 
 /// Supabase implementation kept behind the data layer.
 /// The caller supplies the active family ID obtained during onboarding.
-final class SupabaseFamilyRepository {
+final class SupabaseFamilyRepository: FamilyDataRepository {
     private let client: SupabaseClient
 
     init(client: SupabaseClient = SupabaseClientProvider.makeClient()) {

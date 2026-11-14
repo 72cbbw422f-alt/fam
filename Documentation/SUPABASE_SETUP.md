@@ -37,3 +37,10 @@ The dashboard data model currently uses this repository. Dedicated create/edit/d
 ## Security and release status
 
 The SQL is an initial foundation and must receive a security review and integration tests before production use. Add rate limiting and audit logging before exposing invitation-code creation in a public release. Do not distribute the app until the Supabase project is configured and the app has been compiled and tested on a physical iPhone.
+
+
+## Family notifications
+
+Apply `004_family_notifications.sql` after migrations 001–003. It creates recipient-scoped notification records when another signed-in family member adds or edits a calendar item, adds a shopping-list item, or joins the family. The app includes an in-app notification inbox and a read-state RPC.
+
+This migration does not send operating-system push notifications. Remote notifications while the app is backgrounded or closed require Apple Push Notification service (APNs), an Apple Developer configuration, device-token registration, and a trusted server-side sender. Those steps remain separate from FlareStore signing and are not yet implemented.

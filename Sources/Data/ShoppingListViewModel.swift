@@ -65,7 +65,7 @@ final class ShoppingListViewModel: ObservableObject {
     func startRealtimeIfNeeded() async {
         guard realtimeChannel == nil, let listID else { return }
         do {
-            let channel = client.channel("shopping-list-\\(listID.uuidString)")
+            let channel = client.channel("shopping-list-\(listID.uuidString)")
             let inserts = channel.postgresChange(
                 InsertAction.self, schema: "public", table: "shopping_items",
                 filter: .eq("list_id", value: listID.uuidString)
@@ -74,9 +74,11 @@ final class ShoppingListViewModel: ObservableObject {
                 UpdateAction.self, schema: "public", table: "shopping_items",
                 filter: .eq("list_id", value: listID.uuidString)
             )
+            // Postgres Changes does not support row filters for DELETE events.
+            // The RLS-protected channel may therefore trigger a harmless list reload
+            // after a delete anywhere in this table.
             let deletes = channel.postgresChange(
-                DeleteAction.self, schema: "public", table: "shopping_items",
-                filter: .eq("list_id", value: listID.uuidString)
+                DeleteAction.self, schema: "public", table: "shopping_items"
             )
             await channel.subscribe()
             realtimeChannel = channel

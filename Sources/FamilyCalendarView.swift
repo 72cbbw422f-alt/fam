@@ -33,25 +33,18 @@ struct FamilyCalendarView: View {
             }
 
             if visibleItems.isEmpty && !model.isLoading {
-                ContentUnavailableView(
-                    selectedKind == nil ? "Inget inplanerat" : "Inga träffar",
-                    systemImage: "calendar",
-                    description: Text("Lägg till bokningar, födelsedagar, evenemang och vårdbesök.")
-                )
-                .listRowBackground(Color.clear)
+                ContentUnavailableView(selectedKind == nil ? "Inget inplanerat" : "Inga träffar", systemImage: "calendar",
+                    description: Text("Lägg till bokningar, födelsedagar, evenemang och vårdbesök."))
+                    .listRowBackground(Color.clear)
             } else {
                 ForEach(visibleItems) { item in
                     Button {
                         editingItem = item
                         showingEditor = true
-                    } label: {
-                        calendarRow(item)
-                    }
+                    } label: { calendarRow(item) }
                     .buttonStyle(.plain)
                     .swipeActions {
-                        Button(role: .destructive) {
-                            Task { await model.delete(item) }
-                        } label: {
+                        Button(role: .destructive) { Task { await model.delete(item) } } label: {
                             Label("Ta bort", systemImage: "trash")
                         }
                     }
@@ -59,9 +52,7 @@ struct FamilyCalendarView: View {
             }
 
             if let error = model.errorMessage {
-                Section {
-                    Text(error).font(.footnote).foregroundStyle(.red)
-                }
+                Section { Text(error).font(.footnote).foregroundStyle(.red) }
             }
         }
         .scrollContentBackground(.hidden)
@@ -74,59 +65,44 @@ struct FamilyCalendarView: View {
                     editingItem = nil
                     showingEditor = true
                 } label: {
-                    Image(systemName: "plus")
-                        .foregroundStyle(FamiljenTheme.navy)
+                    Image(systemName: "plus").foregroundStyle(FamiljenTheme.navy)
                 }
                 .accessibilityLabel("Lägg till aktivitet")
             }
         }
         .overlay {
-            if model.isLoading && model.items.isEmpty {
-                ProgressView("Hämtar kalendern …")
-            }
+            if model.isLoading && model.items.isEmpty { ProgressView("Hämtar kalendern …") }
         }
         .sheet(isPresented: $showingEditor, onDismiss: { editingItem = nil }) {
-            FamilyItemEditor(item: editingItem, members: model.members) { title, details, date, kind, memberID in
-                await model.save(id: editingItem?.id, title: title, details: details, startsAt: date, kind: kind, memberID: memberID)
+            FamilyItemEditor(item: editingItem, members: model.members) { title, details, date, kind, memberID, recurring in
+                await model.save(id: editingItem?.id, title: title, details: details, startsAt: date,
+                                 kind: kind, memberID: memberID, isRecurringYearly: recurring)
             }
         }
         .refreshable { await model.load() }
         .task {
             await model.load()
-            if localRemindersEnabled {
-                await LocalReminderScheduler.schedule(for: model.items)
-            }
+            if localRemindersEnabled { await LocalReminderScheduler.schedule(for: model.items) }
         }
         .onChange(of: localRemindersEnabled) { _, enabled in
             Task {
                 if enabled {
                     let granted = await LocalReminderScheduler.requestPermission()
-                    if granted {
-                        await LocalReminderScheduler.schedule(for: model.items)
-                    } else {
-                        localRemindersEnabled = false
-                    }
-                } else {
-                    await LocalReminderScheduler.clearAll()
-                }
+                    if granted { await LocalReminderScheduler.schedule(for: model.items) }
+                    else { localRemindersEnabled = false }
+                } else { await LocalReminderScheduler.clearAll() }
             }
         }
         .onChange(of: model.items) { _, items in
-            if localRemindersEnabled {
-                Task { await LocalReminderScheduler.schedule(for: items) }
-            }
+            if localRemindersEnabled { Task { await LocalReminderScheduler.schedule(for: items) } }
         }
         .onDisappear { Task { await model.stopRealtime() } }
     }
 
     private func filterChip(_ title: String, kind: FamilyItemKind?) -> some View {
-        Button {
-            selectedKind = kind
-        } label: {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 13)
-                .padding(.vertical, 8)
+        Button { selectedKind = kind } label: {
+            Text(title).font(.caption.weight(.semibold))
+                .padding(.horizontal, 13).padding(.vertical, 8)
                 .foregroundStyle(selectedKind == kind ? .white : FamiljenTheme.ink)
                 .background(selectedKind == kind ? FamiljenTheme.navy : .white, in: Capsule())
         }
@@ -136,37 +112,27 @@ struct FamilyCalendarView: View {
     private func calendarRow(_ item: FamilyItem) -> some View {
         HStack(spacing: 13) {
             VStack(spacing: 2) {
-                Text(item.startsAt.formatted(.dateTime.day()))
-                    .font(.title2.weight(.semibold))
-                Text(item.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased())
-                    .font(.caption2.weight(.bold))
+                Text(item.startsAt.formatted(.dateTime.day())).font(.title2.weight(.semibold))
+                Text(item.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased()).font(.caption2.weight(.bold))
             }
-            .foregroundStyle(FamiljenTheme.navy)
-            .frame(width: 42)
-
+            .foregroundStyle(FamiljenTheme.navy).frame(width: 42)
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(FamiljenTheme.ink)
+                Text(item.title).font(.subheadline.weight(.semibold)).foregroundStyle(FamiljenTheme.ink)
                 HStack(spacing: 6) {
                     Text(item.kind.displayName)
+                    if item.isRecurringYearly { Image(systemName: "repeat").accessibilityLabel("Återkommer varje år") }
                     Text("·")
                     Text(item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
                 }
-                .font(.caption)
-                .foregroundStyle(FamiljenTheme.muted)
+                .font(.caption).foregroundStyle(FamiljenTheme.muted)
                 if let member = model.members.first(where: { $0.id == item.memberID }) {
-                    Text(member.displayName)
-                        .font(.caption2)
-                        .foregroundStyle(FamiljenTheme.muted)
+                    Text(member.displayName).font(.caption2).foregroundStyle(FamiljenTheme.muted)
                 }
             }
             Spacer()
-            Image(systemName: item.kind.symbol)
-                .foregroundStyle(FamiljenTheme.navy)
+            Image(systemName: item.kind.symbol).foregroundStyle(FamiljenTheme.navy)
         }
-        .padding(.vertical, 6)
-        .contentShape(Rectangle())
+        .padding(.vertical, 6).contentShape(Rectangle())
     }
 }
 
@@ -174,17 +140,18 @@ private struct FamilyItemEditor: View {
     @Environment(\.dismiss) private var dismiss
     let item: FamilyItem?
     let members: [FamilyMember]
-    let onSave: (String, String?, Date, FamilyItemKind, UUID?) async -> Bool
+    let onSave: (String, String?, Date, FamilyItemKind, UUID?, Bool) async -> Bool
 
     @State private var title: String
     @State private var details: String
     @State private var startsAt: Date
     @State private var kind: FamilyItemKind
     @State private var memberSelection: String
+    @State private var isRecurringYearly: Bool
     @State private var isSaving = false
     @State private var errorMessage: String?
 
-    init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, Date, FamilyItemKind, UUID?) async -> Bool) {
+    init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, Date, FamilyItemKind, UUID?, Bool) async -> Bool) {
         self.item = item
         self.members = members
         self.onSave = onSave
@@ -193,6 +160,7 @@ private struct FamilyItemEditor: View {
         _startsAt = State(initialValue: item?.startsAt ?? .now)
         _kind = State(initialValue: item?.kind ?? .appointment)
         _memberSelection = State(initialValue: item?.memberID?.uuidString ?? "")
+        _isRecurringYearly = State(initialValue: item?.isRecurringYearly ?? true)
     }
 
     var body: some View {
@@ -206,19 +174,19 @@ private struct FamilyItemEditor: View {
                         }
                     }
                     DatePicker("Datum och tid", selection: $startsAt, displayedComponents: [.date, .hourAndMinute])
-                    TextField("Anteckningar (valfritt)", text: $details, axis: .vertical)
-                        .lineLimit(2...5)
+                    if kind == .birthday {
+                        Toggle("Upprepa varje år", isOn: $isRecurringYearly)
+                        Text("Födelsedagen visas automatiskt på nästa kommande datum varje år.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    TextField("Anteckningar (valfritt)", text: $details, axis: .vertical).lineLimit(2...5)
                 }
-
                 Section("Vem gäller det?") {
                     Picker("Familjemedlem", selection: $memberSelection) {
                         Text("Ingen särskild").tag("")
-                        ForEach(members) { member in
-                            Text(member.displayName).tag(member.id.uuidString)
-                        }
+                        ForEach(members) { member in Text(member.displayName).tag(member.id.uuidString) }
                     }
                 }
-
                 if let errorMessage {
                     Section { Text(errorMessage).font(.footnote).foregroundStyle(.red) }
                 }
@@ -226,9 +194,7 @@ private struct FamilyItemEditor: View {
             .navigationTitle(item == nil ? "Ny aktivitet" : "Redigera aktivitet")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Avbryt") { dismiss() }
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("Avbryt") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Spara") { Task { await save() } }
                         .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
@@ -242,7 +208,8 @@ private struct FamilyItemEditor: View {
         defer { isSaving = false }
         let cleanDetails = details.trimmingCharacters(in: .whitespacesAndNewlines)
         let memberID = UUID(uuidString: memberSelection)
-        let saved = await onSave(title, cleanDetails.isEmpty ? nil : cleanDetails, startsAt, kind, memberID)
+        let saved = await onSave(title, cleanDetails.isEmpty ? nil : cleanDetails, startsAt,
+                                 kind, memberID, kind == .birthday && isRecurringYearly)
         if saved { dismiss() }
         else { errorMessage = "Det gick inte att spara. Kontrollera uppgifterna och försök igen." }
     }

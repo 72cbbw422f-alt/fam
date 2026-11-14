@@ -55,8 +55,8 @@ enum AppointmentImageReader {
 
     private static func parseDate(in text: String) -> Date? {
         let patterns = [
-            #"(?<!\\d)(\\d{1,2})[./-](\\d{1,2})[./-](\\d{4})(?!\\d)"#,
-            #"(?<!\\d)(\\d{4})-(\\d{1,2})-(\\d{1,2})(?!\\d)"#
+            #"(?<!\d)(\d{1,2})[./-](\d{1,2})[./-](\d{4})(?!\d)"#,
+            #"(?<!\d)(\d{4})-(\d{1,2})-(\d{1,2})(?!\d)"#
         ]
         var dateComponents: DateComponents?
         for (index, pattern) in patterns.enumerated() {
@@ -74,7 +74,7 @@ enum AppointmentImageReader {
 
         if dateComponents == nil {
             let monthNames = "(januari|februari|mars|april|maj|juni|juli|augusti|september|oktober|november|december)"
-            let pattern = #"(?i)(\\d{1,2})\\s+"# + monthNames + #"(?:\\s+(\\d{4}))?"#
+            let pattern = #"(?i)(\d{1,2})\s+"# + monthNames + #"(?:\s+(\d{4}))?"#
             if let match = firstMatch(pattern, in: text),
                let day = Int(capture(match, 1, in: text)),
                let monthName = capture(match, 2, in: text).lowercased().nilIfEmpty {

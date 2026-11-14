@@ -11,7 +11,7 @@ protocol FamilyDataRepository {
     func loadFamily(id: UUID) async throws -> Family
     func loadMembers(familyID: UUID) async throws -> [FamilyMember]
     func loadUpcomingItems(familyID: UUID, from date: Date) async throws -> [FamilyItem]
-    func createFamilyItem(familyID: UUID, title: String, details: String?, startsAt: Date, kind: FamilyItemKind, memberID: UUID?) async throws
-    func updateFamilyItem(id: UUID, title: String, details: String?, startsAt: Date, kind: FamilyItemKind, memberID: UUID?) async throws
+    func createFamilyItem(familyID: UUID, title: String, details: String?, startsAt: Date, kind: FamilyItemKind, memberID: UUID?, isRecurringYearly: Bool) async throws
+    func updateFamilyItem(id: UUID, title: String, details: String?, startsAt: Date, kind: FamilyItemKind, memberID: UUID?, isRecurringYearly: Bool) async throws
     func deleteFamilyItem(id: UUID) async throws
 }

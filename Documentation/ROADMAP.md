@@ -24,7 +24,7 @@
 - [x] Shared shopping list screen with add, check off and remove (Supabase-backed; manual refresh)
 - [x] Realtime updates for shopping-list inserts, updates and deletes while the list is open (pending device verification)
 - [x] Realtime updates for family-calendar additions, edits and deletions while the calendar is open (pending device verification)
-- [x] Notification event records for calendar additions/changes, shopping additions and new family members, plus an in-app notification inbox
+- [x] Notification event records for calendar additions/changes, shopping additions/check-offs/deletions and new family members, plus an in-app notification inbox
 - [x] Realtime notification delivery while app is open, with unread badge
 - [x] APNs backend groundwork: user-scoped device-token registry and migration
 - [ ] iOS APNs registration, secure token upload and Edge Function sender (requires Apple Developer account and APNs credentials)

@@ -8,7 +8,7 @@ struct SignInView: View {
         VStack(spacing: 28) {
             Spacer()
 
-            Image(systemName: "house.and旗")
+            Image(systemName: "house")
                 .font(.system(size: 54, weight: .light))
                 .foregroundStyle(FamiljenTheme.navy)
 

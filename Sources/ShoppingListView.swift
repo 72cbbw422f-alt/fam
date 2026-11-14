@@ -83,5 +83,6 @@ struct ShoppingListView: View {
         }
         .refreshable { await model.load() }
         .task { await model.load() }
+        .onDisappear { Task { await model.stopRealtime() } }
     }
 }

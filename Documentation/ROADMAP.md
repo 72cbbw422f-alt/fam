@@ -7,12 +7,15 @@
 - [x] Supabase SDK dependency and local-only configuration template
 - [x] Family-scoped Supabase repository for families, members and upcoming items
 - [x] Database integrity migration for family membership and event/member consistency
+- [x] Sign in with Apple implementation and nonce validation
+- [x] Apple Sign In entitlement declared for the Xcode project
+- [x] Family creation and one-time invitation acceptance screens connected to Supabase RPCs
+- [x] Restore signed-in session and route existing family members to the dashboard
+- [ ] Configure Apple provider and Supabase project values
 - [ ] Compile and run on a physical iPhone
 
 ## Core features
-- [ ] Sign in with Apple
-- [x] Database RPCs for family creation and one-time partner invitations
-- [ ] Connect onboarding UI to family creation and invitation acceptance
+- [ ] Persist selected family context and connect live data to dashboard
 - [ ] Family profiles, including children without login accounts
 - [ ] Appointments and health visits: create, edit and delete
 - [ ] Birthdays and events: create, edit and delete

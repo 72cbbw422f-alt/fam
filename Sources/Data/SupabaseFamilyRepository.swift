@@ -67,9 +67,12 @@ final class SupabaseFamilyRepository: FamilyDataRepository {
             components.minute = original.minute
             components.second = original.second
             // Use 28 February for a 29 February birthday in non-leap years.
-            if original.month == 2 && original.day == 29 && !calendar.range(of: .day, in: .month, for: calendar.date(from: DateComponents(year: year, month: 2, day: 1))!)!.contains(29) {
-                components.month = 2
-                components.day = 28
+            if original.month == 2 && original.day == 29 {
+                let february = calendar.date(from: DateComponents(year: year, month: 2, day: 1)) ?? originalDate
+                if let days = calendar.range(of: .day, in: .month, for: february), !days.contains(29) {
+                    components.month = 2
+                    components.day = 28
+                }
             }
             return calendar.date(from: components) ?? originalDate
         }
@@ -152,7 +155,7 @@ final class SupabaseFamilyRepository: FamilyDataRepository {
             if let date = fractional.date(from: string) { return date }
             let standard = ISO8601DateFormatter()
             guard let date = standard.date(from: string) else {
-                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid ISO-8601 date: \\(string)")
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid ISO-8601 date: \(string)")
             }
             return date
         }

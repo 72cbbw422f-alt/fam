@@ -18,7 +18,9 @@ enum LocalReminderScheduler {
         let oldIDs = pending.map(\.identifier).filter { $0.hasPrefix(identifierPrefix) }
         center.removePendingNotificationRequests(withIdentifiers: oldIDs)
 
-        for item in items {
+        // iOS limits the number of pending local notifications. Keep the
+        // next 30 activities (two reminders each) rather than over-scheduling.
+        for item in items.sorted(by: { $0.startsAt < $1.startsAt }).prefix(30) {
             for offset in [24 * 60 * 60, 60 * 60] {
                 let fireDate = item.startsAt.addingTimeInterval(TimeInterval(-offset))
                 guard fireDate > .now else { continue }

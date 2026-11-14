@@ -3,6 +3,7 @@ import Supabase
 
 struct FamilyMembersView: View {
     @State private var members: [FamilyMember] = []
+    @State private var birthdays: [UUID: Date] = [:]
     @State private var newChildName = ""
     @State private var editingChild: FamilyMember?
     @State private var showingEditor = false
@@ -32,6 +33,11 @@ struct FamilyMembersView: View {
                             Text(roleName(member.role))
                                 .font(.caption)
                                 .foregroundStyle(FamiljenTheme.muted)
+                            if let birthday = birthdays[member.id] {
+                                Text("Födelsedag · " + birthday.formatted(.dateTime.day().month(.abbreviated)))
+                                    .font(.caption2)
+                                    .foregroundStyle(FamiljenTheme.muted)
+                            }
                         }
                         Spacer()
                         if member.linkedUserID != nil {
@@ -141,6 +147,20 @@ struct FamilyMembersView: View {
                 .eq("family_id", value: familyID.uuidString)
                 .order("created_at", ascending: true).execute()
             members = try JSONDecoder().decode([FamilyMember].self, from: familyResponse.data)
+            let birthdayResponse = try await client.from("family_items")
+                .select("member_id,starts_at")
+                .eq("family_id", value: familyID.uuidString)
+                .eq("kind", value: "birthday")
+                .execute()
+            let birthdayRows = try JSONDecoder().decode([BirthdayLink].self, from: birthdayResponse.data)
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            let standardFormatter = ISO8601DateFormatter()
+            birthdays = Dictionary(uniqueKeysWithValues: birthdayRows.compactMap { row in
+                guard let memberID = row.memberID,
+                      let date = formatter.date(from: row.startsAt) ?? standardFormatter.date(from: row.startsAt) else { return nil }
+                return (memberID, date)
+            })
         } catch { errorMessage = error.localizedDescription }
     }
 
@@ -183,6 +203,15 @@ struct FamilyMembersView: View {
             childToDelete = nil
             await loadMembers()
         } catch { errorMessage = error.localizedDescription }
+    }
+
+    private struct BirthdayLink: Decodable {
+        let memberID: UUID?
+        let startsAt: String
+        enum CodingKeys: String, CodingKey {
+            case memberID = "member_id"
+            case startsAt = "starts_at"
+        }
     }
 
     private func roleName(_ role: MemberRole) -> String {

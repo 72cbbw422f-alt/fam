@@ -63,16 +63,29 @@ struct DashboardView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)).capitalized)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(FamiljenTheme.muted)
-            Text(model.family?.name ?? "Familjen")
-                .font(.system(size: 34, weight: .semibold, design: .rounded))
-                .foregroundStyle(FamiljenTheme.ink)
-            Text("En gemensam plats för allt som hör er till.")
-                .font(.subheadline)
-                .foregroundStyle(FamiljenTheme.muted)
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)).capitalized)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(FamiljenTheme.muted)
+                Text(model.family?.name ?? "Familjen")
+                    .font(.system(size: 34, weight: .semibold, design: .rounded))
+                    .foregroundStyle(FamiljenTheme.ink)
+                Text("En gemensam plats för allt som hör er till.")
+                    .font(.subheadline)
+                    .foregroundStyle(FamiljenTheme.muted)
+            }
+            Spacer(minLength: 0)
+            NavigationLink {
+                NotificationsView()
+            } label: {
+                Image(systemName: "bell")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(FamiljenTheme.navy)
+                    .frame(width: 44, height: 44)
+                    .background(.white, in: Circle())
+            }
+            .accessibilityLabel("Öppna notiser")
         }
     }
 

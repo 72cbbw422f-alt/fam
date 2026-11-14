@@ -20,7 +20,7 @@
 - [x] Connect dashboard birthday, event and health cards to family calendar; persistent selected family context remains open
 - [x] Family profiles: list adult accounts and create child profiles without login accounts (pending device verification)
 - [x] Appointments and health visits: create, edit and delete (calendar UI and Supabase CRUD; pending device verification)
-- [x] Birthdays and events: create, edit and delete (same calendar flow; recurring birthday handling still needs design)
+- [x] Birthdays and events: create, edit and delete; birthdays can optionally repeat yearly and resolve to the next upcoming date (migration 008; pending device verification)
 - [x] Shared shopping list screen with add, check off and remove (Supabase-backed; manual refresh)
 - [x] Realtime updates for shopping-list inserts, updates and deletes while the list is open (pending device verification)
 - [x] Realtime updates for family-calendar additions, edits and deletions while the calendar is open (pending device verification)

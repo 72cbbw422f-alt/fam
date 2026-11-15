@@ -1,161 +1,42 @@
 import SwiftUI
-import Supabase
 
 struct FamilyOnboardingView: View {
     @State private var familyName = ""
     @State private var displayName = ""
-    @State private var inviteCode = ""
-    @State private var mode: Mode = .create
-    @State private var isWorking = false
-    @State private var message: String?
-    @State private var createdInviteCode: String?
-    @State private var isReadyToContinue = false
-    @State private var isComplete = false
-
-    private let client = SupabaseClientProvider.makeClient()
-
+    private var canCreate: Bool {
+        !familyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Välkommen")
-                            .font(.largeTitle.weight(.semibold))
-                            .foregroundStyle(FamiljenTheme.ink)
-                        Text("Skapa er familj eller anslut med en inbjudningskod.")
-                            .foregroundStyle(FamiljenTheme.muted)
+                    VStack(alignment: .leading, spacing: 7) {
+                        Text("Välkommen till Familjen").font(.largeTitle.weight(.semibold)).foregroundStyle(FamiljenTheme.ink)
+                        Text("Skapa familjens lokala utrymme på den här iPhone-enheten.").foregroundStyle(FamiljenTheme.muted)
                     }
-
-                    Picker("Åtgärd", selection: $mode) {
-                        Text("Skapa familj").tag(Mode.create)
-                        Text("Jag har en kod").tag(Mode.join)
-                    }
-                    .pickerStyle(.segmented)
-
                     field("Ditt namn", text: $displayName, placeholder: "Förnamn")
-
-                    if mode == .create {
-                        field("Familjens namn", text: $familyName, placeholder: "Exempelvis Familjen")
-                    } else {
-                        field("Inbjudningskod", text: $inviteCode, placeholder: "Ange engångskoden")
-                            .textInputAutocapitalization(.characters)
+                    field("Familjens namn", text: $familyName, placeholder: "Exempelvis Familjen")
+                    Button { LocalFamilyStore.shared.createFamily(name: familyName, ownerName: displayName) } label: {
+                        Text("Skapa familj").fontWeight(.semibold).frame(maxWidth: .infinity).padding(.vertical, 15)
+                            .foregroundStyle(.white).background(FamiljenTheme.navy, in: RoundedRectangle(cornerRadius: 14))
                     }
-
-                    Button(action: submit) {
-                        HStack {
-                            if isWorking { ProgressView().tint(.white) }
-                            Text(mode == .create ? "Skapa familj" : "Gå med i familjen")
-                                .fontWeight(.semibold)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                        .foregroundStyle(.white)
-                        .background(FamiljenTheme.navy, in: RoundedRectangle(cornerRadius: 14))
-                    }
-                    .disabled(isWorking || !canSubmit)
-
-                    if let code = createdInviteCode {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Er inbjudningskod").font(.headline)
-                            Text(code)
-                                .font(.system(size: 25, weight: .bold, design: .rounded))
-                                .tracking(2)
-                            Text("Koden gäller i 48 timmar. Dela den med den du vill bjuda in.")
-                                .font(.footnote)
-                                .foregroundStyle(FamiljenTheme.muted)
-                        }
-                        .padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    .disabled(!canCreate).opacity(canCreate ? 1 : 0.5)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label("Sparas lokalt på den här enheten", systemImage: "iphone").font(.subheadline.weight(.semibold))
+                        Text("Testversionen synkar inte mellan telefoner. Varje iPhone har sin egen familjedata. iCloud-delning kommer senare.")
+                            .font(.footnote).foregroundStyle(FamiljenTheme.muted)
+                    }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
                         .background(.white, in: RoundedRectangle(cornerRadius: 16))
-                    }
-
-                    if let message {
-                        Text(message)
-                            .font(.footnote)
-                            .foregroundStyle(FamiljenTheme.muted)
-                    }
-
-                    if isReadyToContinue {
-                        Button("Öppna Familjen") { isComplete = true }
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 15)
-                            .foregroundStyle(.white)
-                            .background(FamiljenTheme.navy, in: RoundedRectangle(cornerRadius: 14))
-                    }
-                }
-                .padding(20)
-            }
-            .background(FamiljenTheme.paper.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
-        }
-        .fullScreenCover(isPresented: $isComplete) {
-            DashboardView()
+                }.padding(20)
+            }.background(FamiljenTheme.paper.ignoresSafeArea()).toolbar(.hidden, for: .navigationBar)
         }
     }
-
-    private var canSubmit: Bool {
-        let nameIsValid = !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        if mode == .create {
-            return nameIsValid && !familyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        }
-        return nameIsValid && !inviteCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
     private func field(_ title: String, text: Binding<String>, placeholder: String) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(title)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(FamiljenTheme.ink)
-            TextField(placeholder, text: text)
-                .textFieldStyle(.plain)
-                .padding(14)
+            Text(title).font(.subheadline.weight(.medium)).foregroundStyle(FamiljenTheme.ink)
+            TextField(placeholder, text: text).textFieldStyle(.plain).padding(14)
                 .background(.white, in: RoundedRectangle(cornerRadius: 12))
         }
-    }
-
-    private func submit() {
-        Task {
-            isWorking = true
-            message = nil
-            defer { isWorking = false }
-
-            do {
-                if mode == .create {
-                    let familyResponse = try await client.rpc(
-                        "create_family",
-                        params: [
-                            "family_name": familyName.trimmingCharacters(in: .whitespacesAndNewlines),
-                            "owner_display_name": displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-                        ]
-                    ).execute()
-                    let familyID = try JSONDecoder().decode(UUID.self, from: familyResponse.data)
-
-                    let inviteResponse = try await client.rpc(
-                        "create_family_invite",
-                        params: ["target_family": familyID.uuidString]
-                    ).execute()
-                    createdInviteCode = try JSONDecoder().decode(String.self, from: inviteResponse.data)
-                    message = "Familjen är skapad. Spara koden och dela den med din partner."
-                } else {
-                    _ = try await client.rpc(
-                        "accept_family_invite",
-                        params: [
-                            "invite_code": inviteCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased(),
-                            "member_display_name": displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-                        ]
-                    ).execute()
-                    message = "Du är nu ansluten till familjen."
-                }
-                isReadyToContinue = true
-            } catch {
-                message = error.localizedDescription
-            }
-        }
-    }
-
-    private enum Mode: Hashable {
-        case create
-        case join
     }
 }

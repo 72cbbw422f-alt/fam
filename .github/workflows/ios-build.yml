@@ -41,3 +41,55 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+  build-device-ipa:
+    name: Build unsigned IPA (iPhone)
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          xcode-select -p
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Resolve Swift packages
+        run: xcodebuild -resolvePackageDependencies -project Familjen.xcodeproj -scheme Familjen
+
+      - name: Build for physical iPhone (unsigned)
+        run: |
+          xcodebuild \
+            -project Familjen.xcodeproj \
+            -scheme Familjen \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          APP_PATH="build/Build/Products/Release-iphoneos/Familjen.app"
+          test -d "$APP_PATH"
+          mkdir -p package/Payload
+          cp -R "$APP_PATH" package/Payload/
+          cd package
+          /usr/bin/zip -qry ../Familjen-unsigned.ipa Payload
+          cd ..
+          test -s Familjen-unsigned.ipa
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Familjen-unsigned-IPA
+          path: Familjen-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

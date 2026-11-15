@@ -28,7 +28,7 @@ struct FamilyCalendarView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         filterChip("Alla", kind: nil)
-                        ForEach([FamilyItemKind.appointment, .birthday, .event, .healthVisit], id: \.self) { kind in
+                        ForEach(FamilyItemKind.allCases, id: \.self) { kind in
                             filterChip(kind.displayName, kind: kind)
                         }
                     }
@@ -135,7 +135,7 @@ struct FamilyCalendarView: View {
                 }
             }
             Spacer()
-            Image(systemName: item.kind.symbol).foregroundStyle(FamiljenTheme.navy)
+            CategoryIcon(kind: item.kind, size: 38)
         }
         .padding(.vertical, 6).contentShape(Rectangle())
     }
@@ -194,7 +194,7 @@ private struct FamilyItemEditor: View {
                 Section("Aktivitet") {
                     TextField("Rubrik", text: $title)
                     Picker("Typ", selection: $kind) {
-                        ForEach([FamilyItemKind.appointment, .birthday, .event, .healthVisit], id: \.self) { value in
+                        ForEach(FamilyItemKind.allCases, id: \.self) { value in
                             Text(value.displayName).tag(value)
                         }
                     }

@@ -26,9 +26,6 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
-      - name: Prepare build-only configuration
-        run: cp Sources/Config.swift.example Sources/Config.swift
-
       - name: Generate Xcode project
         run: xcodegen generate
 

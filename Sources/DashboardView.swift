@@ -246,11 +246,7 @@ struct DashboardView: View {
                 VStack(spacing: 0) {
                     ForEach(model.upcomingBirthdays) { item in
                         HStack(spacing: 12) {
-                            Image(systemName: "gift.fill")
-                                .font(.system(size: 15))
-                                .foregroundStyle(FamiljenTheme.champagneDeep)
-                                .frame(width: 39, height: 39)
-                                .background(FamiljenTheme.sand.opacity(0.55), in: RoundedRectangle(cornerRadius: 13))
+                            CategoryIcon(kind: .birthday, size: 42)
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(item.title)
                                     .font(.system(size: 13, weight: .semibold))
@@ -336,20 +332,14 @@ struct DashboardView: View {
                     .foregroundStyle(FamiljenTheme.muted)
             }
             Spacer(minLength: 4)
-            Image(systemName: icon(for: item.kind))
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(FamiljenTheme.champagneDeep)
+            CategoryIcon(kind: item.kind, size: 38)
         }
         .padding(.vertical, 11)
     }
 
     private func shortcutCard(_ title: String, detail: String, symbol: String) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Image(systemName: symbol)
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(FamiljenTheme.champagneDeep)
-                .frame(width: 34, height: 34)
-                .background(FamiljenTheme.sand.opacity(0.52), in: RoundedRectangle(cornerRadius: 11))
+            CategoryIcon(kind: categoryKind(for: title), size: 42)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
@@ -399,12 +389,12 @@ struct DashboardView: View {
         return count == 1 ? "1" : "\(count)"
     }
 
-    private func icon(for kind: FamilyItemKind) -> String {
-        switch kind {
-        case .appointment: return "calendar"
-        case .birthday: return "gift"
-        case .event: return "sparkles"
-        case .healthVisit: return "cross.case"
+    private func categoryKind(for title: String) -> FamilyItemKind {
+        switch title {
+        case "Hälsa": return .healthVisit
+        case "Födelsedagar": return .birthday
+        case "Inköpslista": return .appointment
+        default: return .appointment
         }
     }
 }

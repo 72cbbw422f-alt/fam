@@ -29,27 +29,51 @@ enum MemberRole: String, Codable {
     case owner, member, child
 }
 
-enum FamilyItemKind: String, Codable, Hashable {
+enum FamilyItemKind: String, Codable, Hashable, CaseIterable {
     case appointment
     case birthday
     case event
     case healthVisit = "health_visit"
+    case dentist
+    case medication
+    case school
+    case activity
+    case trip
+    case celebration
+    case family
+    case work
 
     var displayName: String {
         switch self {
         case .appointment: return "Bokning"
         case .birthday: return "Födelsedag"
         case .event: return "Evenemang"
-        case .healthVisit: return "Vårdbesök"
+        case .healthVisit: return "Läkarbesök"
+        case .dentist: return "Tandläkare"
+        case .medication: return "Medicin"
+        case .school: return "Skola"
+        case .activity: return "Träning och aktivitet"
+        case .trip: return "Resa och utflykt"
+        case .celebration: return "Fest och firande"
+        case .family: return "Familjehändelse"
+        case .work: return "Arbete"
         }
     }
 
     var symbol: String {
         switch self {
         case .appointment: return "calendar"
-        case .birthday: return "gift"
+        case .birthday: return "gift.fill"
         case .event: return "sparkles"
-        case .healthVisit: return "heart.text.square"
+        case .healthVisit: return "stethoscope"
+        case .dentist: return "mouth"
+        case .medication: return "pills.fill"
+        case .school: return "building.2.fill"
+        case .activity: return "dumbbell.fill"
+        case .trip: return "car.fill"
+        case .celebration: return "party.popper.fill"
+        case .family: return "house.fill"
+        case .work: return "briefcase.fill"
         }
     }
 }

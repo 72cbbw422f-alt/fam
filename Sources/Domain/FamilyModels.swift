@@ -42,6 +42,9 @@ enum FamilyItemKind: String, Codable, Hashable, CaseIterable {
     case celebration
     case family
     case work
+    case shopping
+
+    static var calendarKinds: [FamilyItemKind] { allCases.filter { $0 != .shopping } }
 
     var displayName: String {
         switch self {
@@ -57,6 +60,7 @@ enum FamilyItemKind: String, Codable, Hashable, CaseIterable {
         case .celebration: return "Fest och firande"
         case .family: return "Familjehändelse"
         case .work: return "Arbete"
+        case .shopping: return "Inköp"
         }
     }
 
@@ -74,6 +78,7 @@ enum FamilyItemKind: String, Codable, Hashable, CaseIterable {
         case .celebration: return "party.popper.fill"
         case .family: return "house.fill"
         case .work: return "briefcase.fill"
+        case .shopping: return "cart.fill"
         }
     }
 }

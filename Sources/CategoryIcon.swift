@@ -16,6 +16,7 @@ struct CategoryIcon: View {
         case .celebration: return Color(red: 0.70, green: 0.43, blue: 0.37)
         case .family: return FamiljenTheme.navy
         case .work: return Color(red: 0.48, green: 0.37, blue: 0.31)
+        case .shopping: return Color(red: 0.72, green: 0.56, blue: 0.36)
         case .event: return Color(red: 0.53, green: 0.48, blue: 0.59)
         }
     }

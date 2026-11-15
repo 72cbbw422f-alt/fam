@@ -393,7 +393,7 @@ struct DashboardView: View {
         switch title {
         case "Hälsa": return .healthVisit
         case "Födelsedagar": return .birthday
-        case "Inköpslista": return .appointment
+        case "Inköpslista": return .shopping
         default: return .appointment
         }
     }

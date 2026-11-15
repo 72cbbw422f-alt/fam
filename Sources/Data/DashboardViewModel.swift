@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import Supabase
 
 @MainActor
 final class DashboardViewModel: ObservableObject {
@@ -8,79 +7,53 @@ final class DashboardViewModel: ObservableObject {
     @Published private(set) var upcomingItems: [FamilyItem] = []
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
+    private let store = LocalFamilyStore.shared
 
-    private let client: SupabaseClient
-    private let repository: FamilyDataRepository
-
-    init(
-        client: SupabaseClient = SupabaseClientProvider.makeClient(),
-        repository: FamilyDataRepository? = nil
-    ) {
-        self.client = client
-        self.repository = repository ?? SupabaseFamilyRepository(client: client)
-    }
-
-    var nextItem: FamilyItem? {
-        upcomingItems.first
-    }
-
+    var nextItem: FamilyItem? { upcomingItems.first }
     var thisWeekItems: [FamilyItem] {
-        let calendar = Calendar.current
-        guard let endOfWeek = calendar.date(byAdding: .day, value: 7, to: .now) else {
-            return []
-        }
-        return upcomingItems.filter { $0.startsAt < endOfWeek }
+        let end = Calendar.current.date(byAdding: .day, value: 7, to: .now) ?? .now
+        return upcomingItems.filter { $0.startsAt < end }
     }
-
-    var todayItems: [FamilyItem] {
-        upcomingItems.filter { Calendar.current.isDateInToday($0.startsAt) }
-    }
-
-    var tomorrowItems: [FamilyItem] {
-        upcomingItems.filter { Calendar.current.isDateInTomorrow($0.startsAt) }
-    }
-
-    var upcomingBirthdays: [FamilyItem] {
-        upcomingItems.filter { $0.kind == .birthday }.prefix(3).map { $0 }
-    }
-
+    var todayItems: [FamilyItem] { upcomingItems.filter { Calendar.current.isDateInToday($0.startsAt) } }
+    var tomorrowItems: [FamilyItem] { upcomingItems.filter { Calendar.current.isDateInTomorrow($0.startsAt) } }
+    var upcomingBirthdays: [FamilyItem] { upcomingItems.filter { $0.kind == .birthday }.prefix(3).map { $0 } }
     var upcomingEvents: [FamilyItem] {
-        upcomingItems.filter { $0.kind == .event || $0.kind == .appointment || $0.kind == .healthVisit }
+        upcomingItems.filter { [.event, .appointment, .healthVisit].contains($0.kind) }
             .filter { !Calendar.current.isDateInToday($0.startsAt) && !Calendar.current.isDateInTomorrow($0.startsAt) }
             .prefix(4).map { $0 }
     }
 
     func load() async {
-        guard !isLoading else { return }
         isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-
-        do {
-            let session = try await client.auth.session
-            let membershipResponse = try await client
-                .from("family_members")
-                .select("family_id")
-                .eq("user_id", value: session.user.id.uuidString)
-                .single()
-                .execute()
-            let membership = try JSONDecoder().decode(MembershipRecord.self, from: membershipResponse.data)
-
-            async let loadedFamily = repository.loadFamily(id: membership.familyID)
-            async let loadedItems = repository.loadUpcomingItems(familyID: membership.familyID, from: .now)
-
-            family = try await loadedFamily
-            upcomingItems = try await loadedItems
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        family = store.family
+        upcomingItems = Self.project(store.items, from: .now)
+        isLoading = false
     }
 
-    private struct MembershipRecord: Decodable {
-        let familyID: UUID
-
-        enum CodingKeys: String, CodingKey {
-            case familyID = "family_id"
-        }
+    static func project(_ source: [FamilyItem], from date: Date) -> [FamilyItem] {
+        let calendar = Calendar(identifier: .gregorian)
+        return source.compactMap { item in
+            guard item.kind == .birthday && item.isRecurringYearly else {
+                return item.startsAt >= date ? item : nil
+            }
+            let parts = calendar.dateComponents([.month, .day, .hour, .minute], from: item.startsAt)
+            let today = calendar.startOfDay(for: date)
+            var year = calendar.component(.year, from: date)
+            func occurrence(_ year: Int) -> Date? {
+                var c = DateComponents()
+                c.year = year; c.month = parts.month; c.day = parts.day
+                c.hour = parts.hour; c.minute = parts.minute
+                if parts.month == 2 && parts.day == 29 {
+                    let feb = calendar.date(from: DateComponents(year: year, month: 2, day: 1))!
+                    if !calendar.range(of: .day, in: .month, for: feb)!.contains(29) { c.day = 28 }
+                }
+                return calendar.date(from: c)
+            }
+            var next = occurrence(year) ?? item.startsAt
+            if next < today { year += 1; next = occurrence(year) ?? item.startsAt }
+            var projected = item
+            projected.startsAt = next
+            return projected
+        }.sorted { $0.startsAt < $1.startsAt }
     }
 }

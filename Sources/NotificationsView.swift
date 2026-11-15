@@ -9,7 +9,7 @@ struct NotificationsView: View {
                 ContentUnavailableView(
                     "Inga notiser ännu",
                     systemImage: "bell",
-                    description: Text("Här visas när någon i familjen lägger till något nytt.")
+                    description: Text("Här visas aviseringar som skapats på den här enheten.")
                 )
                 .listRowBackground(Color.clear)
             } else {

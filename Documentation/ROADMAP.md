@@ -1,38 +1,24 @@
 # Familjen roadmap
 
-## Foundation
-- [x] Product scope and visual direction documented
-- [x] Native SwiftUI project scaffold
-- [x] Domain models independent of backend provider
-- [x] Supabase SDK dependency and local-only configuration template
-- [x] Family-scoped Supabase repository for families, members and upcoming items
-- [x] Database integrity migration for family membership and event/member consistency
-- [x] Sign in with Apple implementation and nonce validation
-- [x] Apple Sign In entitlement declared for the Xcode project
-- [x] Family creation and one-time invitation acceptance screens connected to Supabase RPCs
-- [x] Restore signed-in session and route existing family members to the dashboard
-- [x] Dashboard loads the signed-in user's family name and upcoming family items
-- [x] Dashboard shows the next booking and the coming week's events from Supabase
-- [ ] Configure Apple provider and Supabase project values
-- [x] Automated iOS Simulator compilation in GitHub Actions (unsigned build; latest successful baseline: 14 Nov 2026)
-- [ ] Compile, sign and run on a physical iPhone
+## Local-first beta
+- [x] Native SwiftUI app and Scandinavian Premium visual direction
+- [x] Local family setup without sign-in or invitation codes
+- [x] On-device persistence for family, profiles, calendar and shopping list
+- [x] Add, edit and remove child profiles without separate accounts
+- [x] Add, edit and delete appointments, birthdays, events and health visits
+- [x] Yearly birthdays, including 29 February birthdays observed on 28 February in non-leap years
+- [x] On-device OCR for screenshots; images are not uploaded
+- [x] Local notification scheduling one day and one hour before activities
+- [ ] Verify persistence, CRUD and reminders on physical iPhones
+- [ ] Verify unsigned iOS Simulator build in CI after local-first refactor
+- [ ] Prepare signed device build when signing credentials are available
 
-## Core features
-- [x] Connect dashboard birthday, event and health cards to family calendar; persistent selected family context remains open
-- [x] Family profiles: list adult accounts; add, rename and remove child profiles without login accounts; show birthdays linked to each profile (migration 009; pending device verification)
-- [x] Appointments and health visits: create, edit and delete (calendar UI and Supabase CRUD; pending device verification)
-- [x] Birthdays and events: create, edit and delete; birthdays can optionally repeat yearly and resolve to the next upcoming date (migration 008; pending device verification)
-- [x] Shared shopping list screen with add, check off and remove (Supabase-backed; manual refresh)
-- [x] Realtime updates for shopping-list inserts, updates and deletes while the list is open (pending device verification)
-- [x] Realtime updates for family-calendar additions, edits and deletions while the calendar is open (pending device verification)
-- [x] Notification event records for calendar additions/changes, shopping additions/check-offs/deletions and new family members, plus an in-app notification inbox
-- [x] Realtime notification delivery while app is open, with unread badge
-- [x] APNs backend groundwork: user-scoped device-token registry and migration
-- [ ] iOS APNs registration, secure token upload and Edge Function sender (requires Apple Developer account and APNs credentials)
-- [ ] APNs push notifications when app is backgrounded or closed (requires physical-device testing)
-- [x] Optional local calendar reminders on each device (one day and one hour before; pending physical-device verification)
+## Known beta limitation
+Each iPhone stores its own independent family data. There is no shared calendar, shared shopping list, account login or cloud backup in this phase.
 
-## Apple integrations and migration
+## Later: Apple ecosystem
+- [ ] CloudKit private/shared databases and CKShare for family sharing
+- [ ] Safe migration from each phone's local data to CloudKit
+- [ ] Conflict handling and family membership permissions
 - [ ] Optional Apple Calendar integration via EventKit
-- [ ] CloudKit backend implementation behind the repository boundary
-- [ ] Data export/import and migration verification before switching providers
+- [ ] Push notifications if needed after CloudKit and Apple Developer setup

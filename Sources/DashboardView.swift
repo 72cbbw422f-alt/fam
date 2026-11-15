@@ -37,7 +37,7 @@ struct DashboardView: View {
                             }
                             .buttonStyle(.plain)
                             NavigationLink { ShoppingListView() } label: {
-                                overviewCard("Inköpslista", detail: "Gemensam lista", symbol: "basket")
+                                overviewCard("Inköpslista", detail: "På den här enheten", symbol: "basket")
                             }
                             .buttonStyle(.plain)
                             NavigationLink { FamilyMembersView() } label: {

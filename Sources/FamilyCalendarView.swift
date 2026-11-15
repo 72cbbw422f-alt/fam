@@ -28,7 +28,7 @@ struct FamilyCalendarView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         filterChip("Alla", kind: nil)
-                        ForEach(FamilyItemKind.allCases, id: \.self) { kind in
+                        ForEach(FamilyItemKind.calendarKinds, id: \.self) { kind in
                             filterChip(kind.displayName, kind: kind)
                         }
                     }
@@ -194,7 +194,7 @@ private struct FamilyItemEditor: View {
                 Section("Aktivitet") {
                     TextField("Rubrik", text: $title)
                     Picker("Typ", selection: $kind) {
-                        ForEach(FamilyItemKind.allCases, id: \.self) { value in
+                        ForEach(FamilyItemKind.calendarKinds, id: \.self) { value in
                             Text(value.displayName).tag(value)
                         }
                     }

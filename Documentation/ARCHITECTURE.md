@@ -1,26 +1,21 @@
 # Architecture
 
-## Backend portability
-The app's domain models and UI must not import Supabase or CloudKit directly.
-Provider-specific code belongs in implementations of protocols under `Sources/Data`.
+## Local-first beta
+The current beta stores all family data in the iOS app's Application Support directory as an atomic JSON snapshot. No account, backend, network service or cross-device sync is required.
 
-Initial provider:
-- Supabase Auth
-- PostgreSQL
-- Realtime subscriptions
+- Domain models remain provider-neutral.
+- LocalFamilyStore is the single source of truth for family, members, calendar items, shopping items and the in-app notification inbox.
+- Appointment screenshots are processed on-device with Apple Vision. Images are not uploaded.
+- Local reminders are scheduled on each iPhone with UserNotifications.
 
-Future provider:
-- CloudKit private/shared databases and CKShare for family sharing
+Each installation has its own independent data set. Changes made on one phone do not appear on another phone in this beta.
 
-Before migration, implement a provider-neutral export/import format and verify:
-- family and member identity mapping
+## Future CloudKit integration
+When Apple Developer access is ready, introduce a CloudKit-backed repository and private/shared databases with CKShare. Before enabling sharing, implement and verify:
+- export/import and migration of local data
+- family/member identity mapping
 - event date/time and timezone preservation
 - shopping-list item state
-- authorization and family sharing boundaries
+- sharing permissions and conflict resolution
 
-## Security principles
-- Never ship a Supabase service-role key in the app.
-- Enable RLS for every user-data table.
-- Use explicit membership checks for every read and write.
-- Invite codes must be random, short-lived, single-use and stored as hashes.
-- Review and test all policies and RPC functions before real family data is entered.
+Do not add a cloud dependency to the local beta.

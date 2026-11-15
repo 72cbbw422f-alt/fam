@@ -2,7 +2,7 @@ name: iOS build
 
 on:
   push:
-    branches: [main]
+    branches: [main, local-first-beta]
   pull_request:
     branches: [main]
   workflow_dispatch:

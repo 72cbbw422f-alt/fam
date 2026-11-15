@@ -4,6 +4,10 @@ import PhotosUI
 struct FamilyCalendarView: View {
     @StateObject private var model = FamilyCalendarViewModel()
     @State private var selectedKind: FamilyItemKind?
+
+    init(initialKind: FamilyItemKind? = nil) {
+        _selectedKind = State(initialValue: initialKind)
+    }
     @State private var showingEditor = false
     @State private var editingItem: FamilyItem?
     @AppStorage("familjen.localRemindersEnabled") private var localRemindersEnabled = false

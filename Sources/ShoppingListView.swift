@@ -28,7 +28,7 @@ struct ShoppingListView: View {
                 ContentUnavailableView(
                     "Listan är tom",
                     systemImage: "basket",
-                    description: Text("Lägg till det ni behöver handla. Listan delas med familjen.")
+                    description: Text("Lägg till det ni behöver handla. Listan sparas bara på den här iPhone-enheten tills iCloud-delning är aktiverad.")
                 )
                 .listRowBackground(Color.clear)
             } else {

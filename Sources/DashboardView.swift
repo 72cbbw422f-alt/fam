@@ -11,6 +11,7 @@ struct DashboardView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 16) {
                     header
+                    persistenceWarning
                     familyHero
                     familyAndNextEvent
                     upcomingAppointments
@@ -38,6 +39,20 @@ struct DashboardView: View {
             .onDisappear { Task { await notificationsModel.stopListening() } }
         }
         .tint(FamiljenTheme.navy)
+    }
+
+    private var persistenceWarning: some View {
+        Group {
+            if let message = store.persistenceError {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(Color.red.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                    .accessibilityLabel("Varning: \(message)")
+            }
+        }
     }
 
     private var header: some View {

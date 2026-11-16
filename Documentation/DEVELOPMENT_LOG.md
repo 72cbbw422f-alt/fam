@@ -94,10 +94,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 |---|---|---|---|
 | FAM-001 | CI | Tidigare körningar har avbrutits av concurrency-inställningen. | Öppen: verifiera aktuell körning och justera endast om problemet återkommer. |
 | FAM-002 | CI-rapportering | Connectorns commit-run-listning har inte alltid visat push-triggade körningar. | Känd begränsning i rapportvägen: använd run-ID/jobs när det finns. |
-| FAM-003 | Påminnelser | Dubblett-offsets kan skapa samma notis-ID. | Öppen: deduplicera offsets och lägg till rena enhetstester för kandidatgenerering. |
-| FAM-004 | Påminnelser | Gamla notiser tas bort innan nya har lagts till. | Öppen: överväg säkrare uppdateringsordning och felhantering. |
-| FAM-005 | Påminnelser | Högst 60 framtida notiser schemaläggs. | Begränsning: visa/kommunicera vilka aktiviteter som inte får plats eller prioritera enligt tydlig regel. |
-| FAM-006 | Påminnelser | Nil-offsets ger standardpåminnelser 24 h och 1 h. | Öppen: säkerställ avsedd fallback för äldre kalenderposter. |
+| FAM-003 | Påminnelser | Dubblett-offsets kunde skapa samma notis-ID. | Åtgärdad i kod: offsets dedupliceras per aktivitet; enhetstester tillagda. CI-verifiering återstår. |
+| FAM-004 | Påminnelser | Tidigare togs gamla notiser bort före nya tillägg. | Förbättrad i kod: nya/uppdaterade notiser läggs till först; därefter tas bara inaktuella ID:n bort. CI-verifiering återstår. |
+| FAM-005 | Påminnelser | Högst 60 framtida notiser schemaläggs. | Begränsningen kvarstår; kandidatfunktionen sorterar och testar urvalet av de 60 närmaste. UI-kommunikation kan förbättras senare. |
+| FAM-006 | Påminnelser | Nil-offsets ger standardpåminnelser 24 h och 1 h. | Test tillagt för fallbacken; CI-verifiering återstår. |
 | FAM-007 | Tidszon | Födelsedagsprojektion har lokal tidszon, men gränsfall vid sommartid är inte fullständigt testade. | Öppen: lägg till tester för datum/tid nära DST-skiften och midnatt. |
 | FAM-008 | Familjedata | Varje telefon har separat lokal databas. | Känd produktbegränsning: CloudKit/CKShare krävs för gemensam data. |
 | FAM-009 | Enhetskvalitet | Ingen verifierad fysisk iPhone-test ännu. | Öppen: testa installation, persistens, notisbehörighet och notisleverans på enheten. |
@@ -117,6 +117,30 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Verifiering**
 - Källtexten är korrigerad och uppdaterad på `local-first-beta`.
 - CI behöver köras på den nya committen innan testet kan markeras som godkänt.
+
+
+### 2026-11-16 – robustare lokal påminnelseschemaläggning
+
+**Ändringar**
+- Bröt ut kandidatgenereringen till en ren, deterministisk funktion som kan enhetstestas utan iOS-notiscenter.
+- Dubblett-offsets dedupliceras per aktivitet.
+- Negativa offsets och påminnelser som redan har passerat filtreras bort.
+- Kandidater sorteras med stabil ordning och begränsas till de 60 närmaste.
+- Nil-offsets behåller den befintliga kompatibilitetsfallbacken på 24 timmar och 1 timme.
+- Schemaläggaren lägger nu till/uppdaterar önskade notiser innan inaktuella tas bort. Om ett tillägg misslyckas tas en befintlig notis med samma ID inte bort.
+- Filer: `Sources/LocalReminderScheduler.swift`, `Tests/LocalReminderSchedulerTests.swift`.
+- Commit `a0562f087eaeaeb035a88975128f5fda598fd91f`: schemaläggare.
+- Commit `f9f799d20a0892a20c812ec2bfe64e6f289bcdf3`: fyra enhetstester.
+
+**Tester tillagda**
+- Dubblett-offsets ger en kandidat per offset.
+- Tidigare tidpunkter och negativa offsets filtreras bort.
+- Nil-offsets använder fallbackvärdena.
+- Endast de 60 närmaste kandidaterna väljs.
+
+**Verifiering**
+- Källkod och tester är incheckade.
+- Testerna är ännu inte verifierade i CI; bygg- och testresultat rapporteras separat när workflow-körningen avslutats.
 
 ## Test- och leveransregler
 

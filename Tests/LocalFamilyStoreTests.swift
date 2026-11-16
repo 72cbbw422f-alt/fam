@@ -186,4 +186,20 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent("snapshot.json").path))
     }
 
+
+    func testCreatingFamilyAgainDoesNotEraseExistingData() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        store.addShoppingItem("Mjölk")
+        let originalFamily = store.family
+        let originalMembers = store.members
+        let originalShoppingItems = store.shoppingItems
+        store.createFamily(name: "En annan familj", ownerName: "Villemo")
+        XCTAssertEqual(store.family, originalFamily)
+        XCTAssertEqual(store.members, originalMembers)
+        XCTAssertEqual(store.shoppingItems, originalShoppingItems)
+    }
+
 }

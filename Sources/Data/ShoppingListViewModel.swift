@@ -9,7 +9,11 @@ final class ShoppingListViewModel: ObservableObject {
     @Published private(set) var isSaving = false
     @Published var newItemTitle = ""
     @Published var errorMessage: String?
-    private let store = LocalFamilyStore.shared
+    private let store: any FamilyRepository
+
+    init(store: any FamilyRepository = FamilyRepositoryFactory.makeDefault()) {
+        self.store = store
+    }
 
     func load() async {
         isLoading = true

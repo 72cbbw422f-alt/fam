@@ -96,6 +96,40 @@ struct FamilyCalendarView: View {
                 }
             }
 
+            Section {
+                if model.isAppleCalendarEnabled {
+                    Label("Apple Kalender är ansluten", systemImage: "checkmark.circle.fill")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(FamiljenTheme.champagneDeep)
+                    if model.appleCalendarEntries.isEmpty {
+                        Text("Inga kommande händelser hittades i dina valda kalendrar.")
+                            .font(.caption).foregroundStyle(FamiljenTheme.muted)
+                    } else {
+                        ForEach(model.appleCalendarEntries) { entry in
+                            appleCalendarRow(entry)
+                                .listRowSeparator(.hidden)
+                        }
+                    }
+                    Button { model.refreshAppleCalendar() } label: {
+                        Label("Uppdatera Apple Kalender", systemImage: "arrow.clockwise")
+                    }
+                } else {
+                    Button {
+                        Task { await model.enableAppleCalendar() }
+                    } label: {
+                        Label("Visa händelser från Apple Kalender", systemImage: "calendar.badge.plus")
+                            .foregroundStyle(FamiljenTheme.navy)
+                    }
+                }
+                if let error = model.appleCalendarError {
+                    Text(error).font(.footnote).foregroundStyle(.red)
+                }
+            } header: {
+                Text("Dina andra kalendrar")
+            } footer: {
+                Text("Händelser från Apple Kalender visas här som importerad information. De ändras inte när du redigerar Familjens egna aktiviteter.")
+            }
+
             if let error = model.errorMessage {
                 Section { Text(error).font(.footnote).foregroundStyle(.red) }
             }
@@ -142,6 +176,35 @@ struct FamilyCalendarView: View {
             if localRemindersEnabled { Task { await LocalReminderScheduler.schedule(for: items) } }
         }
         .onDisappear { Task { await model.stopRealtime() } }
+    }
+
+    private func appleCalendarRow(_ entry: AppleCalendarEntry) -> some View {
+        HStack(spacing: 12) {
+            VStack(spacing: 2) {
+                Text(entry.startsAt.formatted(.dateTime.day()))
+                    .font(.title3.weight(.semibold))
+                Text(entry.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased())
+                    .font(.caption2.weight(.bold))
+            }
+            .foregroundStyle(FamiljenTheme.navy)
+            .frame(width: 42, height: 48)
+            .background(FamiljenTheme.sand.opacity(0.48), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(FamiljenTheme.ink)
+                Text(entry.isAllDay ? "Hela dagen · \(entry.calendarTitle)" :
+                     "\(entry.startsAt.formatted(.dateTime.hour().minute())) · \(entry.calendarTitle)")
+                    .font(.caption)
+                    .foregroundStyle(FamiljenTheme.muted)
+            }
+            Spacer()
+            Image(systemName: "apple.logo")
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(FamiljenTheme.muted)
+        }
+        .padding(.vertical, 7)
     }
 
     private func filterChip(_ title: String, kind: FamilyItemKind?) -> some View {

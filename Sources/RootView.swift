@@ -91,7 +91,7 @@ private struct FamilyTabShell: View {
                             .font(.system(size: 23, weight: selectedTab == tab ? .semibold : .regular))
                             .frame(height: 27)
                         Text(tab.title)
-                            .font(.system(size: 10, weight: selectedTab == tab ? .semibold : .medium))
+                            .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .medium))
                             .lineLimit(1)
                             .minimumScaleFactor(0.76)
                             .allowsTightening(true)

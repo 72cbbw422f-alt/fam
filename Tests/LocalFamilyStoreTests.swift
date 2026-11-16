@@ -283,6 +283,39 @@ final class LocalFamilyStoreTests: XCTestCase {
     }
 
 
+    func testYearlyRecurringEventProjectsAndKeepsOriginalAnchorYearWhenEdited() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let originalDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2024, month: 6, day: 12, hour: 18)))
+        store.saveItem(id: nil, title: "Sommarfest", details: nil, startsAt: originalDate,
+                       kind: .event, memberID: nil, recurring: true, reminderOffsets: [])
+        let originalItem = try XCTUnwrap(store.items.first)
+        let referenceDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 16)))
+        let projected = try XCTUnwrap(DashboardViewModel.project([originalItem], from: referenceDate).first)
+        let projectedParts = calendar.dateComponents([.year, .month, .day], from: projected.startsAt)
+        XCTAssertEqual(projectedParts.year, 2027)
+        XCTAssertEqual(projectedParts.month, 6)
+        XCTAssertEqual(projectedParts.day, 12)
+
+        let editedDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 6, day: 12, hour: 19)))
+        let viewModel = FamilyCalendarViewModel(store: store)
+        let saved = await viewModel.save(id: originalItem.id, title: originalItem.title, details: nil,
+                                         startsAt: editedDate, kind: .event, memberID: nil,
+                                         isRecurringYearly: true, reminderOffsets: [])
+
+        XCTAssertTrue(saved)
+        let persisted = try XCTUnwrap(store.items.first?.startsAt)
+        let persistedParts = calendar.dateComponents([.year, .month, .day, .hour], from: persisted)
+        XCTAssertEqual(persistedParts.year, 2024)
+        XCTAssertEqual(persistedParts.month, 6)
+        XCTAssertEqual(persistedParts.day, 12)
+        XCTAssertEqual(persistedParts.hour, 19)
+    }
+
     func testCorruptedSnapshotIsPreservedForRecovery() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("FamiljenCorruptTests-\(UUID().uuidString)", isDirectory: true)

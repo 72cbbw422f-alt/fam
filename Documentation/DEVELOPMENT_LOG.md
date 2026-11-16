@@ -365,3 +365,43 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Detta är datamodellens första steg. Kalenderformuläret, repository-metoderna och filtreringen använder ännu inte de nya fälten.
 - memberID-kompatibiliteten håller befintliga anropsställen fungerande under övergången; den nya UI-implementationen ska använda de explicita fälten.
 - CI-verifiering inväntas. Inga tester markeras som godkända innan simulatorjobbet har passerat.
+
+
+### 2026-11-16 – familjemedlemmar i kalendern: första implementationen
+
+**Mål**
+- Göra kalenderhändelser tilldelningsbara till flera familjemedlemmar, med explicit familjeomfattning och separat ansvarig vuxen.
+
+**Implementation**
+- Utökade FamilyRepository med saveCalendarItem och behöll äldre saveItem som kompatibilitetsväg.
+- LocalFamilyStore sparar flera deltagare, Hela familjen och ansvarig vuxen. Okända medlems-ID:n och dubbletter filtreras bort; ansvarig måste vara en befintlig vuxenprofil.
+- Vid borttagning av profil tas endast den personens deltagarkoppling bort. Om personen var ansvarig rensas ansvarigfältet. Kalenderhändelsen och övriga deltagare bevaras.
+- FamilyCalendarView har nu flerval av deltagare, ett särskilt Hela familjen-val och separat ansvarig vuxen. Personfilter kan kombineras och familjeomfattande händelser visas även vid personfilter.
+- Kalenderlistan och dashboardens kommande tider visar deltagare/familjeomfattning och ansvarig när det finns.
+- OCR-förslag på person lägger till personen i urvalet utan att skriva över andra deltagare.
+- Filer: Sources/Data/FamilyRepository.swift, Sources/Data/LocalFamilyStore.swift, Sources/Data/FamilyStore.swift, Sources/Data/FamilyCalendarViewModel.swift, Sources/FamilyCalendarView.swift, Sources/DashboardView.swift, Tests/LocalFamilyStoreTests.swift.
+
+**Tester tillagda**
+- Persistens av flera deltagare, deduplicering och ansvarig vuxen.
+- Hela familjen rensar deltagarurvalet men kan behålla ansvarig vuxen.
+- Personfilter matchar valda personer och inkluderar familjeomfattande händelser; tomt filter visar allt.
+- Borttagning av en profil rensar endast den personens koppling och ansvar, utan att ta bort kalenderhistorik eller andra deltagare.
+- Tidigare tester verifierar även avkodning av äldre member_id-snapshots och round-trip för den nya modellen.
+
+**Commits**
+- 936f50f7 – repository-kontrakt.
+- 6590f1fe – lokal lagring och borttagningshantering.
+- 7f1a6f0f – FamilyStore-fasad.
+- 4b9b8618 – ViewModel och filterlogik.
+- 808a5cdd – kalenderformulär och personfilter.
+- 7c85e21f – deterministisk deduplicering av medlems-ID:n.
+- 438fb160 – grundläggande regressionstester.
+- bb522145 – deltagare i dashboardens kommande tider.
+- bb4aec2b – regressionstest för borttagning av deltagare/ansvarig.
+
+**Verifiering och begränsningar**
+- CI för senaste kodcommit bb4aec2b är köad; simulatorjobb och testresultat inväntas.
+- Ett tidigare iPhone unsigned-build-jobb lyckades på samma utvecklingsserie, men den slutliga samlade implementationen ska verifieras i CI innan den räknas som bygggodkänd.
+- Ingen fysisk iPhone-testning har utförts. IPA är osignerad.
+- Personfilter använder OR-semantik: händelsen visas om den gäller minst en vald person. Familjeomfattande händelser visas alltid när ett personfilter är aktivt.
+- Detta är första funktionsversionen. Ingen CloudKit-synk eller delning mellan telefoner ingår.

@@ -417,7 +417,7 @@ struct DashboardView: View {
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(FamiljenTheme.champagneDeep)
                 } else {
-                    let names = members.filter { item.memberIDs.contains($0.id) }.map(\\.displayName)
+                    let names = members.filter { item.memberIDs.contains($0.id) }.map(\.displayName)
                     if !names.isEmpty {
                         Text(names.joined(separator: " · "))
                             .font(.system(size: 11))

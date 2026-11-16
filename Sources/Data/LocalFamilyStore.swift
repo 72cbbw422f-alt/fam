@@ -125,7 +125,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
 
     func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
                           kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
-                          responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int]) {
+                          responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int],
+                          location: String?) {
         guard let family else { return }
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
@@ -142,6 +143,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         if let id, let index = items.firstIndex(where: { $0.id == id }) {
             items[index].title = clean
             items[index].details = details
+            items[index].location = location
             items[index].startsAt = startsAt
             items[index].kind = kind
             items[index].memberIDs = isForEveryone ? [] : validMemberIDs
@@ -152,7 +154,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         } else {
             items.append(FamilyItem(id: UUID(), familyID: family.id, title: clean,
                                     details: details, startsAt: startsAt, endsAt: nil,
-                                    kind: kind, memberID: nil,
+                                    kind: kind, memberID: nil, location: location,
                                     isRecurringYearly: kind == .birthday && recurring,
                                     reminderOffsets: reminderOffsets,
                                     memberIDs: isForEveryone ? [] : validMemberIDs,

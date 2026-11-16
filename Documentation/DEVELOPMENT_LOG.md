@@ -476,3 +476,29 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Verifiering**
 - Ändringen är incheckad. Ny CI krävs innan den kan räknas som kompilerings- eller testgodkänd.
 - Run `43949276257` skapade ingen IPA; iPhone-bygget misslyckades före paketering.
+
+
+### 2026-11-17 – FAM-018: synliggör fel vid lokal datalagring
+
+**Fynd**
+- `LocalFamilyStore.saveToDisk()` ignorerade tidigare både JSON-kodningsfel och skrivfel med `try?`.
+- Appen kunde därför visa en ändring i minnet utan att användaren fick veta att den inte hade sparats på enheten.
+- Skapandet av katalogen för snapshot ignorerade också fel. Vid misslyckad återställning av en korrupt snapshot spärrades skrivningar, men orsaken visades inte i gränssnittet.
+
+**Åtgärd**
+- Lägg till `persistenceError` i repository-kontraktet med ett kompatibelt standardvärde för andra implementationer.
+- `LocalFamilyStore` fångar nu katalog-, kodnings- och skrivfel och exponerar ett begripligt felmeddelande. Ett lyckat atomiskt skrivande rensar felet.
+- Om en korrupt snapshot inte kan flyttas till återställningsfil blockeras skrivningar fortfarande, och ett tydligt fel exponeras.
+- `FamilyStore` vidarebefordrar statusen och dashboarden visar en varning om data inte kunde sparas.
+- Test tillagt: en fil används avsiktligt som föräldrakatalog så att katalog-/skrivning misslyckas; testet verifierar att felet exponeras och att blockeringsfilen inte skrivs över.
+- Filer: `Sources/Data/LocalFamilyStore.swift`, `Sources/Data/FamilyRepository.swift`, `Sources/Data/FamilyStore.swift`, `Sources/DashboardView.swift`, `Tests/LocalFamilyStoreTests.swift`.
+- Commits: `8299b4bb`, `5f132df8`, `ea039751`, `90a29dce`, `9be8d112`.
+
+**Verifiering**
+- Senaste tidigare simulatorjobb i run `43950845036` lyckades med 27/27 tester och simulatorbygget, men det avsåg SHA `a7378f23` före FAM-018.
+- iPhone-jobbet i samma run avbröts och räknas inte som godkänt.
+- FAM-018 och dess nya regressionstest inväntar en ny CI-körning på aktuell commit.
+- Fysisk iPhone-testning är fortfarande inte utförd.
+
+**Kvarstående risk**
+- Vid skrivfel behålls den senaste ändringen i appens minne och användaren varnas; ändringen kan försvinna om appen stängs innan lagringen fungerar igen. Full transaktionell rollback av varje mutation är inte införd i denna ändring.

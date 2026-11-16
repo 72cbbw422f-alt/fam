@@ -90,7 +90,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func deleteMember(id: UUID) {
         guard members.contains(where: { $0.id == id && $0.role != .owner }) else { return }
         members.removeAll { $0.id == id }
-        items.removeAll { $0.memberID == id }
+        // Keep calendar history when a profile is removed; only clear its assignment.
+        for index in items.indices where items[index].memberID == id {
+            items[index].memberID = nil
+        }
         saveToDisk()
     }
 

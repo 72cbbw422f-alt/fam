@@ -111,4 +111,14 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertNil(store.family)
     }
 
+    func testObservableFamilyStoreFacadeReflectsMutations() throws {
+        let (repository, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = FamilyStore(repository: repository)
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        XCTAssertEqual(store.family?.name, "Familjen")
+        XCTAssertEqual(store.members.map(\\.displayName), ["Niklas", "Cleo"])
+    }
+
 }

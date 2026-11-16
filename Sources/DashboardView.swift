@@ -55,7 +55,7 @@ struct DashboardView: View {
                     .font(.system(size: 21, weight: .semibold, design: .serif))
                     .foregroundStyle(FamiljenTheme.ink)
                 Text("VÅR GEMENSAMMA PLANERING")
-                    .font(.system(size: 8, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .tracking(1.35)
                     .foregroundStyle(FamiljenTheme.muted)
             }
@@ -152,7 +152,7 @@ struct DashboardView: View {
                         .font(.system(size: 19, weight: .semibold, design: .serif))
                         .foregroundStyle(FamiljenTheme.ink)
                     Text("Tillsammans i vardagen")
-                        .font(.system(size: 10))
+                        .font(.system(size: 12))
                         .foregroundStyle(FamiljenTheme.muted)
                 }
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -169,7 +169,7 @@ struct DashboardView: View {
                                     }
                                     .overlay(Circle().stroke(.white, lineWidth: 2))
                                 Text(member.displayName.components(separatedBy: " ").first ?? member.displayName)
-                                    .font(.system(size: 9, weight: .medium))
+                                    .font(.system(size: 12, weight: .medium))
                                     .foregroundStyle(FamiljenTheme.ink)
                                     .lineLimit(1)
                             }
@@ -185,26 +185,26 @@ struct DashboardView: View {
                     Image(systemName: "calendar")
                         .foregroundStyle(FamiljenTheme.champagneDeep)
                     Text("Nästa händelse")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(FamiljenTheme.muted)
                 }
                 if let item = model.upcomingItems.first {
                     Text(item.startsAt.formatted(.dateTime.hour().minute()))
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.champagneDeep)
                     Text(item.title)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.ink)
                         .lineLimit(2)
                     Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)))
-                        .font(.system(size: 9))
+                        .font(.system(size: 12))
                         .foregroundStyle(FamiljenTheme.muted)
                 } else {
                     Text("Inget inplanerat")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.ink)
                     Text("Lägg till nästa aktivitet")
-                        .font(.system(size: 9))
+                        .font(.system(size: 12))
                         .foregroundStyle(FamiljenTheme.muted)
                 }
             }
@@ -227,7 +227,7 @@ struct DashboardView: View {
                         sectionTitle("Senast tillagt", subtitle: "Nytt på familjens inköpslista")
                         Spacer()
                         NavigationLink("Visa lista") { ShoppingListView() }
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(FamiljenTheme.navy)
                     }
 
@@ -243,7 +243,7 @@ struct DashboardView: View {
                                         .foregroundStyle(item.isChecked ? FamiljenTheme.muted : FamiljenTheme.ink)
                                         .strikethrough(item.isChecked)
                                     Text(item.createdAt.formatted(.relative(presentation: .named)))
-                                        .font(.system(size: 9))
+                                        .font(.system(size: 12))
                                         .foregroundStyle(FamiljenTheme.muted)
                                 }
                                 Spacer()
@@ -278,15 +278,15 @@ struct DashboardView: View {
                         CategoryIcon(kind: .birthday, size: 32)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Födelsedag snart")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(FamiljenTheme.ink)
                             Text("\(birthday.title) · \(birthday.startsAt.formatted(.dateTime.day().month(.abbreviated)))")
-                                .font(.system(size: 10))
+                                .font(.system(size: 12))
                                 .foregroundStyle(FamiljenTheme.muted)
                         }
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(FamiljenTheme.muted)
                     }
                     .padding(.horizontal, 13)
@@ -305,12 +305,12 @@ struct DashboardView: View {
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(FamiljenTheme.ink)
                         Text("Öppna familjens gemensamma lista")
-                            .font(.system(size: 10))
+                            .font(.system(size: 12))
                             .foregroundStyle(FamiljenTheme.muted)
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.muted)
                 }
                 .padding(13)
@@ -327,7 +327,7 @@ struct DashboardView: View {
                 sectionTitle("Kommande tider", subtitle: "Bokade besök och tider")
                 Spacer()
                 NavigationLink("Visa alla") { FamilyCalendarView() }
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(FamiljenTheme.navy)
             }
             if model.upcomingAppointments.isEmpty {
@@ -354,7 +354,7 @@ struct DashboardView: View {
                 sectionTitle("Kommande händelser", subtitle: "Resor, skola och familjens aktiviteter")
                 Spacer()
                 NavigationLink("Visa alla") { FamilyCalendarView(initialKind: .event) }
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(FamiljenTheme.navy)
             }
             if model.upcomingEvents.isEmpty {
@@ -373,7 +373,7 @@ struct DashboardView: View {
         HStack {
             Spacer()
             Text("FAMILJEN  ·  VARDAGENS GEMENSAMMA PLATS")
-                .font(.system(size: 8, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .tracking(1.25)
                 .foregroundStyle(FamiljenTheme.muted.opacity(0.65))
             Spacer()
@@ -387,7 +387,7 @@ struct DashboardView: View {
                 .font(.system(size: 17, weight: .semibold, design: .serif))
                 .foregroundStyle(FamiljenTheme.ink)
             Text(subtitle)
-                .font(.system(size: 10))
+                .font(.system(size: 12))
                 .foregroundStyle(FamiljenTheme.muted)
         }
     }
@@ -398,7 +398,7 @@ struct DashboardView: View {
                 Text(item.startsAt.formatted(.dateTime.day()))
                     .font(.system(size: 18, weight: .semibold, design: .serif))
                 Text(item.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased())
-                    .font(.system(size: 8, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .tracking(0.6)
             }
             .foregroundStyle(FamiljenTheme.navy)
@@ -410,7 +410,7 @@ struct DashboardView: View {
                     .foregroundStyle(FamiljenTheme.ink)
                     .lineLimit(1)
                 Text(item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
-                    .font(.system(size: 10))
+                    .font(.system(size: 12))
                     .foregroundStyle(FamiljenTheme.muted)
             }
             Spacer(minLength: 4)
@@ -427,7 +427,7 @@ struct DashboardView: View {
                 .frame(width: 34, height: 34)
                 .background(FamiljenTheme.sand.opacity(0.5), in: Circle())
             Text(text)
-                .font(.system(size: 11))
+                .font(.system(size: 12))
                 .foregroundStyle(FamiljenTheme.muted)
             Spacer(minLength: 0)
         }

@@ -296,11 +296,36 @@ private struct FamilyItemEditor: View {
                 }
                 Section("Aktivitet") {
                     TextField("Rubrik", text: $title)
-                    Picker("Typ", selection: $kind) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 94), spacing: 10)], spacing: 10) {
                         ForEach(FamilyItemKind.calendarKinds, id: \.self) { value in
-                            Text(value.displayName).tag(value)
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.16)) { kind = value }
+                            } label: {
+                                VStack(spacing: 7) {
+                                    CategoryIcon(kind: value, size: 38)
+                                    Text(value.displayName)
+                                        .font(.caption.weight(.medium))
+                                        .foregroundStyle(FamiljenTheme.ink)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(2)
+                                        .frame(minHeight: 30)
+                                }
+                                .frame(maxWidth: .infinity, minHeight: 84)
+                                .padding(7)
+                                .background(kind == value ? FamiljenTheme.sand.opacity(0.48) : .white,
+                                            in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                                        .stroke(kind == value ? FamiljenTheme.champagneDeep.opacity(0.7) : FamiljenTheme.sand.opacity(0.65),
+                                                lineWidth: kind == value ? 1.5 : 0.8)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(value.displayName)
+                            .accessibilityAddTraits(kind == value ? .isSelected : [])
                         }
                     }
+                    .padding(.vertical, 4)
                     DatePicker("Datum och tid", selection: $startsAt, displayedComponents: [.date, .hourAndMinute])
                     if kind == .birthday {
                         Toggle("Upprepa varje år", isOn: $isRecurringYearly)

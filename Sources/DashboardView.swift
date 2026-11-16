@@ -10,13 +10,12 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 16) {
                     header
                     familyHero
-                    familyStrip
+                    familyAndNextEvent
                     upcomingAppointments
-                    quickAccess
-                    birthdaysSection
+                    birthdayAndShoppingCards
                     upcomingSection
                     footer
                 }
@@ -130,6 +129,116 @@ struct DashboardView: View {
                 .stroke(.white.opacity(0.35), lineWidth: 1)
         }
         .shadow(color: FamiljenTheme.navy.opacity(0.10), radius: 13, x: 0, y: 7)
+    }
+
+    private var familyAndNextEvent: some View {
+        HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Er familj")
+                    .font(.system(size: 19, weight: .semibold, design: .serif))
+                    .foregroundStyle(FamiljenTheme.ink)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(members.prefix(3)) { member in
+                            VStack(spacing: 5) {
+                                Circle()
+                                    .fill(avatarColor(for: member))
+                                    .frame(width: 43, height: 43)
+                                    .overlay {
+                                        Text(initials(member.displayName))
+                                            .font(.system(size: 15, weight: .semibold, design: .serif))
+                                            .foregroundStyle(FamiljenTheme.navy)
+                                    }
+                                    .overlay(Circle().stroke(.white, lineWidth: 2))
+                                Text(member.displayName.components(separatedBy: " ").first ?? member.displayName)
+                                    .font(.system(size: 9, weight: .medium))
+                                    .foregroundStyle(FamiljenTheme.ink)
+                                    .lineLimit(1)
+                            }
+                            .frame(width: 48)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                        .foregroundStyle(FamiljenTheme.champagneDeep)
+                    Text("Nästa händelse")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(FamiljenTheme.muted)
+                }
+                if let item = model.upcomingItems.first {
+                    Text(item.startsAt.formatted(.dateTime.hour().minute()))
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(FamiljenTheme.champagneDeep)
+                    Text(item.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(FamiljenTheme.ink)
+                        .lineLimit(2)
+                    Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)))
+                        .font(.system(size: 9))
+                        .foregroundStyle(FamiljenTheme.muted)
+                } else {
+                    Text("Inget inplanerat")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(FamiljenTheme.ink)
+                    Text("Lägg till nästa aktivitet")
+                        .font(.system(size: 9))
+                        .foregroundStyle(FamiljenTheme.muted)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
+            .background(.white, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 17).stroke(FamiljenTheme.sand.opacity(0.65), lineWidth: 1))
+        }
+    }
+
+    private var birthdayAndShoppingCards: some View {
+        HStack(spacing: 10) {
+            NavigationLink { FamilyCalendarView(initialKind: .birthday) } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    CategoryIcon(kind: .birthday, size: 34)
+                    Text("Kommande födelsedagar")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(FamiljenTheme.ink)
+                        .lineLimit(2)
+                    if let birthday = model.upcomingBirthdays.first {
+                        Text("\(birthday.title) · \(birthday.startsAt.formatted(.dateTime.day().month(.abbreviated)))")
+                            .font(.system(size: 9))
+                            .foregroundStyle(FamiljenTheme.muted)
+                            .lineLimit(1)
+                    } else {
+                        Text("Lägg till födelsedagar")
+                            .font(.system(size: 9))
+                            .foregroundStyle(FamiljenTheme.muted)
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
+                .padding(12)
+                .background(.white, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink { ShoppingListView() } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    CategoryIcon(kind: .shopping, size: 34)
+                    Text("Inköpslista")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(FamiljenTheme.ink)
+                    Text("Öppna familjens lista")
+                        .font(.system(size: 9))
+                        .foregroundStyle(FamiljenTheme.muted)
+                }
+                .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
+                .padding(12)
+                .background(.white, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var familyStrip: some View {

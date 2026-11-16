@@ -3,6 +3,7 @@ import SwiftUI
 struct DashboardView: View {
     @StateObject private var model = DashboardViewModel()
     @StateObject private var notificationsModel = NotificationsViewModel()
+    @StateObject private var store = LocalFamilyStore.shared
     @State private var members: [FamilyMember] = []
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -16,6 +17,7 @@ struct DashboardView: View {
                     familyAndNextEvent
                     upcomingAppointments
                     upcomingSection
+                    recentShoppingItems
                     birthdayAndShoppingCards
                     footer
                 }
@@ -203,6 +205,61 @@ struct DashboardView: View {
             .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
             .background(.white, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 17).stroke(FamiljenTheme.sand.opacity(0.65), lineWidth: 1))
+        }
+    }
+
+    private var recentShoppingItems: some View {
+        let recentItems = store.shoppingItems
+            .sorted { $0.createdAt > $1.createdAt }
+            .prefix(3)
+
+        return Group {
+            if !recentItems.isEmpty {
+                VStack(alignment: .leading, spacing: 9) {
+                    HStack {
+                        sectionTitle("Senast tillagt", subtitle: "Nytt på familjens inköpslista")
+                        Spacer()
+                        NavigationLink("Visa lista") { ShoppingListView() }
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(FamiljenTheme.navy)
+                    }
+
+                    VStack(spacing: 0) {
+                        ForEach(Array(recentItems)) { item in
+                            HStack(spacing: 10) {
+                                Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
+                                    .font(.system(size: 17, weight: .regular))
+                                    .foregroundStyle(item.isChecked ? FamiljenTheme.champagneDeep : FamiljenTheme.muted.opacity(0.7))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.title)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(item.isChecked ? FamiljenTheme.muted : FamiljenTheme.ink)
+                                        .strikethrough(item.isChecked)
+                                    Text(item.createdAt.formatted(.relative(presentation: .named)))
+                                        .font(.system(size: 9))
+                                        .foregroundStyle(FamiljenTheme.muted)
+                                }
+                                Spacer()
+                                Image(systemName: "cart")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(FamiljenTheme.champagneDeep)
+                            }
+                            .padding(.horizontal, 13)
+                            .padding(.vertical, 9)
+
+                            if item.id != recentItems.last?.id {
+                                Divider().overlay(FamiljenTheme.sand.opacity(0.8)).padding(.leading, 40)
+                            }
+                        }
+                    }
+                    .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(FamiljenTheme.sand.opacity(0.65), lineWidth: 1)
+                    }
+                    .shadow(color: FamiljenTheme.navy.opacity(0.025), radius: 8, x: 0, y: 3)
+                }
+            }
         }
     }
 

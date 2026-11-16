@@ -21,6 +21,19 @@ final class LocalReminderSchedulerTests: XCTestCase {
         )
     }
 
+    func testObsoleteReminderCleanupOnlyTargetsStaleFamiljenNotifications() {
+        let stale = "familjen-item-11111111-1111-1111-1111-111111111111-3600"
+        let current = "familjen-item-22222222-2222-2222-2222-222222222222-900"
+        let unrelated = "other-app-notification"
+
+        let obsolete = LocalReminderScheduler.obsoleteManagedIdentifiers(
+            existingIdentifiers: [stale, current, unrelated],
+            desiredIdentifiers: [current]
+        )
+
+        XCTAssertEqual(obsolete, [stale])
+    }
+
     func testDuplicateOffsetsProduceOnlyOneCandidatePerReminder() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let item = makeItem(startsAt: now.addingTimeInterval(3_600), reminderOffsets: [900, 900, 300])

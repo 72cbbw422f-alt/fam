@@ -599,3 +599,21 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Verifiering**
 - Källkod och regressionstest är incheckade. CI-verifiering inväntas.
 - Veckovis och månadsvis återkomst ingår inte i denna ändring. De kräver en mer omfattande modell för serier och redigering av en enskild förekomst kontra hela serien.
+
+
+### 2026-11-17 – FAM-024: visa tydligt när kalendern inte kunde sparas
+
+**Fynd**
+- Efter FAM-021 återställdes kalenderns data vid skrivfel, men kalenderns view model kunde ändå rapportera att sparandet lyckats och stänga redigeraren.
+- Misslyckad radering kunde också återställas utan att kalenderlistan visade ett fel.
+
+**Åtgärd**
+- View model kontrollerar nu repositoryts persistenceError efter spara och returnerar misslyckande till redigeraren i stället för att stänga den.
+- Raderingsflödet visar samma lagringsfel i kalenderns felområde.
+- Ett lyckat sparande rensar föregående view model-fel.
+- Regressionstest verifierar att sparande rapporteras som misslyckat, posten ligger kvar, redigeraren får ett felresultat och radering inte tar bort posten när snapshot-skrivning misslyckas.
+- Filer: Sources/Data/FamilyCalendarViewModel.swift, Tests/LocalFamilyStoreTests.swift.
+- Commits: 1baf1672, 94d12b7d.
+
+**Verifiering**
+- Källkod och regressionstest är incheckade. CI-verifiering inväntas.

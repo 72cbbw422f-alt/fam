@@ -350,7 +350,7 @@ private struct FamilyItemEditor: View {
         _selectedMemberIDs = State(initialValue: Set(item?.memberIDs ?? []))
         _isForEveryone = State(initialValue: item?.isForEveryone ?? false)
         _responsibleSelection = State(initialValue: item?.responsibleMemberID?.uuidString ?? "")
-        _isRecurringYearly = State(initialValue: item?.isRecurringYearly ?? true)
+        _isRecurringYearly = State(initialValue: item?.isRecurringYearly ?? false)
         _selectedReminderOffsets = State(initialValue: Set(item?.reminderOffsets ?? [24 * 60 * 60, 60 * 60]))
     }
 
@@ -480,6 +480,9 @@ private struct FamilyItemEditor: View {
             .onChange(of: selectedPhoto) { _, photo in
                 guard let photo else { return }
                 Task { await readAppointmentImage(photo) }
+            }
+            .onChange(of: kind) { _, newKind in
+                if newKind == .birthday { isRecurringYearly = true }
             }
             .navigationTitle(item == nil ? "Ny aktivitet" : "Redigera aktivitet")
             .navigationBarTitleDisplayMode(.inline)

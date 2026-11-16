@@ -114,6 +114,12 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - **Viktig begränsning:** vid skrivfel behålls ändringen i minnet och användaren varnas; full rollback av den aktuella mutationen ingår inte ännu.
 
 
+## Kvalitetsrunda: transaktionella kalenderändringar (2026-11-17)
+- [x] Återställ kalenderlistan om skapande eller uppdatering inte kan skrivas till lokal snapshot (FAM-021; CI inväntas).
+- [x] Återställ kalenderposten om radering inte kan sparas (FAM-021; CI inväntas).
+- [x] Återställ familjeprofil och berörda kalenderkopplingar om profilborttagning inte kan sparas (FAM-021; CI inväntas).
+- [x] Lägg till regressionstester för de tre skrivfelen (CI inväntas).
+
 ## Kvalitetsrunda: kalenderfilter och påminnelser (2026-11-17)
 - [x] Rensa inaktuella levererade Familjen-påminnelser när en händelse ändras/raderas och när påminnelser stängs av (FAM-019; CI inväntas).
 - [x] Säkerställ att andra appars notiser inte påverkas av Familjens rensning (regressionstest tillagt; CI inväntas).

@@ -156,4 +156,21 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(parts.day, 12)
     }
 
+
+    func testCorruptedSnapshotIsPreservedForRecovery() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenCorruptTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fileURL = directory.appendingPathComponent("snapshot.json")
+        try Data("not valid json".utf8).write(to: fileURL)
+        _ = LocalFamilyStore(fileURL: fileURL)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
+        let files = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+        XCTAssertEqual(files.count, 1)
+        XCTAssertTrue(files[0].hasPrefix("snapshot.json.corrupt-"))
+        let recoveredData = try Data(contentsOf: directory.appendingPathComponent(files[0]))
+        XCTAssertEqual(String(data: recoveredData, encoding: .utf8), "not valid json")
+    }
+
 }

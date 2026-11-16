@@ -35,6 +35,14 @@ final class LocalFamilyStore: ObservableObject {
         saveToDisk()
     }
 
+    func renameFamily(name: String) {
+        guard let family else { return }
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, clean.count <= 80 else { return }
+        self.family = Family(id: family.id, name: clean)
+        saveToDisk()
+    }
+
     func addChild(name: String) {
         guard let family, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         members.append(FamilyMember(id: UUID(), familyID: family.id,

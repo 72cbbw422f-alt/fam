@@ -21,9 +21,9 @@
 - [x] Preserve unreadable local snapshots as recovery files instead of silently overwriting them
 - [x] Add unit tests for family/profile/shopping persistence, calendar CRUD, message read state, input validation, repeat-onboarding protection, observable facade behavior, birthday projection edge cases and local-time-zone handling, reminder persistence, legacy snapshot compatibility and corrupt-snapshot recovery
 - [x] Add unit tests for reminder deduplication, future filtering, legacy fallback and the 60-reminder cap
-- [ ] Verify all unit tests pass in the iOS Simulator CI workflow (latest run 43944814343 failed during Swift compilation; FAM-015 refactor committed, rerun required)
+- [ ] Verify all unit tests pass for the latest code in the iOS Simulator CI workflow (run 43950845036 passed 27/27 tests and simulator build on SHA a7378f23; FAM-018 persistence changes still require CI)
 - [ ] Verify persistence, CRUD and reminders on physical iPhones
-- [ ] Verify the new repository abstraction and unit tests pass in CI
+- [x] Verify the repository abstraction, calendar regression tests and reminder tests in CI (27/27 passed in run 43950845036; later FAM-018 change awaits a fresh run)
 - [ ] Verify unsigned iOS Simulator build in CI after local-first refactor
 - [ ] Prepare signed device build when signing credentials are available
 
@@ -67,11 +67,11 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 
 #### P0 – kvalitet och grund
 - [ ] Slutför verifiering av de senast tillagda födelsedagsregressionstesterna i CI; senaste kända run `43941033673` avbröts och räknas inte som godkänd.
-- [x] Förhindra dataförlust när en familjeprofil tas bort: behåll kalenderhändelser och rensa endast personkopplingen (CI-verifiering inväntas).
-- [ ] Fortsätt regressionstesta lokal persistens, kalenderredigering och notiser innan större funktionsbyggen.
+- [x] Förhindra dataförlust när en familjeprofil tas bort: behåll kalenderhändelser och rensa endast personkopplingen (test verifierat i run 43950845036).
+- [ ] Fortsätt regressionstesta lokal persistens, kalenderredigering och notiser innan större funktionsbyggen. FAM-018 gör skrivfel synliga; dess nya test inväntar CI.
 
 #### P1 – kärnupplevelsen i familjekalendern
-- [x] Familjemedlemmar i kalendern: koppla en händelse till en eller flera profiler (implementation incheckad; CI-verifiering inväntas).
+- [x] Familjemedlemmar i kalendern: koppla en händelse till en eller flera profiler (implementation incheckad; simulator-CI verifierad i run 43950845036 (27/27 tester)).
 - [x] Separat och tydligt val för **Hela familjen** (implementation incheckad; CI-verifiering inväntas).
 - [x] Filter för alla, en person och flera valda personer (implementation incheckad; CI-verifiering inväntas).
 - [x] Skilj på deltagare/berörda personer och ansvarig vuxen för händelsen (implementation incheckad; CI-verifiering inväntas).
@@ -103,3 +103,12 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - Håll gränssnittet kompakt, lättläst och i linje med Scandinavian Premium / Modern iOS.
 
 **Status:** Produktgranskning dokumenterad. Detta är en prioriterad plan, inte ett påstående om att dessa funktioner redan är implementerade.
+
+
+## Kvalitetsförbättring: synlig status för lokal lagring (2026-11-17)
+- [x] Fånga fel när snapshot-katalogen inte kan skapas eller JSON inte kan skrivas.
+- [x] Exponera lagringsfel genom repository och FamilyStore.
+- [x] Visa en varning på dashboarden när en ändring inte kunde sparas.
+- [x] Lägg till regressionstest som säkerställer att ett skrivfel exponeras och att befintlig blockeringsfil inte skrivs över.
+- [ ] Verifiera FAM-018 i CI på aktuell commit.
+- **Viktig begränsning:** vid skrivfel behålls ändringen i minnet och användaren varnas; full rollback av den aktuella mutationen ingår inte ännu.

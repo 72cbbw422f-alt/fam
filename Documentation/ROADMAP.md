@@ -42,16 +42,16 @@ Each iPhone stores its own independent family data. There is no shared calendar,
 - [x] Införa bakåtkompatibel grundmodell för flera berörda personer, explicit Hela familjen och separat ansvarig person (CI-verifiering inväntas).
 
 - [ ] Hantera familjeprofiler i Inställningar: vuxna och barn utan krav på egna konton.
-- [ ] Vid skapande och redigering av kalenderhändelse kunna välja en eller flera berörda personer.
-- [ ] Ha ett tydligt val för **Hela familjen**, skilt från en händelse som ännu inte har tilldelats någon.
-- [ ] Filtrera kalendern på hela familjen, en person eller flera valda personer.
-- [ ] Visa personkopplingar tydligt i kalendern med konsekvent färg-/profilmarkering.
-- [ ] Göra datamodellsändringen bakåtkompatibel så befintliga händelser och lokala snapshots bevaras.
-- [ ] Lägga till tester för äldre data, flera deltagare, familjeomfattande händelser och kalenderfilter.
+- [x] Vid skapande och redigering av kalenderhändelse kunna välja en eller flera berörda personer (CI-verifiering inväntas).
+- [x] Ha ett tydligt val för **Hela familjen**, skilt från en händelse som ännu inte har tilldelats någon (CI-verifiering inväntas).
+- [x] Filtrera kalendern på alla, en person eller flera personer; familjehändelser visas även i personfilter (CI-verifiering inväntas).
+- [x] Visa personkopplingar, familjeomfattning och ansvarig diskret i kalenderlistan och dashboardens kommande tider (CI-verifiering inväntas).
+- [x] Göra datamodellsändringen bakåtkompatibel så befintliga händelser och lokala snapshots bevaras (CI-verifiering inväntas).
+- [x] Lägga till tester för äldre data, flera deltagare, familjeomfattande händelser, borttagning och kalenderfilter (CI-verifiering inväntas).
 
 **Designprincip:** Barn ska kunna finnas som profiler utan egna konton. Funktionen ska stödja praktisk familjeplanering, inte bli ett generellt uppgiftssystem.
 
-**Status:** Produktbeslut/plan dokumenterat 2026-11-16. Inte implementerat ännu.
+**Status:** Första implementationen är incheckad 2026-11-16. CI-verifiering inväntas; fysisk iPhone-testning återstår.
 
 ## Produktgranskning: jämförelse med familjeappar (2026-11-16)
 

@@ -440,3 +440,21 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Ändringen är incheckad. En ny CI-körning krävs för att avgöra om uttrycket nu kompilerar och om enhetstesterna passerar.
 - Ingen IPA skapades i run `43944814343`; paketerings- och uppladdningsstegen hoppades över efter byggfelet.
 - Ingen fysisk iPhone-testning är utförd.
+
+
+
+### 2026-11-16 – FAM-016: förenklad toolbar och korrigerad ansvarig-etikett
+
+**Fynd**
+- CI-run `43948780418` misslyckades åter i Swift-kompileringen på `FamilyCalendarView.swift`, nu vid användningen av den separata toolbar-egenskapen. Det visar att första uppdelningen i FAM-015 inte räckte.
+- Samma körning gav en varning i `DashboardView.swift`: ansvarigprofilen hämtades men användes inte. Orsaken var en felaktigt escapad stränginterpolation, vilket gjorde att etiketten inte visade namnet.
+
+**Åtgärd**
+- Förenklade toolbaren ytterligare: själva plusknappen är nu en separat `some View`-egenskap och placeras direkt i `ToolbarItem`.
+- Korrigerade stränginterpolationen för ansvarig vuxen i dashboarden så att profilens namn visas i stället för en bokstavlig interpolationstext.
+- Filer: `Sources/FamilyCalendarView.swift`, `Sources/DashboardView.swift`.
+- Commits: `d03fa2d2f1de223db08f8145997cc0118733b635`, `52ee91e2e013648908d2ffb0782e4569e39fd5a1`.
+
+**Verifiering**
+- Korrigeringarna är incheckade. Ny CI krävs; varken simulator-/enhetstester eller iPhone-bygget är ännu godkända för dessa commits.
+- Run `43948780418` skapade ingen IPA eftersom iPhone-bygget avbröts före paketering.

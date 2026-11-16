@@ -20,3 +20,13 @@ targets:
     platform: iOS
     sources:
       - path: Sources
+  FamiljenTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: Familjen
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: se.familjen.tests

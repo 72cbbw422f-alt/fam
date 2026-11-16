@@ -49,7 +49,7 @@ struct FamilyOnboardingView: View {
                         }
 
                         Button {
-                            LocalFamilyStore.shared.createFamily(name: familyName, ownerName: displayName)
+                            FamilyStore.shared.createFamily(name: familyName, ownerName: displayName)
                         } label: {
                             HStack {
                                 Text("Skapa familj")

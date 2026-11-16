@@ -3,7 +3,7 @@ import SwiftUI
 struct DashboardView: View {
     @StateObject private var model = DashboardViewModel()
     @StateObject private var notificationsModel = NotificationsViewModel()
-    @StateObject private var store = LocalFamilyStore.shared
+    @StateObject private var store = FamilyStore.shared
     @State private var members: [FamilyMember] = []
 
     var body: some View {
@@ -27,11 +27,11 @@ struct DashboardView: View {
             .toolbar(.hidden, for: .navigationBar)
             .refreshable {
                 await model.load()
-                members = LocalFamilyStore.shared.members
+                members = FamilyStore.shared.members
             }
             .task {
                 await model.load()
-                members = LocalFamilyStore.shared.members
+                members = FamilyStore.shared.members
                 await notificationsModel.startListening()
             }
             .onAppear { Task { await notificationsModel.load() } }

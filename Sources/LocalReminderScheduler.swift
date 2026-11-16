@@ -50,6 +50,20 @@ enum LocalReminderScheduler {
         return Array(candidates.prefix(maximumPendingReminders))
     }
 
+    static func obsoleteManagedIdentifiers(existingIdentifiers: [String], desiredIdentifiers: Set<String>) -> [String] {
+        existingIdentifiers
+            .filter { $0.hasPrefix(identifierPrefix) && !desiredIdentifiers.contains($0) }
+            .sorted()
+    }
+
+    private static func deliveredRequests() async -> [UNNotification] {
+        await withCheckedContinuation { continuation in
+            center.getDeliveredNotifications { notifications in
+                continuation.resume(returning: notifications)
+            }
+        }
+    }
+
     static func schedule(for items: [FamilyItem]) async {
         let previous = operationTask
         let current = Task { @MainActor in
@@ -95,8 +109,11 @@ enum LocalReminderScheduler {
             }
         }
 
-        let obsoleteIDs = oldIDs.filter { !desiredIDs.contains(String($0.dropFirst(identifierPrefix.count))) }
+        let obsoleteIDs = obsoleteManagedIdentifiers(
+            existingIdentifiers: existingIDs, desiredIdentifiers: desiredIDs
+        )
         center.removePendingNotificationRequests(withIdentifiers: obsoleteIDs)
+        center.removeDeliveredNotifications(withIdentifiers: obsoleteIDs)
     }
 
     private static func identifier(for candidate: ReminderCandidate) -> String {

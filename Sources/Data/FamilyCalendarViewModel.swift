@@ -42,6 +42,15 @@ final class FamilyCalendarViewModel: ObservableObject {
 
     func save(id: UUID?, title: String, details: String?, startsAt: Date, kind: FamilyItemKind,
               memberID: UUID?, isRecurringYearly: Bool, reminderOffsets: [Int]) async -> Bool {
+        await save(id: id, title: title, details: details, startsAt: startsAt, kind: kind,
+                   memberIDs: memberID.map { [$0] } ?? [], isForEveryone: false,
+                   responsibleMemberID: nil, isRecurringYearly: isRecurringYearly,
+                   reminderOffsets: reminderOffsets)
+    }
+
+    func save(id: UUID?, title: String, details: String?, startsAt: Date, kind: FamilyItemKind,
+              memberIDs: [UUID], isForEveryone: Bool, responsibleMemberID: UUID?,
+              isRecurringYearly: Bool, reminderOffsets: [Int]) async -> Bool {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 160 else {
             errorMessage = "Ange en rubrik på 1–160 tecken."
@@ -50,10 +59,19 @@ final class FamilyCalendarViewModel: ObservableObject {
         let persistedDate = preservedBirthdayDate(
             id: id, proposedDate: startsAt, kind: kind, recurring: isRecurringYearly
         )
-        store.saveItem(id: id, title: clean, details: details, startsAt: persistedDate,
-                       kind: kind, memberID: memberID, recurring: isRecurringYearly, reminderOffsets: reminderOffsets)
+        store.saveCalendarItem(id: id, title: clean, details: details, startsAt: persistedDate,
+                               kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
+                               responsibleMemberID: responsibleMemberID, recurring: isRecurringYearly,
+                               reminderOffsets: reminderOffsets)
         await load()
         return true
+    }
+
+    static func filteredItems(_ items: [FamilyItem], selectedMemberIDs: Set<UUID>) -> [FamilyItem] {
+        guard !selectedMemberIDs.isEmpty else { return items }
+        return items.filter { item in
+            item.isForEveryone || !Set(item.memberIDs).isDisjoint(with: selectedMemberIDs)
+        }
     }
 
     func delete(_ item: FamilyItem) async {

@@ -12,6 +12,7 @@ protocol FamilyRepository: AnyObject {
     var shoppingItems: [ShoppingItem] { get }
     var notifications: [FamilyNotification] { get }
     var messages: [FamilyMessage] { get }
+    var persistenceError: String? { get }
 
     func createFamily(name: String, ownerName: String)
     func renameFamily(name: String)
@@ -36,6 +37,8 @@ protocol FamilyRepository: AnyObject {
 }
 
 extension FamilyRepository {
+    var persistenceError: String? { nil }
+
     func addMember(name: String) { addMember(name: name, role: .member) }
 
     /// Compatibility default for repositories not yet supporting the richer calendar assignment.

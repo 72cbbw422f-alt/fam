@@ -173,4 +173,13 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(String(data: recoveredData, encoding: .utf8), "not valid json")
     }
 
+
+    func testShoppingItemsCannotBeCreatedWithoutAFamily() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.addShoppingItem("Mjölk")
+        XCTAssertTrue(store.shoppingItems.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent("snapshot.json").path))
+    }
+
 }

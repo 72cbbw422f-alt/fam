@@ -43,6 +43,14 @@ When membership and identifiers are available:
 
 ## Features that can be prepared before membership
 
+Current implementation progress on `local-first-beta`:
+- `FamilyRepository` now defines the provider-neutral data contract.
+- Dashboard, calendar, shopping and notification view models receive that contract through constructor injection.
+- `LocalFamilyStore` is the current default provider and supports an injected file URL for isolated persistence tests.
+- An iOS unit-test target covers local persistence, calendar CRUD and default-provider selection; CI now runs the tests before the simulator build.
+- This is the first repository-boundary step, not yet a CloudKit implementation. Physical-device validation is still outstanding.
+
+
 - Complete SwiftUI screens and domain models.
 - Repository protocols and a local implementation for UI/offline testing.
 - CloudKit repository implementation behind the same protocols, with capability checks and clear unavailable-account states.

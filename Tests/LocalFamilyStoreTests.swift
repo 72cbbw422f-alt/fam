@@ -118,7 +118,7 @@ final class LocalFamilyStoreTests: XCTestCase {
         store.createFamily(name: "Familjen", ownerName: "Niklas")
         store.addChild(name: "Cleo")
         XCTAssertEqual(store.family?.name, "Familjen")
-        XCTAssertEqual(store.members.map(\\.displayName), ["Niklas", "Cleo"])
+        XCTAssertEqual(store.members.map(\.displayName), ["Niklas", "Cleo"])
     }
 
 }

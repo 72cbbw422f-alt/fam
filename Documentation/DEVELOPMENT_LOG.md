@@ -103,6 +103,21 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 | FAM-009 | Enhetskvalitet | Ingen verifierad fysisk iPhone-test ännu. | Öppen: testa installation, persistens, notisbehörighet och notisleverans på enheten. |
 | FAM-010 | Signering | Unsigned IPA är inte direkt likvärdig med signerad distributionsklar app. | Känd begränsning: signera och testa via tillgänglig sideload-process; Apple Developer senare. |
 
+
+### 2026-11-16 – korrigering av legacy-snapshot-test
+
+**Fynd**
+- Vid kodgranskning upptäcktes att testet för äldre snapshot hade två omvända snedstreck före UUID-uttrycket i den temporära katalognamnet. Swift interpolerade därför inte UUID:t. Flera testkörningar kunde använda samma katalog och påverka varandra.
+
+**Åtgärd**
+- Korrigerade strängen till riktig Swift-interpolering så varje test får en unik temporär katalog.
+- Fil: `Tests/LocalFamilyStoreTests.swift`
+- Commit: `6d826dc3e2c864e32eb5bf7fb3e83cbaa21077fa`
+
+**Verifiering**
+- Källtexten är korrigerad och uppdaterad på `local-first-beta`.
+- CI behöver köras på den nya committen innan testet kan markeras som godkänt.
+
 ## Test- och leveransregler
 
 - Ett test räknas som godkänt först när CI-resultat/logg visar att det passerat.

@@ -5,6 +5,10 @@ import Foundation
 final class FamilyCalendarViewModel: ObservableObject {
     @Published private(set) var items: [FamilyItem] = []
     @Published private(set) var members: [FamilyMember] = []
+    @Published private(set) var appleCalendarEntries: [AppleCalendarEntry] = []
+    @Published private(set) var isAppleCalendarEnabled = false
+    @Published var appleCalendarError: String?
+    private let appleCalendar = AppleCalendarImport()
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
     private let store = LocalFamilyStore.shared
@@ -14,6 +18,19 @@ final class FamilyCalendarViewModel: ObservableObject {
         members = store.members
         items = DashboardViewModel.project(store.items, from: .now)
         isLoading = false
+    }
+
+    func enableAppleCalendar() async {
+        await appleCalendar.enableAndLoad()
+        appleCalendarEntries = appleCalendar.entries
+        isAppleCalendarEnabled = appleCalendar.isEnabled
+        appleCalendarError = appleCalendar.errorMessage
+    }
+
+    func refreshAppleCalendar() {
+        appleCalendar.refresh()
+        appleCalendarEntries = appleCalendar.entries
+        appleCalendarError = appleCalendar.errorMessage
     }
 
     func startRealtimeIfNeeded() async {}

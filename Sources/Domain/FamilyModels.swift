@@ -91,9 +91,42 @@ struct FamilyItem: Identifiable, Codable, Equatable {
     var startsAt: Date
     var endsAt: Date?
     var kind: FamilyItemKind
-    var memberID: UUID?
+
+    /// Multiple people may be affected by one calendar item.
+    /// An empty array means no person has been assigned.
+    var memberIDs: [UUID]
+    /// Explicit family-wide scope; deliberately distinct from no assignment.
+    var isForEveryone: Bool
+    /// Optional adult responsible for coordinating the event.
+    var responsibleMemberID: UUID?
     var isRecurringYearly: Bool
     var reminderOffsets: [Int]?
+
+    /// Compatibility accessor for older call sites and legacy snapshots.
+    /// Setting this property replaces the full participant selection with one person.
+    var memberID: UUID? {
+        get { memberIDs.first }
+        set { memberIDs = newValue.map { [$0] } ?? [] }
+    }
+
+    init(id: UUID, familyID: UUID, title: String, details: String?, startsAt: Date,
+         endsAt: Date?, kind: FamilyItemKind, memberID: UUID?,
+         isRecurringYearly: Bool, reminderOffsets: [Int]?,
+         memberIDs: [UUID]? = nil, isForEveryone: Bool = false,
+         responsibleMemberID: UUID? = nil) {
+        self.id = id
+        self.familyID = familyID
+        self.title = title
+        self.details = details
+        self.startsAt = startsAt
+        self.endsAt = endsAt
+        self.kind = kind
+        self.memberIDs = memberIDs ?? memberID.map { [$0] } ?? []
+        self.isForEveryone = isForEveryone
+        self.responsibleMemberID = responsibleMemberID
+        self.isRecurringYearly = isRecurringYearly
+        self.reminderOffsets = reminderOffsets
+    }
 
     enum CodingKeys: String, CodingKey {
         case id, title, details, kind
@@ -101,8 +134,49 @@ struct FamilyItem: Identifiable, Codable, Equatable {
         case startsAt = "starts_at"
         case endsAt = "ends_at"
         case memberID = "member_id"
+        case memberIDs = "member_ids"
+        case isForEveryone = "is_for_everyone"
+        case responsibleMemberID = "responsible_member_id"
         case isRecurringYearly = "is_recurring_yearly"
         case reminderOffsets = "reminder_offsets"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        familyID = try container.decode(UUID.self, forKey: .familyID)
+        title = try container.decode(String.self, forKey: .title)
+        details = try container.decodeIfPresent(String.self, forKey: .details)
+        startsAt = try container.decode(Date.self, forKey: .startsAt)
+        endsAt = try container.decodeIfPresent(Date.self, forKey: .endsAt)
+        kind = try container.decode(FamilyItemKind.self, forKey: .kind)
+        if container.contains(.memberIDs) {
+            memberIDs = try container.decode([UUID].self, forKey: .memberIDs)
+        } else {
+            memberIDs = try container.decodeIfPresent(UUID.self, forKey: .memberID).map { [$0] } ?? []
+        }
+        isForEveryone = try container.decodeIfPresent(Bool.self, forKey: .isForEveryone) ?? false
+        responsibleMemberID = try container.decodeIfPresent(UUID.self, forKey: .responsibleMemberID)
+        isRecurringYearly = try container.decodeIfPresent(Bool.self, forKey: .isRecurringYearly) ?? false
+        reminderOffsets = try container.decodeIfPresent([Int].self, forKey: .reminderOffsets)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(familyID, forKey: .familyID)
+        try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(details, forKey: .details)
+        try container.encode(startsAt, forKey: .startsAt)
+        try container.encodeIfPresent(endsAt, forKey: .endsAt)
+        try container.encode(kind, forKey: .kind)
+        try container.encode(memberIDs, forKey: .memberIDs)
+        // Retain the legacy key for downgrade/read compatibility.
+        try container.encodeIfPresent(memberIDs.first, forKey: .memberID)
+        try container.encode(isForEveryone, forKey: .isForEveryone)
+        try container.encodeIfPresent(responsibleMemberID, forKey: .responsibleMemberID)
+        try container.encode(isRecurringYearly, forKey: .isRecurringYearly)
+        try container.encodeIfPresent(reminderOffsets, forKey: .reminderOffsets)
     }
 }
 

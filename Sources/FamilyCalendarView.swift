@@ -27,6 +27,50 @@ struct FamilyCalendarView: View {
         }
     }
 
+    private var calendarFilterSection: some View {
+        Section {
+            Toggle(isOn: $localRemindersEnabled) {
+                Label("Påminnelser på den här enheten", systemImage: "bell.badge")
+                    .font(.subheadline.weight(.medium))
+            }
+            .tint(FamiljenTheme.navy)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    filterChip("Alla", kind: nil)
+                    ForEach(FamilyItemKind.calendarKinds, id: \.self) { kind in
+                        filterChip(kind.displayName, kind: kind)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 5)
+            }
+            .contentMargins(.horizontal, 0)
+
+            if !model.members.isEmpty {
+                Text("Visa personer")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(FamiljenTheme.muted)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        personFilterChip("Alla personer", id: nil)
+                        ForEach(model.members) { member in
+                            personFilterChip(for: member)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 5)
+                }
+                .contentMargins(.horizontal, 0)
+            }
+        }
+        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+    }
+
+    private func personFilterChip(for member: FamilyMember) -> some View {
+        personFilterChip(member.displayName, id: member.id)
+    }
+
     private var addCalendarItemButton: some View {
         Button {
             editingItem = nil
@@ -54,41 +98,7 @@ struct FamilyCalendarView: View {
 
     var body: some View {
         List {
-            Section {
-                Toggle(isOn: $localRemindersEnabled) {
-                    Label("Påminnelser på den här enheten", systemImage: "bell.badge")
-                        .font(.subheadline.weight(.medium))
-                }
-                .tint(FamiljenTheme.navy)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        filterChip("Alla", kind: nil)
-                        ForEach(FamilyItemKind.calendarKinds, id: \.self) { kind in
-                            filterChip(kind.displayName, kind: kind)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 5)
-                }
-                .contentMargins(.horizontal, 0)
-                if !model.members.isEmpty {
-                    Text("Visa personer")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(FamiljenTheme.muted)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            personFilterChip("Alla personer", id: nil)
-                            ForEach(model.members) { member in
-                                personFilterChip(member.displayName, id: member.id)
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 5)
-                    }
-                    .contentMargins(.horizontal, 0)
-                }
-                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-            }
+            calendarFilterSection
 
             if visibleItems.isEmpty && !model.isLoading {
                 ContentUnavailableView {

@@ -10,6 +10,25 @@ final class LocalFamilyStoreTests: XCTestCase {
         return (LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json")), directory)
     }
 
+    func testPersistenceFailureIsExposedInsteadOfSilentlyIgnored() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenPersistenceFailure-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let blockingFile = directory.appendingPathComponent("not-a-directory")
+        try Data("keep this file".utf8).write(to: blockingFile)
+        let snapshotURL = blockingFile.appendingPathComponent("snapshot.json")
+        let store = LocalFamilyStore(fileURL: snapshotURL)
+
+        XCTAssertNotNil(store.persistenceError)
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: blockingFile, encoding: .utf8), "keep this file")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: snapshotURL.path))
+    }
+
     func testFamilyProfilesAndShoppingItemsSurviveReload() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

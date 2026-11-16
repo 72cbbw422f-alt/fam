@@ -314,4 +314,65 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(parts.hour, 9)
     }
 
+
+    func testFamilyItemDecodesLegacySingleMemberAndRoundTripsMultipleMembers() throws {
+        let firstID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+        let secondID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
+        let familyID = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
+        let itemID = UUID(uuidString: "44444444-4444-4444-4444-444444444444")!
+        let legacyJSON = """
+        {
+          "id": "\(itemID.uuidString)",
+          "family_id": "\(familyID.uuidString)",
+          "title": "Tandläkare",
+          "starts_at": 0,
+          "kind": "dentist",
+          "member_id": "\(firstID.uuidString)",
+          "is_recurring_yearly": false,
+          "reminder_offsets": []
+        }
+        """
+        let decoder = JSONDecoder()
+        let legacyItem = try decoder.decode(FamilyItem.self, from: Data(legacyJSON.utf8))
+        XCTAssertEqual(legacyItem.memberIDs, [firstID])
+        XCTAssertEqual(legacyItem.memberID, firstID)
+        XCTAssertFalse(legacyItem.isForEveryone)
+        XCTAssertNil(legacyItem.responsibleMemberID)
+
+        let multiMemberItem = FamilyItem(
+            id: itemID, familyID: familyID, title: "Skolavslutning",
+            details: nil, startsAt: Date(timeIntervalSince1970: 0), endsAt: nil,
+            kind: .event, memberID: nil, isRecurringYearly: false,
+            reminderOffsets: [], memberIDs: [firstID, secondID],
+            isForEveryone: false, responsibleMemberID: firstID
+        )
+        let encoded = try JSONEncoder().encode(multiMemberItem)
+        let decoded = try decoder.decode(FamilyItem.self, from: encoded)
+        XCTAssertEqual(decoded.memberIDs, [firstID, secondID])
+        XCTAssertEqual(decoded.memberID, firstID)
+        XCTAssertEqual(decoded.responsibleMemberID, firstID)
+        XCTAssertFalse(decoded.isForEveryone)
+    }
+
+    func testFamilyWideCalendarItemIsDistinctFromUnassignedItem() throws {
+        let familyID = UUID()
+        let date = Date(timeIntervalSince1970: 0)
+        let unassigned = FamilyItem(
+            id: UUID(), familyID: familyID, title: "Preliminärt",
+            details: nil, startsAt: date, endsAt: nil, kind: .appointment,
+            memberID: nil, isRecurringYearly: false, reminderOffsets: []
+        )
+        let familyWide = FamilyItem(
+            id: UUID(), familyID: familyID, title: "Familjemiddag",
+            details: nil, startsAt: date, endsAt: nil, kind: .event,
+            memberID: nil, isRecurringYearly: false, reminderOffsets: [],
+            isForEveryone: true
+        )
+        XCTAssertTrue(unassigned.memberIDs.isEmpty)
+        XCTAssertFalse(unassigned.isForEveryone)
+        XCTAssertTrue(familyWide.memberIDs.isEmpty)
+        XCTAssertTrue(familyWide.isForEveryone)
+    }
+
+
 }

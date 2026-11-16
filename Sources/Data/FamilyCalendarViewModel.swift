@@ -57,7 +57,7 @@ final class FamilyCalendarViewModel: ObservableObject {
             return false
         }
         let persistedDate = preservedRecurringDate(
-            id: id, proposedDate: startsAt, kind: kind, recurring: isRecurringYearly
+            id: id, proposedDate: startsAt, recurring: isRecurringYearly
         )
         store.saveCalendarItem(id: id, title: clean, details: details, startsAt: persistedDate,
                                kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
@@ -79,10 +79,10 @@ final class FamilyCalendarViewModel: ObservableObject {
         await load()
     }
 
-    // The calendar displays a recurring birthday in its next upcoming year.
-    // Persist the original birth year when that projected row is edited.
+    // The calendar displays the next upcoming yearly occurrence.
+    // Persist the series' original year when a projected row is edited.
     private func preservedRecurringDate(id: UUID?, proposedDate: Date,
-                                       kind: FamilyItemKind, recurring: Bool) -> Date {
+                                       recurring: Bool) -> Date {
         guard recurring, let id,
               let original = store.items.first(where: { $0.id == id }),
               original.isRecurringYearly else {
@@ -94,15 +94,15 @@ final class FamilyCalendarViewModel: ObservableObject {
         let originalParts = calendar.dateComponents([.year, .month, .day], from: original.startsAt)
         var editedParts = calendar.dateComponents([.month, .day, .hour, .minute, .second],
                                                    from: proposedDate)
-        guard let birthYear = originalParts.year else { return proposedDate }
+        guard let anchorYear = originalParts.year else { return proposedDate }
 
-        // A 29 February birthday is displayed as 28 February in non-leap years.
+        // A 29 February occurrence is displayed as 28 February in non-leap years.
         // If the user leaves that projected date unchanged, retain 29 February.
         if originalParts.month == 2, originalParts.day == 29,
            editedParts.month == 2, editedParts.day == 28 {
             editedParts.day = 29
         }
-        editedParts.year = birthYear
+        editedParts.year = anchorYear
         return calendar.date(from: editedParts) ?? original.startsAt
     }
 }

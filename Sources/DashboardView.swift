@@ -426,7 +426,7 @@ struct DashboardView: View {
                 }
                 if let responsibleID = item.responsibleMemberID,
                    let responsible = members.first(where: { $0.id == responsibleID }) {
-                    Text("Ansvarig: \\(responsible.displayName)")
+                    Text("Ansvarig: \(responsible.displayName)")
                         .font(.system(size: 11))
                         .foregroundStyle(FamiljenTheme.muted)
                 }

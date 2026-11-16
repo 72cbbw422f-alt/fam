@@ -62,10 +62,14 @@ enum LocalReminderScheduler {
             content.body = "\(candidate.item.title) · \(candidate.item.startsAt.formatted(.dateTime.hour().minute()))"
             content.sound = .default
 
-            let components = Calendar.current.dateComponents(
+            var calendar = Calendar.current
+            calendar.timeZone = .current
+            var components = calendar.dateComponents(
                 [.year, .month, .day, .hour, .minute, .second],
                 from: candidate.fireDate
             )
+            components.calendar = calendar
+            components.timeZone = calendar.timeZone
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             let request = UNNotificationRequest(
                 identifier: identifierPrefix + identifier(for: candidate),

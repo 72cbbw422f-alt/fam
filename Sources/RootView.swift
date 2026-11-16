@@ -19,7 +19,6 @@ struct RootView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(FamiljenTheme.paper.ignoresSafeArea(.all))
-        .ignoresSafeArea(.container, edges: [.top, .bottom])
         .animation(.easeInOut(duration: 0.2), value: store.family != nil)
     }
 }
@@ -87,19 +86,19 @@ private struct FamilyTabShell: View {
                         selectedTab = tab
                     }
                 } label: {
-                    VStack(spacing: 5) {
+                    VStack(spacing: 6) {
                         Image(systemName: tab.symbol)
-                            .font(.system(size: 19, weight: selectedTab == tab ? .semibold : .regular))
-                            .frame(height: 22)
+                            .font(.system(size: 23, weight: selectedTab == tab ? .semibold : .regular))
+                            .frame(height: 27)
                         Text(tab.title)
-                            .font(.system(size: 8.5, weight: selectedTab == tab ? .semibold : .medium))
+                            .font(.system(size: 10, weight: selectedTab == tab ? .semibold : .medium))
                             .lineLimit(1)
-                            .minimumScaleFactor(0.62)
+                            .minimumScaleFactor(0.76)
                             .allowsTightening(true)
                     }
                     .foregroundStyle(selectedTab == tab ? FamiljenTheme.navy : FamiljenTheme.muted)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 54)
+                    .frame(height: 66)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -108,8 +107,8 @@ private struct FamilyTabShell: View {
             }
         }
         .padding(.horizontal, 5)
-        .padding(.top, 7)
-        .padding(.bottom, 3)
+        .padding(.top, 9)
+        .padding(.bottom, 7)
         .background {
             UnevenRoundedRectangle(topLeadingRadius: 20, topTrailingRadius: 20)
                 .fill(.white)

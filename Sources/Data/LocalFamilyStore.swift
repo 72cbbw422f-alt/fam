@@ -154,12 +154,13 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         } else {
             items.append(FamilyItem(id: UUID(), familyID: family.id, title: clean,
                                     details: details, startsAt: startsAt, endsAt: nil,
-                                    kind: kind, memberID: nil, location: location,
+                                    kind: kind, memberID: nil,
                                     isRecurringYearly: kind == .birthday && recurring,
                                     reminderOffsets: reminderOffsets,
                                     memberIDs: isForEveryone ? [] : validMemberIDs,
                                     isForEveryone: isForEveryone,
-                                    responsibleMemberID: validResponsibleID))
+                                    responsibleMemberID: validResponsibleID,
+                                    location: location))
         }
         if !saveToDisk() {
             items = previousItems

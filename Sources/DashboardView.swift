@@ -107,22 +107,26 @@ struct DashboardView: View {
                     .offset(x: proxy.size.width - 150, y: 55)
             }
             VStack(alignment: .leading, spacing: 7) {
-                Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)).capitalized)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.86))
+                HStack {
+                    Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "sv_SE"))).capitalized)
+                    Spacer()
+                    Text("v. \(Calendar(identifier: .iso8601).component(.weekOfYear, from: .now))")
+                }
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.88))
                 Text(model.family?.name ?? "Välkommen hem")
-                    .font(.system(size: 27, weight: .semibold, design: .serif))
+                    .font(.system(size: 29, weight: .semibold, design: .serif))
                     .foregroundStyle(.white)
                 HStack(spacing: 6) {
                     Image(systemName: "sun.max")
                     Text("En plats för allt som hör er till")
                 }
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white.opacity(0.88))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.92))
             }
             .padding(19)
         }
-        .frame(height: 158)
+        .frame(height: 174)
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -134,9 +138,14 @@ struct DashboardView: View {
     private var familyAndNextEvent: some View {
         HStack(alignment: .center, spacing: 10) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("Er familj")
-                    .font(.system(size: 19, weight: .semibold, design: .serif))
-                    .foregroundStyle(FamiljenTheme.ink)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Er familj")
+                        .font(.system(size: 19, weight: .semibold, design: .serif))
+                        .foregroundStyle(FamiljenTheme.ink)
+                    Text("Tillsammans i vardagen")
+                        .font(.system(size: 10))
+                        .foregroundStyle(FamiljenTheme.muted)
+                }
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(members.prefix(3)) { member in

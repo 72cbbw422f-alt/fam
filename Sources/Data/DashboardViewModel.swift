@@ -7,7 +7,11 @@ final class DashboardViewModel: ObservableObject {
     @Published private(set) var upcomingItems: [FamilyItem] = []
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
-    private let store = LocalFamilyStore.shared
+    private let store: any FamilyRepository
+
+    init(store: any FamilyRepository = FamilyRepositoryFactory.makeDefault()) {
+        self.store = store
+    }
 
     var nextItem: FamilyItem? { upcomingItems.first }
     var thisWeekItems: [FamilyItem] {

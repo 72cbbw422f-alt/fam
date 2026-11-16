@@ -91,8 +91,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         guard members.contains(where: { $0.id == id && $0.role != .owner }) else { return }
         members.removeAll { $0.id == id }
         // Keep calendar history when a profile is removed; only clear its assignment.
-        for index in items.indices where items[index].memberID == id {
-            items[index].memberID = nil
+        for index in items.indices {
+            items[index].memberIDs.removeAll { $0 == id }
+            if items[index].responsibleMemberID == id {
+                items[index].responsibleMemberID = nil
+            }
         }
         saveToDisk()
     }
@@ -102,23 +105,45 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
 
     func saveItem(id: UUID?, title: String, details: String?, startsAt: Date,
                   kind: FamilyItemKind, memberID: UUID?, recurring: Bool, reminderOffsets: [Int]) {
+        saveCalendarItem(id: id, title: title, details: details, startsAt: startsAt,
+                         kind: kind, memberIDs: memberID.map { [$0] } ?? [],
+                         isForEveryone: false, responsibleMemberID: nil,
+                         recurring: recurring, reminderOffsets: reminderOffsets)
+    }
+
+    func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
+                          kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
+                          responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int]) {
         guard let family else { return }
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
+
+        let validMemberIDs = Array(NSOrderedSet(array: memberIDs.filter { memberID in
+            members.contains(where: { $0.id == memberID })
+        })) as? [UUID] ?? []
+        let validResponsibleID = members.first(where: {
+            $0.id == responsibleMemberID && $0.role != .child
+        })?.id
+
         if let id, let index = items.firstIndex(where: { $0.id == id }) {
             items[index].title = clean
             items[index].details = details
             items[index].startsAt = startsAt
             items[index].kind = kind
-            items[index].memberID = memberID
+            items[index].memberIDs = isForEveryone ? [] : validMemberIDs
+            items[index].isForEveryone = isForEveryone
+            items[index].responsibleMemberID = validResponsibleID
             items[index].isRecurringYearly = kind == .birthday && recurring
             items[index].reminderOffsets = reminderOffsets
         } else {
             items.append(FamilyItem(id: UUID(), familyID: family.id, title: clean,
                                     details: details, startsAt: startsAt, endsAt: nil,
-                                    kind: kind, memberID: memberID,
+                                    kind: kind, memberID: nil,
                                     isRecurringYearly: kind == .birthday && recurring,
-                                    reminderOffsets: reminderOffsets))
+                                    reminderOffsets: reminderOffsets,
+                                    memberIDs: isForEveryone ? [] : validMemberIDs,
+                                    isForEveryone: isForEveryone,
+                                    responsibleMemberID: validResponsibleID))
         }
         saveToDisk()
     }

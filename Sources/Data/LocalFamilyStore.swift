@@ -56,7 +56,7 @@ final class LocalFamilyStore: ObservableObject {
     }
 
     func saveItem(id: UUID?, title: String, details: String?, startsAt: Date,
-                  kind: FamilyItemKind, memberID: UUID?, recurring: Bool) {
+                  kind: FamilyItemKind, memberID: UUID?, recurring: Bool, reminderOffsets: [Int]) {
         guard let family else { return }
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
@@ -67,11 +67,13 @@ final class LocalFamilyStore: ObservableObject {
             items[index].kind = kind
             items[index].memberID = memberID
             items[index].isRecurringYearly = kind == .birthday && recurring
+            items[index].reminderOffsets = reminderOffsets
         } else {
             items.append(FamilyItem(id: UUID(), familyID: family.id, title: clean,
                                     details: details, startsAt: startsAt, endsAt: nil,
                                     kind: kind, memberID: memberID,
-                                    isRecurringYearly: kind == .birthday && recurring))
+                                    isRecurringYearly: kind == .birthday && recurring,
+                                    reminderOffsets: reminderOffsets))
         }
         saveToDisk()
     }

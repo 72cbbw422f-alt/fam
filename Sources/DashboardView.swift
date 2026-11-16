@@ -75,6 +75,14 @@ struct DashboardView: View {
                     }
             }
             .accessibilityLabel("Notiser")
+            NavigationLink { FamilyMessagesView() } label: {
+                Image(systemName: "bubble.left.and.bubble.right")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(FamiljenTheme.navy)
+                    .frame(width: 42, height: 42)
+                    .background(.white, in: Circle())
+            }
+            .accessibilityLabel("Meddelanden")
             NavigationLink { FamilyCalendarView() } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 17, weight: .medium))

@@ -51,7 +51,7 @@ Each iPhone stores its own independent family data. There is no shared calendar,
 
 **Designprincip:** Barn ska kunna finnas som profiler utan egna konton. Funktionen ska stödja praktisk familjeplanering, inte bli ett generellt uppgiftssystem.
 
-**Status:** Första implementationen är incheckad 2026-11-16. En key-path-kompileringsmiss korrigerades (FAM-014). Nästa CI-körning visade ett SwiftUI type-check-fel i toolbar-uttrycket; detta har brutits ut i FAM-015 följdes av en ytterligare förenkling och interpolationsfix (FAM-016). Ny CI-verifiering inväntas. Fysisk iPhone-testning återstår.
+**Status:** Första implementationen är incheckad 2026-11-16. En key-path-kompileringsmiss korrigerades (FAM-014). Nästa CI-körning visade ett SwiftUI type-check-fel i toolbar-uttrycket; detta har brutits ut i FAM-015 följdes av en ytterligare förenkling och interpolationsfix (FAM-016 följdes av att filtersektionen bröts ut i FAM-017. Ny CI-verifiering inväntas. Fysisk iPhone-testning återstår.
 
 ## Produktgranskning: jämförelse med familjeappar (2026-11-16)
 

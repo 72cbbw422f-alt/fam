@@ -27,16 +27,14 @@ struct FamilyCalendarView: View {
         }
     }
 
-    private var calendarToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                editingItem = nil
-                showingEditor = true
-            } label: {
-                Image(systemName: "plus").foregroundStyle(FamiljenTheme.navy)
-            }
-            .accessibilityLabel("Lägg till aktivitet")
+    private var addCalendarItemButton: some View {
+        Button {
+            editingItem = nil
+            showingEditor = true
+        } label: {
+            Image(systemName: "plus").foregroundStyle(FamiljenTheme.navy)
         }
+        .accessibilityLabel("Lägg till aktivitet")
     }
 
     private var emptyTitle: String {
@@ -169,7 +167,9 @@ struct FamilyCalendarView: View {
         .navigationTitle(pageTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            calendarToolbar
+            ToolbarItem(placement: .topBarTrailing) {
+                addCalendarItemButton
+            }
         }
         .overlay {
             if model.isLoading && model.items.isEmpty { ProgressView("Hämtar kalendern …") }

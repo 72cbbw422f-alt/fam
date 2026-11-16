@@ -594,7 +594,7 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Skottdagslogiken bevaras: 29 februari visas 28 februari under år som inte är skottår.
 - Regressionstest täcker projektion och redigering av en årligen återkommande vanlig kalenderhändelse.
 - Filer: Sources/Data/LocalFamilyStore.swift, Sources/Data/DashboardViewModel.swift, Sources/Data/FamilyCalendarViewModel.swift, Sources/FamilyCalendarView.swift, Tests/LocalFamilyStoreTests.swift.
-- Commits: 9f3e3fe3, 7d7d701c, f47afc59, 299bedcc, 104032a0.
+- Commits: 9f3e3fe3, 7d7d701c, f47afc59, 299bedcc, 104032a0, 9ea404b4.
 
 **Verifiering**
 - Källkod och regressionstest är incheckade. CI-verifiering inväntas.

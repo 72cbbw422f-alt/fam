@@ -1,9 +1,21 @@
 import Foundation
 import UserNotifications
 
+struct ReminderCandidate: Identifiable {
+    let item: FamilyItem
+    let offset: Int
+    let fireDate: Date
+
+    var id: String {
+        "\(item.id.uuidString)-\(offset)"
+    }
+}
+
 enum LocalReminderScheduler {
     private static let center = UNUserNotificationCenter.current()
     private static let identifierPrefix = "familjen-item-"
+    private static let maximumPendingReminders = 60
+    private static let defaultOffsets = [24 * 60 * 60, 60 * 60]
 
     static func requestPermission() async -> Bool {
         do {
@@ -13,43 +25,50 @@ enum LocalReminderScheduler {
         }
     }
 
+    /// Pure candidate generation keeps reminder selection deterministic and unit-testable.
+    static func makeCandidates(for items: [FamilyItem], now: Date) -> [ReminderCandidate] {
+        var candidates: [ReminderCandidate] = []
+
+        for item in items {
+            let offsets = item.reminderOffsets ?? defaultOffsets
+            for offset in Set(offsets) where offset >= 0 {
+                let fireDate = item.startsAt.addingTimeInterval(TimeInterval(-offset))
+                guard fireDate > now else { continue }
+                candidates.append(ReminderCandidate(item: item, offset: offset, fireDate: fireDate))
+            }
+        }
+
+        candidates.sort {
+            if $0.fireDate != $1.fireDate { return $0.fireDate < $1.fireDate }
+            if $0.item.id != $1.item.id {
+                return $0.item.id.uuidString < $1.item.id.uuidString
+            }
+            return $0.offset < $1.offset
+        }
+        return Array(candidates.prefix(maximumPendingReminders))
+    }
+
     static func schedule(for items: [FamilyItem]) async {
         let pending = await center.pendingNotificationRequests()
         let oldIDs = pending.map(\.identifier).filter { $0.hasPrefix(identifierPrefix) }
-        center.removePendingNotificationRequests(withIdentifiers: oldIDs)
+        let candidates = makeCandidates(for: items, now: .now)
+        let desiredIDs = Set(candidates.map { identifier(for: $0) })
 
-        // iOS allows a limited number of pending local notifications.
-        // Keep the 60 soonest reminders across all calendar activities.
-        var candidates: [(item: FamilyItem, offset: Int, fireDate: Date)] = []
-        for item in items {
-            let offsets = item.reminderOffsets ?? [24 * 60 * 60, 60 * 60]
-            for offset in offsets {
-                let fireDate = item.startsAt.addingTimeInterval(TimeInterval(-offset))
-                if fireDate > .now {
-                    candidates.append((item: item, offset: offset, fireDate: fireDate))
-                }
-            }
-        }
-        candidates.sort { $0.fireDate < $1.fireDate }
-        let selectedCandidates = Array(candidates.prefix(60))
-
-        for candidate in selectedCandidates {
-            let item = candidate.item
-            let offset = candidate.offset
-            let fireDate = candidate.fireDate
-
+        // Add/update desired reminders before removing obsolete ones. This avoids
+        // deleting the previous reminder set if adding a replacement fails.
+        for candidate in candidates {
             let content = UNMutableNotificationContent()
-            content.title = "Påminnelse: \(reminderLabel(for: offset))"
-            content.body = "\(item.title) · \(item.startsAt.formatted(.dateTime.hour().minute()))"
+            content.title = "Påminnelse: \(reminderLabel(for: candidate.offset))"
+            content.body = "\(candidate.item.title) · \(candidate.item.startsAt.formatted(.dateTime.hour().minute()))"
             content.sound = .default
 
             let components = Calendar.current.dateComponents(
                 [.year, .month, .day, .hour, .minute, .second],
-                from: fireDate
+                from: candidate.fireDate
             )
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             let request = UNNotificationRequest(
-                identifier: "\(identifierPrefix)\(item.id.uuidString)-\(offset)",
+                identifier: identifierPrefix + identifier(for: candidate),
                 content: content,
                 trigger: trigger
             )
@@ -59,6 +78,13 @@ enum LocalReminderScheduler {
                 // A failed local reminder must not block calendar usage.
             }
         }
+
+        let obsoleteIDs = oldIDs.filter { !desiredIDs.contains(String($0.dropFirst(identifierPrefix.count))) }
+        center.removePendingNotificationRequests(withIdentifiers: obsoleteIDs)
+    }
+
+    private static func identifier(for candidate: ReminderCandidate) -> String {
+        candidate.id
     }
 
     private static func reminderLabel(for offset: Int) -> String {

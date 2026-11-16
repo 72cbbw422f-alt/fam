@@ -23,6 +23,9 @@ protocol FamilyRepository: AnyObject {
     func deleteChild(id: UUID)
     func saveItem(id: UUID?, title: String, details: String?, startsAt: Date,
                   kind: FamilyItemKind, memberID: UUID?, recurring: Bool, reminderOffsets: [Int])
+    func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
+                         kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
+                         responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int])
     func deleteItem(_ item: FamilyItem)
     func addShoppingItem(_ title: String)
     func setShoppingItem(_ id: UUID, checked: Bool)
@@ -34,6 +37,14 @@ protocol FamilyRepository: AnyObject {
 
 extension FamilyRepository {
     func addMember(name: String) { addMember(name: name, role: .member) }
+
+    /// Compatibility default for repositories not yet supporting the richer calendar assignment.
+    func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
+                          kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
+                          responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int]) {
+        saveItem(id: id, title: title, details: details, startsAt: startsAt, kind: kind,
+                 memberID: memberIDs.first, recurring: recurring, reminderOffsets: reminderOffsets)
+    }
 }
 
 /// Provider selection stays centralized; CloudKit can replace the local adapter.

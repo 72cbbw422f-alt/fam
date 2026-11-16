@@ -11,7 +11,11 @@ final class FamilyCalendarViewModel: ObservableObject {
     private let appleCalendar = AppleCalendarImport()
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
-    private let store = LocalFamilyStore.shared
+    private let store: any FamilyRepository
+
+    init(store: any FamilyRepository = FamilyRepositoryFactory.makeDefault()) {
+        self.store = store
+    }
 
     func load() async {
         isLoading = true

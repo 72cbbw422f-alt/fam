@@ -160,6 +160,19 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Workflow-konfigurationen är uppdaterad på arbetsgrenen.
 - Ny körning ska kontrolleras separat; inga bygg- eller testresultat är ännu godkända.
 
+
+### 2026-11-16 – explicit lokal kalender för notistriggers
+
+**Fynd och åtgärd**
+- Påminnelsernas absoluta tidpunkt beräknas korrekt som en `Date`, men kalenderkomponenterna som skickas till iOS-notiscentret förlitade sig tidigare på implicit kalender-/tidszonskontext.
+- Schemaläggaren använder nu uttryckligen enhetens aktuella kalender och lokala tidszon när år, månad, dag och klockslag skapas för `UNCalendarNotificationTrigger`.
+- Fil: `Sources/LocalReminderScheduler.swift`.
+- Commit: `a4a91351f1adcd1e956ae566d20d6e6c60032543`.
+
+**Verifiering**
+- Källändringen är incheckad.
+- Simulator-CI måste verifiera kompilering och tester; fysisk notisleverans och sommartidsgränser återstår att prova på enhet.
+
 ## Test- och leveransregler
 
 - Ett test räknas som godkänt först när CI-resultat/logg visar att det passerat.

@@ -1,9 +1,11 @@
+import Combine
 import Foundation
 
-/// Storage boundary for family data. UI and feature logic should depend on this
+/// Storage boundary for family data. UI and feature logic depend on this
 /// contract rather than on a specific persistence or cloud provider.
 @MainActor
 protocol FamilyRepository: AnyObject {
+    var changePublisher: AnyPublisher<Void, Never> { get }
     var family: Family? { get }
     var members: [FamilyMember] { get }
     var items: [FamilyItem] { get }
@@ -30,8 +32,11 @@ protocol FamilyRepository: AnyObject {
     func markNotificationRead(_ id: UUID)
 }
 
-/// The default provider remains local until CloudKit capabilities are configured.
-/// This keeps provider selection in one place and avoids cloud dependencies in views.
+extension FamilyRepository {
+    func addMember(name: String) { addMember(name: name, role: .member) }
+}
+
+/// Provider selection stays centralized; CloudKit can replace the local adapter.
 @MainActor
 enum FamilyRepositoryFactory {
     static func makeDefault() -> any FamilyRepository {

@@ -537,3 +537,26 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 
 **Verifiering**
 - Källändringen är incheckad; CI-verifiering inväntas.
+
+
+### 2026-11-17 – FAM-021: återställ kalenderändringar när lokal lagring misslyckas
+
+**Fynd**
+- FAM-018 gjorde lagringsfel synliga, men en kalenderändring kunde fortfarande ligga kvar i minnet trots att snapshot-filen inte uppdaterades.
+- Det kunde ge en missvisande kalender under pågående session och förlust av ändringen när appen stängdes.
+
+**Åtgärd**
+- Kalenderns skapa/uppdatera- och raderingsflöden sparar nu föregående kalenderlista och återställer den om atomisk snapshot-skrivning misslyckas.
+- Borttagning av familjeprofil återställer både medlemslistan och kalenderns deltagar-/ansvarskopplingar om skrivningen misslyckas.
+- Lagringsfunktionen returnerar nu ett resultat så kalenderflödena kan skilja på lyckad och misslyckad persistens. Det befintliga lagringsfelet behålls och visas via repository.
+- Nya regressionstester täcker misslyckad kalenderuppdatering, radering och profilborttagning. Testerna använder en blockerande fil som ersätter snapshot-katalogen för att deterministiskt framkalla skrivfel.
+- Filer: Sources/Data/LocalFamilyStore.swift, Tests/LocalFamilyStoreTests.swift.
+- Commits: 9d4fe9c6, ebc13c5d.
+
+**Verifiering**
+- Källkod och tester är incheckade. Ny CI-verifiering inväntas.
+- Den tidigare CI-körningen 43981913051 stod kvar med simulatorns teststeg som pågående trots att iPhone-bygget skapade IPA. Den nya commitserien behöver en färsk, avslutad CI-körning.
+- Fysisk iPhone-testning är inte utförd.
+
+**Avgränsning**
+- Denna korrigering omfattar kalenderposter och profilborttagning som påverkar kalenderkopplingar. Övriga lokala mutationer har ännu inte fått samma transaktionella rollback.

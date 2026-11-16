@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct FamilyMoreView: View {
-    @StateObject private var store = LocalFamilyStore.shared
+    @StateObject private var store = FamilyStore.shared
     @State private var showingRename = false
 
     var body: some View {

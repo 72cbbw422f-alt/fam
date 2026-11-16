@@ -96,6 +96,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
 
     func deleteMember(id: UUID) {
         guard members.contains(where: { $0.id == id && $0.role != .owner }) else { return }
+        let previousMembers = members
+        let previousItems = items
         members.removeAll { $0.id == id }
         // Keep calendar history when a profile is removed; only clear its assignment.
         for index in items.indices {
@@ -104,7 +106,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                 items[index].responsibleMemberID = nil
             }
         }
-        saveToDisk()
+        if !saveToDisk() {
+            members = previousMembers
+            items = previousItems
+        }
     }
 
     func renameChild(id: UUID, name: String) { renameMember(id: id, name: name) }
@@ -133,6 +138,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             $0.id == responsibleMemberID && $0.role != .child
         })?.id
 
+        let previousItems = items
         if let id, let index = items.firstIndex(where: { $0.id == id }) {
             items[index].title = clean
             items[index].details = details
@@ -153,12 +159,17 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                                     isForEveryone: isForEveryone,
                                     responsibleMemberID: validResponsibleID))
         }
-        saveToDisk()
+        if !saveToDisk() {
+            items = previousItems
+        }
     }
 
     func deleteItem(_ item: FamilyItem) {
+        let previousItems = items
         items.removeAll { $0.id == item.id }
-        saveToDisk()
+        if !saveToDisk() {
+            items = previousItems
+        }
     }
 
     func addShoppingItem(_ title: String) {
@@ -241,16 +252,22 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         }
     }
 
-    private func saveToDisk() {
-        guard !persistenceBlockedByCorruption else { return }
+    @discardableResult
+    private func saveToDisk() -> Bool {
+        guard !persistenceBlockedByCorruption else {
+            persistenceError = persistenceError ?? persistenceFailureMessage
+            return false
+        }
         let snapshot = Snapshot(family: family, members: members, items: items,
                                 shoppingItems: shoppingItems, notifications: notifications, messages: messages)
         do {
             let data = try JSONEncoder().encode(snapshot)
             try data.write(to: fileURL, options: .atomic)
             persistenceError = nil
+            return true
         } catch {
             persistenceError = persistenceFailureMessage
+            return false
         }
     }
 }

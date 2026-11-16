@@ -76,9 +76,10 @@ enum LocalReminderScheduler {
 
     private static func performSchedule(for items: [FamilyItem]) async {
         let pending = await center.pendingNotificationRequests()
-        let oldIDs = pending.map(\.identifier).filter { $0.hasPrefix(identifierPrefix) }
+        let delivered = await deliveredRequests()
+        let existingIDs = pending.map(\.identifier) + delivered.map { $0.request.identifier }
         let candidates = makeCandidates(for: items, now: .now)
-        let desiredIDs = Set(candidates.map { identifier(for: $0) })
+        let desiredIDs = Set(candidates.map { identifierPrefix + identifier(for: $0) })
 
         // Add/update desired reminders before removing obsolete ones. This avoids
         // deleting the previous reminder set if adding a replacement fails.
@@ -143,7 +144,10 @@ enum LocalReminderScheduler {
 
     private static func performClearAll() async {
         let pending = await center.pendingNotificationRequests()
-        let ids = pending.map(\.identifier).filter { $0.hasPrefix(identifierPrefix) }
+        let delivered = await deliveredRequests()
+        let ids = (pending.map(\.identifier) + delivered.map { $0.request.identifier })
+            .filter { $0.hasPrefix(identifierPrefix) }
         center.removePendingNotificationRequests(withIdentifiers: ids)
+        center.removeDeliveredNotifications(withIdentifiers: ids)
     }
 }

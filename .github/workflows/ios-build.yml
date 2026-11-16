@@ -82,6 +82,7 @@ jobs:
           echo "===== BUILT APP INFO.PLIST ====="
           /usr/libexec/PlistBuddy -c "Print :UIDeviceFamily" "$APP_PATH/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Print :UIRequiresFullScreen" "$APP_PATH/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Print :UILaunchScreen" "$APP_PATH/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Print :UISupportedInterfaceOrientations" "$APP_PATH/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$APP_PATH/Info.plist" || true
           echo "===== APP EXECUTABLE / BUNDLE ====="

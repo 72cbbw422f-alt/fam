@@ -37,7 +37,7 @@ final class FamilyCalendarViewModel: ObservableObject {
     func stopRealtime() async {}
 
     func save(id: UUID?, title: String, details: String?, startsAt: Date, kind: FamilyItemKind,
-              memberID: UUID?, isRecurringYearly: Bool) async -> Bool {
+              memberID: UUID?, isRecurringYearly: Bool, reminderOffsets: [Int]) async -> Bool {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 160 else {
             errorMessage = "Ange en rubrik på 1–160 tecken."
@@ -47,7 +47,7 @@ final class FamilyCalendarViewModel: ObservableObject {
             id: id, proposedDate: startsAt, kind: kind, recurring: isRecurringYearly
         )
         store.saveItem(id: id, title: clean, details: details, startsAt: persistedDate,
-                       kind: kind, memberID: memberID, recurring: isRecurringYearly)
+                       kind: kind, memberID: memberID, recurring: isRecurringYearly, reminderOffsets: reminderOffsets)
         await load()
         return true
     }

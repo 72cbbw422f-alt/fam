@@ -13,6 +13,7 @@ final class FamilyStore: ObservableObject {
     @Published private(set) var shoppingItems: [ShoppingItem] = []
     @Published private(set) var notifications: [FamilyNotification] = []
     @Published private(set) var messages: [FamilyMessage] = []
+    @Published private(set) var persistenceError: String?
 
     private let repository: any FamilyRepository
     private var cancellable: AnyCancellable?
@@ -33,6 +34,7 @@ final class FamilyStore: ObservableObject {
         shoppingItems = repository.shoppingItems
         notifications = repository.notifications
         messages = repository.messages
+        persistenceError = repository.persistenceError
     }
 
     func createFamily(name: String, ownerName: String) { repository.createFamily(name: name, ownerName: ownerName); refresh() }

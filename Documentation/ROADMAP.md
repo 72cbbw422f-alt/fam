@@ -21,7 +21,7 @@
 - [x] Preserve unreadable local snapshots as recovery files instead of silently overwriting them
 - [x] Add unit tests for family/profile/shopping persistence, calendar CRUD, message read state, input validation, repeat-onboarding protection, observable facade behavior, birthday projection edge cases and local-time-zone handling, reminder persistence, legacy snapshot compatibility and corrupt-snapshot recovery
 - [x] Add unit tests for reminder deduplication, future filtering, legacy fallback and the 60-reminder cap
-- [ ] Verify all unit tests pass in the iOS Simulator CI workflow
+- [ ] Verify all unit tests pass in the iOS Simulator CI workflow (latest run 43944814343 failed during Swift compilation; FAM-015 refactor committed, rerun required)
 - [ ] Verify persistence, CRUD and reminders on physical iPhones
 - [ ] Verify the new repository abstraction and unit tests pass in CI
 - [ ] Verify unsigned iOS Simulator build in CI after local-first refactor
@@ -51,7 +51,7 @@ Each iPhone stores its own independent family data. There is no shared calendar,
 
 **Designprincip:** Barn ska kunna finnas som profiler utan egna konton. Funktionen ska stödja praktisk familjeplanering, inte bli ett generellt uppgiftssystem.
 
-**Status:** Första implementationen är incheckad 2026-11-16. En key-path-kompileringsmiss i första CI-försöket har korrigerats (FAM-014); ny CI-verifiering inväntas. Fysisk iPhone-testning återstår.
+**Status:** Första implementationen är incheckad 2026-11-16. En key-path-kompileringsmiss korrigerades (FAM-014). Nästa CI-körning visade ett SwiftUI type-check-fel i toolbar-uttrycket; detta har brutits ut i FAM-015. Ny CI-verifiering inväntas. Fysisk iPhone-testning återstår.
 
 ## Produktgranskning: jämförelse med familjeappar (2026-11-16)
 
@@ -71,11 +71,11 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [ ] Fortsätt regressionstesta lokal persistens, kalenderredigering och notiser innan större funktionsbyggen.
 
 #### P1 – kärnupplevelsen i familjekalendern
-- [ ] Familjemedlemmar i kalendern: koppla en händelse till en eller flera profiler.
-- [ ] Separat och tydligt val för **Hela familjen**.
-- [ ] Filter för alla, en person och flera valda personer.
-- [ ] Skilj på deltagare/berörda personer och ansvarig vuxen för händelsen.
-- [ ] Bakåtkompatibel datamodell från nuvarande `memberID` till stöd för flera personer; bevara befintliga snapshots och poster.
+- [x] Familjemedlemmar i kalendern: koppla en händelse till en eller flera profiler (implementation incheckad; CI-verifiering inväntas).
+- [x] Separat och tydligt val för **Hela familjen** (implementation incheckad; CI-verifiering inväntas).
+- [x] Filter för alla, en person och flera valda personer (implementation incheckad; CI-verifiering inväntas).
+- [x] Skilj på deltagare/berörda personer och ansvarig vuxen för händelsen (implementation incheckad; CI-verifiering inväntas).
+- [x] Bakåtkompatibel datamodell från nuvarande `memberID` till stöd för flera personer; bevara befintliga snapshots och poster (implementation incheckad; CI-verifiering inväntas).
 - [ ] Förbättra händelsedetaljer med plats/adress och tydliga anteckningar; undersök kontaktuppgifter och bilagor först när integritet och lagring är definierade.
 - [ ] Utöka återkommande aktiviteter utöver födelsedagar när kalenderns grundflöde är stabilt; börja med veckovis/månadsvis och stöd för att ändra en förekomst eller hela serien.
 

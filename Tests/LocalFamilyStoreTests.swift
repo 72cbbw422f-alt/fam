@@ -202,4 +202,34 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(store.shoppingItems, originalShoppingItems)
     }
 
+
+    func testLegacySnapshotWithoutMessagesLoadsAsEmptyConversationHistory() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenLegacyTests-\\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fileURL = directory.appendingPathComponent("snapshot.json")
+        let legacySnapshot = """
+        {
+          "family": null,
+          "members": [],
+          "items": [],
+          "shoppingItems": [],
+          "notifications": []
+        }
+        """
+        try Data(legacySnapshot.utf8).write(to: fileURL)
+
+        let store = LocalFamilyStore(fileURL: fileURL)
+
+        XCTAssertNil(store.family)
+        XCTAssertTrue(store.members.isEmpty)
+        XCTAssertTrue(store.items.isEmpty)
+        XCTAssertTrue(store.shoppingItems.isEmpty)
+        XCTAssertTrue(store.notifications.isEmpty)
+        XCTAssertTrue(store.messages.isEmpty)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path))
+    }
+
 }

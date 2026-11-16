@@ -19,7 +19,7 @@
 - [x] Explicitly include the unit-test bundle in the XcodeGen test scheme
 - [x] Make local storage file location injectable for isolated persistence tests
 - [x] Preserve unreadable local snapshots as recovery files instead of silently overwriting them
-- [x] Add unit tests for family/profile/shopping persistence, calendar CRUD, message read state, input validation, observable facade behavior, birthday projection edge cases and corrupt-snapshot recovery
+- [x] Add unit tests for family/profile/shopping persistence, calendar CRUD, message read state, input validation, repeat-onboarding protection, observable facade behavior, birthday projection edge cases, reminder persistence and corrupt-snapshot recovery
 - [x] Run unit tests in the iOS Simulator CI workflow
 - [ ] Verify persistence, CRUD and reminders on physical iPhones
 - [ ] Verify the new repository abstraction and unit tests pass in CI

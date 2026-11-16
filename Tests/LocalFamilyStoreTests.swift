@@ -31,6 +31,33 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.shoppingItems, store.shoppingItems)
     }
 
+
+    func testDeletingMemberPreservesCalendarItemsAndClearsAssignment() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first(where: { $0.role == .child }))
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+
+        store.saveItem(id: nil, title: "Tandläkare", details: "Årlig kontroll", startsAt: date,
+                       kind: .dentist, memberID: child.id, recurring: false, reminderOffsets: [3600])
+        let originalItem = try XCTUnwrap(store.items.first)
+
+        store.deleteMember(id: child.id)
+
+        XCTAssertFalse(store.members.contains(where: { $0.id == child.id }))
+        XCTAssertEqual(store.items.count, 1)
+        XCTAssertEqual(store.items.first?.id, originalItem.id)
+        XCTAssertEqual(store.items.first?.title, "Tandläkare")
+        XCTAssertNil(store.items.first?.memberID)
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.items.count, 1)
+        XCTAssertEqual(reloaded.items.first?.id, originalItem.id)
+        XCTAssertNil(reloaded.items.first?.memberID)
+    }
+
     func testCalendarItemCanBeCreatedUpdatedAndDeleted() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

@@ -580,3 +580,22 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Källkod och regressionstest är incheckade. CI-verifiering inväntas.
 - Äldre snapshots får location = nil och fortsätter därför att kunna läsas.
 - Fysisk iPhone-testning är inte utförd.
+
+
+### 2026-11-17 – FAM-023: årlig återkomst för fler kalenderhändelser än födelsedagar
+
+**Fynd**
+- Årlig återkomst var tidigare kopplad till födelsedagskategorin. Återkommande årsdagar, skolavslutningar, traditioner och familjeevenemang kunde därför inte använda samma funktion.
+
+**Åtgärd**
+- Flyttade den årliga återkomstinställningen till alla kalenderkategorier.
+- Dashboardens och kalenderns projektion visar nästa kommande årsdatum även för andra återkommande händelser.
+- Redigering av en projicerad händelse bevarar seriens ursprungliga år och datumankare men sparar den ändrade klocktiden.
+- Skottdagslogiken bevaras: 29 februari visas 28 februari under år som inte är skottår.
+- Regressionstest täcker projektion och redigering av en årligen återkommande vanlig kalenderhändelse.
+- Filer: Sources/Data/LocalFamilyStore.swift, Sources/Data/DashboardViewModel.swift, Sources/Data/FamilyCalendarViewModel.swift, Sources/FamilyCalendarView.swift, Tests/LocalFamilyStoreTests.swift.
+- Commits: 9f3e3fe3, 7d7d701c, f47afc59, 299bedcc, 104032a0.
+
+**Verifiering**
+- Källkod och regressionstest är incheckade. CI-verifiering inväntas.
+- Veckovis och månadsvis återkomst ingår inte i denna ändring. De kräver en mer omfattande modell för serier och redigering av en enskild förekomst kontra hela serien.

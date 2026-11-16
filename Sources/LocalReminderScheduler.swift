@@ -20,17 +20,20 @@ enum LocalReminderScheduler {
 
         // iOS allows a limited number of pending local notifications.
         // Keep the 60 soonest reminders across all calendar activities.
-        let candidates = items.flatMap { item in
-            (item.reminderOffsets ?? [24 * 60 * 60, 60 * 60]).map { offset in
-                (item: item, offset: offset,
-                 fireDate: item.startsAt.addingTimeInterval(TimeInterval(-offset)))
+        var candidates: [(item: FamilyItem, offset: Int, fireDate: Date)] = []
+        for item in items {
+            let offsets = item.reminderOffsets ?? [24 * 60 * 60, 60 * 60]
+            for offset in offsets {
+                let fireDate = item.startsAt.addingTimeInterval(TimeInterval(-offset))
+                if fireDate > .now {
+                    candidates.append((item: item, offset: offset, fireDate: fireDate))
+                }
             }
         }
-        .filter { $0.fireDate > .now }
-        .sorted { $0.fireDate < $1.fireDate }
-        .prefix(60)
+        candidates.sort { $0.fireDate < $1.fireDate }
+        let selectedCandidates = Array(candidates.prefix(60))
 
-        for candidate in candidates {
+        for candidate in selectedCandidates {
             let item = candidate.item
             let offset = candidate.offset
             let fireDate = candidate.fireDate

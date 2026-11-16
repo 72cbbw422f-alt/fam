@@ -77,7 +77,7 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Skilj på deltagare/berörda personer och ansvarig vuxen för händelsen (implementation incheckad; CI-verifiering inväntas).
 - [x] Bakåtkompatibel datamodell från nuvarande `memberID` till stöd för flera personer; bevara befintliga snapshots och poster (implementation incheckad; CI-verifiering inväntas).
 - [x] Lägg till separat plats-/adressfält för kalenderhändelser, med bakåtkompatibel lokal lagring och visning i kalenderlistan (FAM-022; CI inväntas).
-- [ ] Utöka återkommande aktiviteter utöver födelsedagar när kalenderns grundflöde är stabilt; börja med veckovis/månadsvis och stöd för att ändra en förekomst eller hela serien.
+- [x] Stöd årlig återkomst även för vanliga kalenderhändelser, inte bara födelsedagar (FAM-023; CI inväntas).\n- [ ] Utöka återkomst med veckovis/månadsvis och stöd för att ändra en förekomst eller hela serien; kräver en separat serie-/förekomstmodell.
 
 #### P2 – minska manuellt arbete och förbättra iOS-åtkomst
 - [ ] Bygg vidare på befintlig OCR till ett importflöde: bild/PDF → extraherat förslag på titel, datum, tid och plats → användaren granskar → väljer familjemedlem → sparar.
@@ -119,6 +119,11 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Återställ kalenderposten om radering inte kan sparas (FAM-021; CI inväntas).
 - [x] Återställ familjeprofil och berörda kalenderkopplingar om profilborttagning inte kan sparas (FAM-021; CI inväntas).
 - [x] Lägg till regressionstester för de tre skrivfelen (CI inväntas).
+
+## Kalender: årlig återkomst (2026-11-17)
+- [x] Tillåt årlig återkomst för samtliga kalenderkategorier, med bevarat ursprungligt datumankare (FAM-023; CI inväntas).
+- [x] Testa projektion och redigering av en återkommande händelse som inte är en födelsedag.
+- [ ] Veckovis/månadsvis återkomst och val mellan att redigera en förekomst eller hela serien återstår.
 
 ## Kalender: platsuppgifter (2026-11-17)
 - [x] Lägg till separat valfritt plats-/adressfält, skilt från anteckningar (FAM-022; CI inväntas).

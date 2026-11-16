@@ -458,3 +458,21 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Verifiering**
 - Korrigeringarna är incheckade. Ny CI krävs; varken simulator-/enhetstester eller iPhone-bygget är ännu godkända för dessa commits.
 - Run `43948780418` skapade ingen IPA eftersom iPhone-bygget avbröts före paketering.
+
+
+
+### 2026-11-16 – FAM-017: bryt ut kalenderns filtersektion efter fortsatt SwiftUI type-check-fel
+
+**Fynd**
+- CI-run `43949276257` misslyckades under kompilering vid personfilterchipen i `FamilyCalendarView.swift` (rad 82). Toolbarens tidigare fel var inte längre den rapporterade felplatsen; kompilatorn fastnade nu i det stora List/Section-uttrycket för filter.
+- Varken enhetstester eller iPhone-paketering kunde slutföras eftersom appmålet inte kompilerade.
+
+**Åtgärd**
+- Flyttade kalenderns påminnelse- och filterinnehåll till en separat beräknad `calendarFilterSection`.
+- Lade till en liten typad hjälpfunktion för personfilterchip så att den nästlade `ForEach`-closure inte behöver bygga hela uttrycket direkt i List-buildern.
+- Fil: `Sources/FamilyCalendarView.swift`.
+- Commit: `aa38e9d0a9a2c4d7c44fd16a4fab983d36833b18`.
+
+**Verifiering**
+- Ändringen är incheckad. Ny CI krävs innan den kan räknas som kompilerings- eller testgodkänd.
+- Run `43949276257` skapade ingen IPA; iPhone-bygget misslyckades före paketering.

@@ -206,6 +206,9 @@ struct FamilyCalendarView: View {
                 } else { await LocalReminderScheduler.clearAll() }
             }
         }
+        .onChange(of: model.members.map(\.id)) { _, memberIDs in
+            selectedMemberIDs.formIntersection(Set(memberIDs))
+        }
         .onChange(of: model.items) { _, items in
             if localRemindersEnabled { Task { await LocalReminderScheduler.schedule(for: items) } }
         }

@@ -125,6 +125,7 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 | FAM-009 | Enhetskvalitet | Ingen verifierad fysisk iPhone-test ännu. | Öppen: testa installation, persistens, notisbehörighet och notisleverans på enheten. |
 | FAM-010 | Signering | Unsigned IPA är inte direkt likvärdig med signerad distributionsklar app. | Känd begränsning: signera och testa via tillgänglig sideload-process; Apple Developer senare. |
 | FAM-011 | Swift concurrency | MainActor-isolerad repository-fabrik anropades i default arguments för fyra ViewModels, vilket stoppade simulator- och device-kompilering. | Åtgärdad och verifierad: båda byggspåren gröna i run `43939559116`. |\n| FAM-012 | Födelsedagsredigering | Regressionstäckningen saknade kontroll av att projicerade födelsedagar behåller födelseåret och att 29 februari bevaras vid oförändrad projicering. | Två regressionstester tillagda i `701de43`; CI-verifiering inväntas. Känd UX-tvetydighet för avsiktlig ändring 29→28 februari dokumenterad ovan. |
+| FAM-013 | Familjeprofiler / kalenderhistorik | Att ta bort en familjemedlem raderade tidigare alla kalenderhändelser som var kopplade till profilen. | Åtgärdad i kod: behåll händelserna och rensa endast personkopplingen. Regressionstest tillagt; CI-verifiering inväntas. |
 
 
 ### 2026-11-16 – korrigering av legacy-snapshot-test
@@ -321,3 +322,21 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Importerade dokument ska bara skapa ett granskningsförslag; användaren måste bekräfta innan en händelse sparas.
 - Lokal, importerad och gemensamt synkroniserad information ska kunna särskiljas tydligt.
 - Roadmapen är uppdaterad med prioriteringarna. Inga av dessa nya funktioner markeras som implementerade.
+
+
+### 2026-11-16 – bevara kalenderhistorik när familjeprofil tas bort
+
+**Fynd (FAM-013)**
+- `LocalFamilyStore.deleteMember` raderade alla kalenderposter vars `memberID` pekade på profilen som togs bort.
+- Detta innebar oavsiktlig dataförlust: exempelvis kunde tandläkarbesök och andra historiska händelser försvinna när en barnprofil togs bort.
+
+**Åtgärd**
+- Ändrade borttagningen så att profilen tas bort men befintliga kalenderposter behålls. `memberID` rensas på de poster som pekade på profilen.
+- Uppdaterade bekräftelsetexten i `FamilyMembersView` så att användaren får korrekt information före borttagningen.
+- Lade till regressionstest som verifierar att händelsen, titel, ID och övrig data finns kvar efter borttagningen och efter omladdning från JSON-snapshot.
+- Filer: `Sources/Data/LocalFamilyStore.swift`, `Sources/FamilyMembersView.swift`, `Tests/LocalFamilyStoreTests.swift`.
+- Commits: `66a32505a3700fe22599b435085745231176aec3`, `8ac2168913a93a7d6354e6443d3a8d4aaac9afc8`, `af37923fb9f804205744cb4c634240f6acc5ea59`.
+
+**Verifiering**
+- Regressionstestet är incheckat men ännu inte verifierat i CI.
+- Nästa CI-körning ska kontrollera simulatorbuild och hela enhetstestsviten.

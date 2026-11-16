@@ -118,9 +118,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
 
-        let validMemberIDs = Array(NSOrderedSet(array: memberIDs.filter { memberID in
-            members.contains(where: { $0.id == memberID })
-        })) as? [UUID] ?? []
+        var seenMemberIDs = Set<UUID>()
+        let validMemberIDs = memberIDs.filter { memberID in
+            members.contains(where: { $0.id == memberID }) && seenMemberIDs.insert(memberID).inserted
+        }
         let validResponsibleID = members.first(where: {
             $0.id == responsibleMemberID && $0.role != .child
         })?.id

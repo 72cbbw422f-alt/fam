@@ -43,19 +43,32 @@ final class LocalFamilyStore: ObservableObject {
         saveToDisk()
     }
 
-    func renameChild(id: UUID, name: String) {
-        guard let index = members.firstIndex(where: { $0.id == id && $0.role == .child }) else { return }
+    func addMember(name: String, role: MemberRole = .member) {
+        guard let family else { return }
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !clean.isEmpty else { return }
+        guard !clean.isEmpty, clean.count <= 80, role != .owner else { return }
+        members.append(FamilyMember(id: UUID(), familyID: family.id,
+                                    displayName: clean, role: role, linkedUserID: nil))
+        saveToDisk()
+    }
+
+    func renameMember(id: UUID, name: String) {
+        guard let index = members.firstIndex(where: { $0.id == id && $0.role != .owner }) else { return }
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, clean.count <= 80 else { return }
         members[index].displayName = clean
         saveToDisk()
     }
 
-    func deleteChild(id: UUID) {
-        members.removeAll { $0.id == id && $0.role == .child }
+    func deleteMember(id: UUID) {
+        guard members.contains(where: { $0.id == id && $0.role != .owner }) else { return }
+        members.removeAll { $0.id == id }
         items.removeAll { $0.memberID == id }
         saveToDisk()
     }
+
+    func renameChild(id: UUID, name: String) { renameMember(id: id, name: name) }
+    func deleteChild(id: UUID) { deleteMember(id: id) }
 
     func saveItem(id: UUID?, title: String, details: String?, startsAt: Date,
                   kind: FamilyItemKind, memberID: UUID?, recurring: Bool, reminderOffsets: [Int]) {

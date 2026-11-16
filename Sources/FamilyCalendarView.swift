@@ -4,6 +4,7 @@ import PhotosUI
 struct FamilyCalendarView: View {
     @StateObject private var model = FamilyCalendarViewModel()
     @State private var selectedKind: FamilyItemKind?
+    @State private var selectedMemberIDs: Set<UUID> = []
 
     init(initialKind: FamilyItemKind? = nil) {
         _selectedKind = State(initialValue: initialKind)
@@ -13,8 +14,9 @@ struct FamilyCalendarView: View {
     @AppStorage("familjen.localRemindersEnabled") private var localRemindersEnabled = false
 
     private var visibleItems: [FamilyItem] {
-        guard let selectedKind else { return model.items }
-        return model.items.filter { $0.kind == selectedKind }
+        let peopleFiltered = FamilyCalendarViewModel.filteredItems(model.items, selectedMemberIDs: selectedMemberIDs)
+        guard let selectedKind else { return peopleFiltered }
+        return peopleFiltered.filter { $0.kind == selectedKind }
     }
 
     private var pageTitle: String {
@@ -59,6 +61,22 @@ struct FamilyCalendarView: View {
                     .padding(.vertical, 5)
                 }
                 .contentMargins(.horizontal, 0)
+                if !model.members.isEmpty {
+                    Text("Visa personer")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(FamiljenTheme.muted)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            personFilterChip("Alla personer", id: nil)
+                            ForEach(model.members) { member in
+                                personFilterChip(member.displayName, id: member.id)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 5)
+                    }
+                    .contentMargins(.horizontal, 0)
+                }
                 .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
             }
 
@@ -153,9 +171,11 @@ struct FamilyCalendarView: View {
             if model.isLoading && model.items.isEmpty { ProgressView("Hämtar kalendern …") }
         }
         .sheet(isPresented: $showingEditor, onDismiss: { editingItem = nil }) {
-            FamilyItemEditor(item: editingItem, members: model.members) { title, details, date, kind, memberID, recurring, reminderOffsets in
+            FamilyItemEditor(item: editingItem, members: model.members) { title, details, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurring, reminderOffsets in
                 await model.save(id: editingItem?.id, title: title, details: details, startsAt: date,
-                                 kind: kind, memberID: memberID, isRecurringYearly: recurring, reminderOffsets: reminderOffsets)
+                                 kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
+                                 responsibleMemberID: responsibleMemberID, isRecurringYearly: recurring,
+                                 reminderOffsets: reminderOffsets)
             }
         }
         .refreshable { await model.load() }
@@ -217,6 +237,24 @@ struct FamilyCalendarView: View {
         .buttonStyle(.plain)
     }
 
+    private func personFilterChip(_ title: String, id: UUID?) -> some View {
+        let isSelected = id.map { selectedMemberIDs.contains($0) } ?? selectedMemberIDs.isEmpty
+        return Button {
+            if let id {
+                if selectedMemberIDs.contains(id) { selectedMemberIDs.remove(id) }
+                else { selectedMemberIDs.insert(id) }
+            } else {
+                selectedMemberIDs.removeAll()
+            }
+        } label: {
+            Text(title).font(.caption.weight(.semibold))
+                .padding(.horizontal, 13).padding(.vertical, 8)
+                .foregroundStyle(isSelected ? .white : FamiljenTheme.ink)
+                .background(isSelected ? FamiljenTheme.navy : .white, in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
     private func calendarRow(_ item: FamilyItem) -> some View {
         HStack(spacing: 13) {
             VStack(spacing: 2) {
@@ -233,8 +271,20 @@ struct FamilyCalendarView: View {
                     Text(item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
                 }
                 .font(.caption).foregroundStyle(FamiljenTheme.muted)
-                if let member = model.members.first(where: { $0.id == item.memberID }) {
-                    Text(member.displayName).font(.caption2).foregroundStyle(FamiljenTheme.muted)
+                if item.isForEveryone {
+                    Label("Hela familjen", systemImage: "person.3.fill")
+                        .font(.caption2).foregroundStyle(FamiljenTheme.champagneDeep)
+                } else {
+                    let names = model.members.filter { item.memberIDs.contains($0.id) }.map(\.displayName)
+                    if !names.isEmpty {
+                        Text(names.joined(separator: " · "))
+                            .font(.caption2).foregroundStyle(FamiljenTheme.muted)
+                    }
+                }
+                if let responsibleID = item.responsibleMemberID,
+                   let responsible = model.members.first(where: { $0.id == responsibleID }) {
+                    Text("Ansvarig: \(responsible.displayName)")
+                        .font(.caption2).foregroundStyle(FamiljenTheme.muted)
                 }
             }
             Spacer()
@@ -248,13 +298,15 @@ private struct FamilyItemEditor: View {
     @Environment(\.dismiss) private var dismiss
     let item: FamilyItem?
     let members: [FamilyMember]
-    let onSave: (String, String?, Date, FamilyItemKind, UUID?, Bool, [Int]) async -> Bool
+    let onSave: (String, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, Bool, [Int]) async -> Bool
 
     @State private var title: String
     @State private var details: String
     @State private var startsAt: Date
     @State private var kind: FamilyItemKind
-    @State private var memberSelection: String
+    @State private var selectedMemberIDs: Set<UUID>
+    @State private var isForEveryone: Bool
+    @State private var responsibleSelection: String
     @State private var isRecurringYearly: Bool
     @State private var selectedReminderOffsets: Set<Int>
     @State private var isSaving = false
@@ -263,7 +315,7 @@ private struct FamilyItemEditor: View {
     @State private var isReadingImage = false
     @State private var importMessage: String?
 
-    init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, Date, FamilyItemKind, UUID?, Bool, [Int]) async -> Bool) {
+    init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, Bool, [Int]) async -> Bool) {
         self.item = item
         self.members = members
         self.onSave = onSave
@@ -271,7 +323,9 @@ private struct FamilyItemEditor: View {
         _details = State(initialValue: item?.details ?? "")
         _startsAt = State(initialValue: item?.startsAt ?? .now)
         _kind = State(initialValue: item?.kind ?? .appointment)
-        _memberSelection = State(initialValue: item?.memberID?.uuidString ?? "")
+        _selectedMemberIDs = State(initialValue: Set(item?.memberIDs ?? []))
+        _isForEveryone = State(initialValue: item?.isForEveryone ?? false)
+        _responsibleSelection = State(initialValue: item?.responsibleMemberID?.uuidString ?? "")
         _isRecurringYearly = State(initialValue: item?.isRecurringYearly ?? true)
         _selectedReminderOffsets = State(initialValue: Set(item?.reminderOffsets ?? [24 * 60 * 60, 60 * 60]))
     }
@@ -351,9 +405,46 @@ private struct FamilyItemEditor: View {
                     Text("Påminnelser")
                 }
                 Section("Vem gäller det?") {
-                    Picker("Familjemedlem", selection: $memberSelection) {
-                        Text("Ingen särskild").tag("")
-                        ForEach(members) { member in Text(member.displayName).tag(member.id.uuidString) }
+                    Toggle("Hela familjen", isOn: $isForEveryone)
+                        .tint(FamiljenTheme.navy)
+                        .onChange(of: isForEveryone) { _, enabled in
+                            if enabled { selectedMemberIDs.removeAll() }
+                        }
+                    if !isForEveryone {
+                        ForEach(members) { member in
+                            Button {
+                                if selectedMemberIDs.contains(member.id) {
+                                    selectedMemberIDs.remove(member.id)
+                                } else {
+                                    selectedMemberIDs.insert(member.id)
+                                }
+                            } label: {
+                                HStack {
+                                    Text(member.displayName).foregroundStyle(FamiljenTheme.ink)
+                                    Spacer()
+                                    if selectedMemberIDs.contains(member.id) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(FamiljenTheme.navy)
+                                    } else {
+                                        Image(systemName: "circle")
+                                            .foregroundStyle(FamiljenTheme.muted)
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(selectedMemberIDs.contains(member.id) ? .isSelected : [])
+                        }
+                    }
+                    Text("Du kan välja flera personer. Lämna alla om händelsen ännu inte har tilldelats någon.")
+                        .font(.caption).foregroundStyle(FamiljenTheme.muted)
+                }
+                Section("Ansvarig") {
+                    Picker("Ansvarig vuxen", selection: $responsibleSelection) {
+                        Text("Ingen ansvarig").tag("")
+                        ForEach(members.filter { $0.role != .child }) { member in
+                            Text(member.displayName).tag(member.id.uuidString)
+                        }
                     }
                 }
                 if let errorMessage {
@@ -420,7 +511,10 @@ private struct FamilyItemEditor: View {
             if let suggestedTitle = result.title, title.isEmpty { title = suggestedTitle }
             if let suggestedDate = result.date { startsAt = suggestedDate }
             if result.isHealthVisit { kind = .healthVisit }
-            if let member = result.member { memberSelection = member.id.uuidString }
+            if let member = result.member {
+                isForEveryone = false
+                selectedMemberIDs.insert(member.id)
+            }
             if !result.text.isEmpty {
                 let existing = details.trimmingCharacters(in: .whitespacesAndNewlines)
                 details = existing.isEmpty ? result.text : existing + "\n\n" + result.text
@@ -437,9 +531,10 @@ private struct FamilyItemEditor: View {
         isSaving = true
         defer { isSaving = false }
         let cleanDetails = details.trimmingCharacters(in: .whitespacesAndNewlines)
-        let memberID = UUID(uuidString: memberSelection)
+        let responsibleMemberID = UUID(uuidString: responsibleSelection)
         let saved = await onSave(title, cleanDetails.isEmpty ? nil : cleanDetails, startsAt,
-                                 kind, memberID, kind == .birthday && isRecurringYearly, Array(selectedReminderOffsets).sorted(by: >))
+                                 kind, Array(selectedMemberIDs), isForEveryone, responsibleMemberID,
+                                 kind == .birthday && isRecurringYearly, Array(selectedReminderOffsets).sorted(by: >))
         if saved { dismiss() }
         else { errorMessage = "Det gick inte att spara. Kontrollera uppgifterna och försök igen." }
     }

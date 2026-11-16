@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct FamilyMessagesView: View {
-    @StateObject private var store = LocalFamilyStore.shared
+    @StateObject private var store = FamilyStore.shared
 
     private var ownerID: UUID? { store.members.first(where: { $0.role == .owner })?.id }
 
@@ -119,7 +119,7 @@ struct FamilyMessagesView: View {
 }
 
 private struct FamilyChatView: View {
-    @StateObject private var store = LocalFamilyStore.shared
+    @StateObject private var store = FamilyStore.shared
     @State private var draft = ""
     @FocusState private var composerFocused: Bool
 

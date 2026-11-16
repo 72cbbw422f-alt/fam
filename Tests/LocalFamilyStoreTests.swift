@@ -232,4 +232,59 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path))
     }
 
+
+    func testEditingProjectedBirthdayKeepsOriginalBirthYear() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let birthDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 1990, month: 3, day: 12, hour: 8)))
+        store.saveItem(id: nil, title: "Födelsedag", details: nil, startsAt: birthDate,
+                       kind: .birthday, memberID: nil, recurring: true, reminderOffsets: [])
+        let item = try XCTUnwrap(store.items.first)
+        let projectedDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 3, day: 12, hour: 9)))
+
+        let viewModel = FamilyCalendarViewModel(store: store)
+        let saved = await viewModel.save(id: item.id, title: item.title, details: nil,
+                                         startsAt: projectedDate, kind: .birthday, memberID: nil,
+                                         isRecurringYearly: true, reminderOffsets: [])
+
+        XCTAssertTrue(saved)
+        let persisted = try XCTUnwrap(store.items.first?.startsAt)
+        let parts = calendar.dateComponents([.year, .month, .day, .hour], from: persisted)
+        XCTAssertEqual(parts.year, 1990)
+        XCTAssertEqual(parts.month, 3)
+        XCTAssertEqual(parts.day, 12)
+        XCTAssertEqual(parts.hour, 9)
+    }
+
+    func testSavingUnchangedProjectedLeapDayKeepsFebruary29BirthDate() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let birthDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2000, month: 2, day: 29, hour: 9)))
+        store.saveItem(id: nil, title: "Födelsedag", details: nil, startsAt: birthDate,
+                       kind: .birthday, memberID: nil, recurring: true, reminderOffsets: [])
+        let item = try XCTUnwrap(store.items.first)
+        let projectedDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 2, day: 28, hour: 9)))
+
+        let viewModel = FamilyCalendarViewModel(store: store)
+        let saved = await viewModel.save(id: item.id, title: item.title, details: nil,
+                                         startsAt: projectedDate, kind: .birthday, memberID: nil,
+                                         isRecurringYearly: true, reminderOffsets: [])
+
+        XCTAssertTrue(saved)
+        let persisted = try XCTUnwrap(store.items.first?.startsAt)
+        let parts = calendar.dateComponents([.year, .month, .day, .hour], from: persisted)
+        XCTAssertEqual(parts.year, 2000)
+        XCTAssertEqual(parts.month, 2)
+        XCTAssertEqual(parts.day, 29)
+        XCTAssertEqual(parts.hour, 9)
+    }
+
 }

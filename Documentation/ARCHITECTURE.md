@@ -7,6 +7,7 @@ The current beta stores all family data in the iOS app's Application Support dir
 - LocalFamilyStore is the single source of truth for family, members, calendar items, shopping items and the in-app notification inbox.
 - Appointment screenshots are processed on-device with Apple Vision. Images are not uploaded.
 - Local reminders are scheduled on each iPhone with UserNotifications.
+- Family and direct-message conversations are stored locally in the JSON snapshot for UI and interaction testing. They do not sync between devices in this beta.
 
 Each installation has its own independent data set. Changes made on one phone do not appear on another phone in this beta.
 
@@ -16,6 +17,7 @@ When Apple Developer access is ready, introduce a CloudKit-backed repository and
 - family/member identity mapping
 - event date/time and timezone preservation
 - shopping-list item state
+- message threads, sender identity, read state and delivery semantics
 - sharing permissions and conflict resolution
 
 Do not add a cloud dependency to the local beta.

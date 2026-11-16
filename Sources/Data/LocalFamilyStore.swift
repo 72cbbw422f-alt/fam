@@ -10,6 +10,7 @@ final class LocalFamilyStore: ObservableObject {
     @Published private(set) var items: [FamilyItem] = []
     @Published private(set) var shoppingItems: [ShoppingItem] = []
     @Published private(set) var notifications: [FamilyNotification] = []
+    @Published private(set) var messages: [FamilyMessage] = []
 
     private let fileURL: URL
 
@@ -30,6 +31,7 @@ final class LocalFamilyStore: ObservableObject {
         items = []
         shoppingItems = []
         notifications = []
+        messages = []
         saveToDisk()
     }
 
@@ -102,6 +104,26 @@ final class LocalFamilyStore: ObservableObject {
         saveToDisk()
     }
 
+    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) {
+        guard let senderID = members.first(where: { $0.role == .owner })?.id else { return }
+        let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, clean.count <= 4000 else { return }
+        messages.append(FamilyMessage(id: UUID(), conversationID: conversationID,
+                                      kind: kind, senderID: senderID, text: clean,
+                                      sentAt: .now, readAt: nil))
+        saveToDisk()
+    }
+
+    func markConversationRead(_ conversationID: String) {
+        var changed = false
+        for index in messages.indices where messages[index].conversationID == conversationID
+            && messages[index].readAt == nil {
+            messages[index].readAt = .now
+            changed = true
+        }
+        if changed { saveToDisk() }
+    }
+
     func markNotificationRead(_ id: UUID) {
         guard let index = notifications.firstIndex(where: { $0.id == id }) else { return }
         notifications[index].readAt = .now
@@ -114,6 +136,7 @@ final class LocalFamilyStore: ObservableObject {
         var items: [FamilyItem]
         var shoppingItems: [ShoppingItem]
         var notifications: [FamilyNotification]
+        var messages: [FamilyMessage]?
     }
 
     private func loadFromDisk() {
@@ -124,11 +147,12 @@ final class LocalFamilyStore: ObservableObject {
         items = snapshot.items
         shoppingItems = snapshot.shoppingItems
         notifications = snapshot.notifications
+        messages = snapshot.messages ?? []
     }
 
     private func saveToDisk() {
         let snapshot = Snapshot(family: family, members: members, items: items,
-                                shoppingItems: shoppingItems, notifications: notifications)
+                                shoppingItems: shoppingItems, notifications: notifications, messages: messages)
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: fileURL, options: .atomic)
     }

@@ -173,6 +173,24 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Källändringen är incheckad.
 - Simulator-CI måste verifiera kompilering och tester; fysisk notisleverans och sommartidsgränser återstår att prova på enhet.
 
+
+### 2026-11-16 – serialisering av påminnelseuppdateringar
+
+**Fynd**
+- Kalenderändringar kan trigga flera asynkrona schemaläggningar tätt efter varandra. Utan serialisering kunde en äldre schemaläggning i teorin slutföras efter en nyare och skriva tillbaka ett gammalt triggerdatum för samma notis-ID.
+
+**Åtgärd**
+- Schemaläggning och rensning körs nu i en gemensam serialiserad uppgiftskö på main actor.
+- En ny operation väntar in föregående operation innan den läser, lägger till eller tar bort notiser.
+- Påminnelsetesterna körs på main actor eftersom schemaläggaren nu har uttrycklig actor-isolering.
+- Filer: `Sources/LocalReminderScheduler.swift`, `Tests/LocalReminderSchedulerTests.swift`.
+- Commit `cae238ab6cc34638b3c8768095663acc6b3e84fd`: serialisering av schemaläggare.
+- Commit `35efb44669d3758bbef65c861d420def560de88d`: testisolering.
+
+**Verifiering**
+- Ändringarna är incheckade.
+- CI-kompilering och testresultat återstår. Fysisk notisleverans måste också verifieras på iPhone.
+
 ## Test- och leveransregler
 
 - Ett test räknas som godkänt först när CI-resultat/logg visar att det passerat.

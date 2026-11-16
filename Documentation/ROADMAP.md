@@ -51,7 +51,7 @@ Each iPhone stores its own independent family data. There is no shared calendar,
 
 **Designprincip:** Barn ska kunna finnas som profiler utan egna konton. Funktionen ska stödja praktisk familjeplanering, inte bli ett generellt uppgiftssystem.
 
-**Status:** Första implementationen är incheckad 2026-11-16. CI-verifiering inväntas; fysisk iPhone-testning återstår.
+**Status:** Första implementationen är incheckad 2026-11-16. En key-path-kompileringsmiss i första CI-försöket har korrigerats (FAM-014); ny CI-verifiering inväntas. Fysisk iPhone-testning återstår.
 
 ## Produktgranskning: jämförelse med familjeappar (2026-11-16)
 

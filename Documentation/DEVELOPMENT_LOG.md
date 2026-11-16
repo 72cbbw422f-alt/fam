@@ -495,10 +495,45 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Commits: `8299b4bb`, `5f132df8`, `ea039751`, `90a29dce`, `9be8d112`.
 
 **Verifiering**
-- Senaste tidigare simulatorjobb i run `43950845036` lyckades med 27/27 tester och simulatorbygget, men det avsåg SHA `a7378f23` före FAM-018.
-- iPhone-jobbet i samma run avbröts och räknas inte som godkänt.
-- FAM-018 och dess nya regressionstest inväntar en ny CI-körning på aktuell commit.
+- CI-run `43980622324` på SHA `15ee43038b66781429a8e57d251f50c86365485d` passerade både simulator- och unsigned iPhone-build.
+- Simulatorlogg: 28/28 tester passerade (24 LocalFamilyStoreTests + 4 LocalReminderSchedulerTests); `TEST SUCCEEDED`.
+- Unsigned IPA-artifact `Familjen-unsigned-IPA`, artifact ID `14282708762`, SHA-256 `17e7550317a296949a0c919cfee8f8b7cd0da90d6bcdf4da3f450c04c51f3e`, giltig till 2026-11-30. IPA är osignerad; fysisk installation är inte verifierad.
+- FAM-018 är därmed verifierad i CI på ovanstående SHA. Senare kalender-/påminnelseändringar FAM-019 och FAM-020 inväntar egen CI.
 - Fysisk iPhone-testning är fortfarande inte utförd.
 
 **Kvarstående risk**
 - Vid skrivfel behålls den senaste ändringen i appens minne och användaren varnas; ändringen kan försvinna om appen stängs innan lagringen fungerar igen. Full transaktionell rollback av varje mutation är inte införd i denna ändring.
+
+
+### 2026-11-17 – FAM-019: rensa inaktuella levererade påminnelser
+
+**Fynd**
+- Schemaläggaren tog tidigare bara bort inaktuella väntande notiser. En notis som redan levererats kunde ligga kvar i iOS notiscenter efter att kalenderhändelsen raderats eller ändrats.
+- Att stänga av Familjens lokala påminnelser rensade också bara väntande notiser, inte redan levererade notiser.
+
+**Åtgärd**
+- Läser nu både väntande och levererade notiser som tillhör Familjens identifierarprefix.
+- Vid omschemaläggning tas endast inaktuella Familjen-notiser bort från båda samlingarna; aktuella notiser och andra appars notiser lämnas orörda.
+- När användaren stänger av påminnelser rensas både väntande och levererade notiser som ägs av Familjen.
+- Ny ren hjälpfunktion väljer inaktuella identifierare deterministiskt och ett regressionstest verifierar att främmande appnotiser och fortfarande önskade notiser bevaras.
+- Filer: `Sources/LocalReminderScheduler.swift`, `Tests/LocalReminderSchedulerTests.swift`.
+- Commits: `972e1bbc` (schemaläggare), testcommit `bfd54284`.
+
+**Verifiering**
+- Källkod och regressionstest är incheckade.
+- CI-verifiering inväntas för FAM-019.
+- Fysisk leverans/rensning i iOS notiscenter behöver fortfarande provas på en iPhone.
+
+### 2026-11-17 – FAM-020: rensa borttagna profiler ur aktiva kalenderfilter
+
+**Fynd**
+- Personfilter lagras som UUID:n i vyernas lokala state. Om en profil togs bort medan kalendern fortfarande var aktiv kunde filtret behålla ett UUID som inte längre motsvarade någon familjemedlem. Det gav ett föråldrat filterläge tills användaren manuellt valde om filter.
+
+**Åtgärd**
+- Kalendern observerar nu medlems-ID-listan och tar bort valda ID:n som inte längre finns i medlemslistan.
+- Om inga valda personer återstår återgår filtret till Alla personer, vilket är det befintliga och avsedda beteendet.
+- Fil: `Sources/FamilyCalendarView.swift`.
+- Commit: `ff4bd3c3`.
+
+**Verifiering**
+- Källändringen är incheckad; CI-verifiering inväntas.

@@ -12,6 +12,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     @Published private(set) var notifications: [FamilyNotification] = []
     @Published private(set) var messages: [FamilyMessage] = []
 
+    var changePublisher: AnyPublisher<Void, Never> {
+        objectWillChange.map { _ in () }.eraseToAnyPublisher()
+    }
+
     private let fileURL: URL
 
     private convenience init() {

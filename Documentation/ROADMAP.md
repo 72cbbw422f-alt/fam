@@ -76,7 +76,7 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Filter för alla, en person och flera valda personer (implementation incheckad; CI-verifiering inväntas).
 - [x] Skilj på deltagare/berörda personer och ansvarig vuxen för händelsen (implementation incheckad; CI-verifiering inväntas).
 - [x] Bakåtkompatibel datamodell från nuvarande `memberID` till stöd för flera personer; bevara befintliga snapshots och poster (implementation incheckad; CI-verifiering inväntas).
-- [ ] Förbättra händelsedetaljer med plats/adress och tydliga anteckningar; undersök kontaktuppgifter och bilagor först när integritet och lagring är definierade.
+- [x] Lägg till separat plats-/adressfält för kalenderhändelser, med bakåtkompatibel lokal lagring och visning i kalenderlistan (FAM-022; CI inväntas).
 - [ ] Utöka återkommande aktiviteter utöver födelsedagar när kalenderns grundflöde är stabilt; börja med veckovis/månadsvis och stöd för att ändra en förekomst eller hela serien.
 
 #### P2 – minska manuellt arbete och förbättra iOS-åtkomst
@@ -119,6 +119,11 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Återställ kalenderposten om radering inte kan sparas (FAM-021; CI inväntas).
 - [x] Återställ familjeprofil och berörda kalenderkopplingar om profilborttagning inte kan sparas (FAM-021; CI inväntas).
 - [x] Lägg till regressionstester för de tre skrivfelen (CI inväntas).
+
+## Kalender: platsuppgifter (2026-11-17)
+- [x] Lägg till separat valfritt plats-/adressfält, skilt från anteckningar (FAM-022; CI inväntas).
+- [x] Visa plats i kalenderlistan och behåll kompatibilitet med äldre lokala snapshots.
+- [x] Testa platsens persistens och avkodning av äldre poster utan platsfält.
 
 ## Kvalitetsrunda: kalenderfilter och påminnelser (2026-11-17)
 - [x] Rensa inaktuella levererade Familjen-påminnelser när en händelse ändras/raderas och när påminnelser stängs av (FAM-019; CI inväntas).

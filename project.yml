@@ -30,3 +30,15 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.familjen.tests
+
+schemes:
+  Familjen:
+    build:
+      targets:
+        Familjen: all
+        FamiljenTests: [test]
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - FamiljenTests

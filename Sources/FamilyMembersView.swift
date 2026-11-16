@@ -68,7 +68,7 @@ struct FamilyMembersView: View {
         .sheet(isPresented: $showingEditor, onDismiss: { editingChild = nil }) {
             if let editingChild {
                 MemberProfileEditor(member: editingChild) { newName in
-                    LocalFamilyStore.shared.renameMember(id: editingChild.id, name: newName)
+                    FamilyStore.shared.renameMember(id: editingChild.id, name: newName)
                     loadMembers()
                     return true
                 }
@@ -76,14 +76,14 @@ struct FamilyMembersView: View {
         }
         .confirmationDialog(childToDelete?.role == .child ? "Ta bort barnprofilen?" : "Ta bort vuxenprofilen?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
             Button("Ta bort", role: .destructive) {
-                if let childToDelete { LocalFamilyStore.shared.deleteMember(id: childToDelete.id); loadMembers() }
+                if let childToDelete { FamilyStore.shared.deleteMember(id: childToDelete.id); loadMembers() }
             }
             Button("Avbryt", role: .cancel) { childToDelete = nil }
         } message: { Text("Profilen tas bort. Kalenderaktiviteter kopplade till profilen tas också bort.") }
     }
 
     private func loadMembers() {
-        let store = LocalFamilyStore.shared
+        let store = FamilyStore.shared
         members = store.members
         birthdays = Dictionary(store.items.filter { $0.kind == .birthday }.compactMap { item in
             item.memberID.map { ($0, item.startsAt) }
@@ -92,14 +92,14 @@ struct FamilyMembersView: View {
     private func addChild() {
         let clean = newChildName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 80 else { errorMessage = "Namnet får vara högst 80 tecken."; return }
-        LocalFamilyStore.shared.addChild(name: clean)
+        FamilyStore.shared.addChild(name: clean)
         newChildName = ""; infoMessage = "Barnprofilen har lagts till."; loadMembers()
     }
 
     private func addAdult() {
         let clean = newAdultName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 80 else { errorMessage = "Namnet får vara högst 80 tecken."; return }
-        LocalFamilyStore.shared.addMember(name: clean, role: .member)
+        FamilyStore.shared.addMember(name: clean, role: .member)
         newAdultName = ""; infoMessage = "Vuxenprofilen har lagts till."; loadMembers()
     }
 }

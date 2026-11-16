@@ -407,11 +407,11 @@ private struct FamilyItemEditor: View {
                     }
                     .padding(.vertical, 4)
                     DatePicker("Datum och tid", selection: $startsAt, displayedComponents: [.date, .hourAndMinute])
-                    if kind == .birthday {
-                        Toggle("Upprepa varje år", isOn: $isRecurringYearly)
-                        Text("Födelsedagen visas automatiskt på nästa kommande datum varje år.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
+                    Toggle("Upprepa varje år", isOn: $isRecurringYearly)
+                    Text(kind == .birthday
+                         ? "Födelsedagen visas automatiskt på nästa kommande datum varje år."
+                         : "Aktiviteten visas automatiskt igen varje år på samma datum.")
+                        .font(.caption).foregroundStyle(.secondary)
                     TextField("Plats eller adress (valfritt)", text: $location)
                         .textContentType(.fullStreetAddress)
                     TextField("Anteckningar (valfritt)", text: $details, axis: .vertical).lineLimit(2...5)
@@ -562,7 +562,7 @@ private struct FamilyItemEditor: View {
         let saved = await onSave(title, cleanDetails.isEmpty ? nil : cleanDetails,
                                  cleanLocation.isEmpty ? nil : cleanLocation, startsAt,
                                  kind, Array(selectedMemberIDs), isForEveryone, responsibleMemberID,
-                                 kind == .birthday && isRecurringYearly, Array(selectedReminderOffsets).sorted(by: >))
+                                 isRecurringYearly, Array(selectedReminderOffsets).sorted(by: >))
         if saved { dismiss() }
         else { errorMessage = "Det gick inte att spara. Kontrollera uppgifterna och försök igen." }
     }

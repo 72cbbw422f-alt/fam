@@ -8,8 +8,8 @@ final class NotificationsViewModel: ObservableObject {
     @Published var errorMessage: String?
     private let store: any FamilyRepository
 
-    init(store: any FamilyRepository = FamilyRepositoryFactory.makeDefault()) {
-        self.store = store
+    init(store: (any FamilyRepository)? = nil) {
+        self.store = store ?? FamilyRepositoryFactory.makeDefault()
     }
 
     var unreadCount: Int { notifications.filter { !$0.isRead }.count }

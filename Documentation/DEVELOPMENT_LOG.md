@@ -285,3 +285,39 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Beslut och krav är dokumenterade i Documentation/ROADMAP.md.
 - Detta är planerat arbete, inte implementerad funktionalitet.
 - Ingen befintlig kalenderdata ska migreras eller skrivas om förrän kompatibilitetsstrategin är testad.
+
+### 2026-11-16 – produktgranskning mot Cozi, TimeTree och FamilyWall
+
+**Syfte**
+- Jämföra Familjens funktioner och produktinriktning med etablerade familjeappar för att identifiera viktiga luckor innan mer funktionalitet byggs.
+- Granskningen fokuserade på Cozi, TimeTree och FamilyWall.
+
+**Fynd i befintlig kod**
+- Familjeprofiler för vuxna och barn finns redan i `FamilyMembersView`. Återanvänd befintlig profilhantering; bygg inte ett parallellt inställningssystem.
+- `FamilyCalendarView` har aktivitetskategorifilter, lokal påminnelsehantering och visar importerade Apple Kalender-poster separat.
+- `AppleCalendarImport` använder EventKit och läser kommande händelser från Apple Kalender. Det är en läsvy/import, inte synkronisering av Familjens egna poster tillbaka till Apple Kalender.
+- `FamilyItem` har i nuläget ett enda valfritt `memberID`. Det räcker inte för att ange flera berörda familjemedlemmar eller skilja mellan deltagare och ansvarig.
+- Händelsedetaljer består i nuläget av titel, valfri text och datum/tid. Plats/adress och bilagor saknas som separata fält.
+- OCR finns redan i projektet. Det mest värdefulla nästa steget är ett granskat arbetsflöde från bild/PDF till föreslagen kalenderpost, inte att skapa en separat OCR-modul.
+- Kalendern har stöd för årliga födelsedagar, men inte ett generellt återkommande schema för aktiviteter.
+- Local-first-betan har fortfarande separat data på varje telefon. Gemensam synk och säkerhetskopiering är en grundläggande framtida förutsättning för verklig familjeanvändning.
+
+**Prioriterade produktbeslut**
+1. P0: slutför verifiering av befintliga regressionstester och fortsätt kvalitetssäkra lokal persistens, kalender och notiser. Senaste kända CI-run `43941033673` avbröts och får inte räknas som godkänd.
+2. P1: färdigställ familjekalenderns kärna med flera personer per händelse, explicit val för Hela familjen, personfilter samt åtskillnad mellan berörda personer och ansvarig vuxen. Gör datamodellsändringen bakåtkompatibel från nuvarande `memberID`.
+3. P1: förbättra händelsedetaljer med plats/adress och utred bilagor först när lagring och integritet är definierade.
+4. P1/P2: utöka återkommande aktiviteter från enbart årliga födelsedagar till veckovis/månadsvis med möjlighet att ändra en förekomst eller hela serien.
+5. P2: bygg vidare på befintlig OCR till bild/PDF → förslag → manuell granskning → personval → sparad händelse.
+6. P2: widget och snabbregistrering; undersök därefter extern iCal/ICS-import.
+7. P3: aktivitetsflöde när synk finns; flera inköpslistor kan utvärderas senare.
+8. Gemensam synk/backup kräver separat CloudKit/CKShare-plan med migrering, behörigheter och konfliktlösning. Ingen CloudKit-migrering påbörjas utan uttryckligt beslut.
+
+**Medvetet bortprioriterat**
+- Hushållssysslor, poängsystem och generella att-göra-listor.
+- GPS-spårning/ankomstaviseringar, budgetering, recept-/måltidsplanering och separat socialt fotoalbum.
+
+**Produktprinciper**
+- Varje funktion ska lösa ett verkligt och återkommande familjebehov.
+- Importerade dokument ska bara skapa ett granskningsförslag; användaren måste bekräfta innan en händelse sparas.
+- Lokal, importerad och gemensamt synkroniserad information ska kunna särskiljas tydligt.
+- Roadmapen är uppdaterad med prioriteringarna. Inga av dessa nya funktioner markeras som implementerade.

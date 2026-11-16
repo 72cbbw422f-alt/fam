@@ -103,6 +103,53 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertTrue(store.items.isEmpty)
     }
 
+    func testFailedCalendarWritesRollBackCreateUpdateAndDeleteInMemoryChanges() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        store.saveItem(id: nil, title: "Tandläkare", details: nil, startsAt: date,
+                       kind: .dentist, memberID: nil, recurring: false, reminderOffsets: [60])
+        let originalItems = store.items
+        let originalItem = try XCTUnwrap(originalItems.first)
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+
+        store.saveItem(id: originalItem.id, title: "Ändrad titel", details: nil,
+                       startsAt: date.addingTimeInterval(3600), kind: .dentist,
+                       memberID: nil, recurring: false, reminderOffsets: [15])
+        XCTAssertEqual(store.items, originalItems)
+        XCTAssertNotNil(store.persistenceError)
+
+        store.deleteItem(originalItem)
+        XCTAssertEqual(store.items, originalItems)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
+    }
+
+    func testFailedProfileDeletionRollsBackCalendarAssignments() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first(where: { $0.role == .child }))
+        store.saveItem(id: nil, title: "Tandläkare", details: nil,
+                       startsAt: Date(timeIntervalSince1970: 1_800_000_000),
+                       kind: .dentist, memberID: child.id, recurring: false, reminderOffsets: [])
+        let originalMembers = store.members
+        let originalItems = store.items
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+
+        store.deleteMember(id: child.id)
+
+        XCTAssertEqual(store.members, originalMembers)
+        XCTAssertEqual(store.items, originalItems)
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
+    }
+
     func testRepositoryFactoryUsesLocalImplementationUntilCloudIsConfigured() {
         let repository = FamilyRepositoryFactory.makeDefault()
         XCTAssertTrue(repository is LocalFamilyStore)

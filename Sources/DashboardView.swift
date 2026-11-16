@@ -6,8 +6,6 @@ struct DashboardView: View {
     @StateObject private var store = LocalFamilyStore.shared
     @State private var members: [FamilyMember] = []
 
-    private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
-
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
@@ -314,57 +312,6 @@ struct DashboardView: View {
         }
     }
 
-    private var familyStrip: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            HStack {
-                sectionTitle("Er familj", subtitle: "Tillsammans i vardagen")
-                Spacer()
-                NavigationLink { FamilyMembersView() } label: {
-                    Image(systemName: "arrow.up.right")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(FamiljenTheme.navy)
-                        .frame(width: 30, height: 30)
-                        .background(.white, in: Circle())
-                }
-            }
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 17) {
-                    ForEach(members) { member in
-                        VStack(spacing: 6) {
-                            ZStack {
-                                Circle().fill(avatarColor(for: member))
-                                Text(initials(member.displayName))
-                                    .font(.system(size: 16, weight: .semibold, design: .serif))
-                                    .foregroundStyle(FamiljenTheme.navy)
-                            }
-                            .frame(width: 48, height: 48)
-                            .overlay(Circle().stroke(.white, lineWidth: 2))
-                            Text(member.displayName.components(separatedBy: " ").first ?? member.displayName)
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(FamiljenTheme.ink)
-                                .lineLimit(1)
-                        }
-                        .frame(width: 58)
-                    }
-                    NavigationLink { FamilyMembersView() } label: {
-                        VStack(spacing: 6) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(FamiljenTheme.navy)
-                                .frame(width: 48, height: 48)
-                                .background(.white, in: Circle())
-                            Text("Lägg till")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(FamiljenTheme.muted)
-                        }
-                        .frame(width: 58)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
     private var upcomingAppointments: some View {
         VStack(alignment: .leading, spacing: 11) {
             HStack {
@@ -388,68 +335,6 @@ struct DashboardView: View {
                 .padding(.horizontal, 14)
                 .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .shadow(color: FamiljenTheme.navy.opacity(0.035), radius: 10, x: 0, y: 4)
-            }
-        }
-    }
-
-    private var quickAccess: some View {
-        LazyVGrid(columns: columns, spacing: 12) {
-            NavigationLink { FamilyCalendarView() } label: {
-                shortcutCard("Kalender", detail: countText(.appointment) + " bokningar", symbol: "calendar")
-            }
-            .buttonStyle(.plain)
-            NavigationLink { FamilyCalendarView() } label: {
-                shortcutCard("Hälsa", detail: countText(.healthVisit) + " besök", symbol: "heart.text.square")
-            }
-            .buttonStyle(.plain)
-            NavigationLink { FamilyCalendarView() } label: {
-                shortcutCard("Födelsedagar", detail: countText(.birthday) + " kommande", symbol: "gift")
-            }
-            .buttonStyle(.plain)
-            NavigationLink { ShoppingListView() } label: {
-                shortcutCard("Inköpslista", detail: "Håll koll på varorna", symbol: "basket")
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var birthdaysSection: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            HStack {
-                sectionTitle("Kommande födelsedagar", subtitle: "Dagar att fira lite extra")
-                Spacer()
-                NavigationLink("Alla") { FamilyCalendarView() }
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(FamiljenTheme.navy)
-            }
-            if model.upcomingBirthdays.isEmpty {
-                emptyCard("Lägg till familjens födelsedagar i kalendern.", symbol: "gift")
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(model.upcomingBirthdays) { item in
-                        HStack(spacing: 12) {
-                            CategoryIcon(kind: .birthday, size: 42)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(item.title)
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(FamiljenTheme.ink)
-                                Text(item.startsAt.formatted(.dateTime.day().month(.wide)))
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(FamiljenTheme.muted)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(FamiljenTheme.muted.opacity(0.7))
-                        }
-                        .padding(.vertical, 10)
-                        if item.id != model.upcomingBirthdays.last?.id {
-                            Divider().overlay(FamiljenTheme.sand)
-                        }
-                    }
-                }
-                .padding(.horizontal, 14)
-                .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
         }
     }
@@ -571,11 +456,6 @@ struct DashboardView: View {
 
     private func avatarColor(for member: FamilyMember) -> Color {
         member.role == .child ? FamiljenTheme.champagne.opacity(0.38) : FamiljenTheme.sand
-    }
-
-    private func countText(_ kind: FamilyItemKind) -> String {
-        let count = model.upcomingItems.filter { $0.kind == kind }.count
-        return count == 1 ? "1" : "\(count)"
     }
 
     private func categoryKind(for title: String) -> FamilyItemKind {

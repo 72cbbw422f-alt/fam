@@ -64,6 +64,11 @@ final class FamilyCalendarViewModel: ObservableObject {
                                responsibleMemberID: responsibleMemberID, recurring: isRecurringYearly,
                                reminderOffsets: reminderOffsets, location: location)
         await load()
+        if let persistenceError = store.persistenceError {
+            errorMessage = persistenceError
+            return false
+        }
+        errorMessage = nil
         return true
     }
 
@@ -77,6 +82,7 @@ final class FamilyCalendarViewModel: ObservableObject {
     func delete(_ item: FamilyItem) async {
         store.deleteItem(item)
         await load()
+        errorMessage = store.persistenceError
     }
 
     // The calendar displays the next upcoming yearly occurrence.

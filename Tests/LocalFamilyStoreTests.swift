@@ -40,6 +40,7 @@ final class LocalFamilyStoreTests: XCTestCase {
         store.saveItem(id: nil, title: "Tandläkare", details: nil, startsAt: date,
                        kind: .dentist, memberID: nil, recurring: false, reminderOffsets: [60])
         XCTAssertEqual(store.items.count, 1)
+        XCTAssertEqual(store.items.first?.reminderOffsets, [60])
         let id = try XCTUnwrap(store.items.first?.id)
 
         store.saveItem(id: id, title: "Tandläkare – ändrad", details: "Kontroll",
@@ -48,6 +49,9 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(store.items.count, 1)
         XCTAssertEqual(store.items.first?.title, "Tandläkare – ändrad")
         XCTAssertEqual(store.items.first?.details, "Kontroll")
+        XCTAssertEqual(store.items.first?.reminderOffsets, [15])
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.items.first?.reminderOffsets, [15])
 
         if let item = store.items.first { store.deleteItem(item) }
         XCTAssertTrue(store.items.isEmpty)

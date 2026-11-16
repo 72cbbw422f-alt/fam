@@ -57,4 +57,58 @@ final class LocalFamilyStoreTests: XCTestCase {
         let repository = FamilyRepositoryFactory.makeDefault()
         XCTAssertTrue(repository is LocalFamilyStore)
     }
+
+    func testOwnerCannotBeRenamedOrDeletedAndInvalidProfilesAreRejected() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let owner = try XCTUnwrap(store.members.first)
+        store.renameMember(id: owner.id, name: "Ändrat namn")
+        store.deleteMember(id: owner.id)
+        store.addChild(name: "   ")
+        store.addChild(name: String(repeating: "x", count: 81))
+        store.addMember(name: "   ")
+        XCTAssertEqual(store.members.count, 1)
+        XCTAssertEqual(store.members.first?.displayName, "Niklas")
+        XCTAssertEqual(store.members.first?.role, .owner)
+    }
+
+    func testShoppingItemCanBeCheckedAndDeleted() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Mjölk")
+        let item = try XCTUnwrap(store.shoppingItems.first)
+        store.setShoppingItem(item.id, checked: true)
+        XCTAssertEqual(store.shoppingItems.first?.isChecked, true)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.shoppingItems.first?.isChecked, true)
+        store.deleteShoppingItem(item.id)
+        XCTAssertTrue(store.shoppingItems.isEmpty)
+    }
+
+    func testMessagesPersistAndConversationReadStateUpdates() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.sendMessage("Vi ses klockan fem", conversationID: "family", kind: .family)
+        XCTAssertEqual(store.messages.count, 1)
+        XCTAssertEqual(store.messages.first?.text, "Vi ses klockan fem")
+        XCTAssertNil(store.messages.first?.readAt)
+        store.markConversationRead("family")
+        XCTAssertNotNil(store.messages.first?.readAt)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.messages.count, 1)
+        XCTAssertNotNil(reloaded.messages.first?.readAt)
+    }
+
+    func testInvalidFamilyAndOwnerNamesDoNotCreateFamily() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "   ", ownerName: "Niklas")
+        XCTAssertNil(store.family)
+        store.createFamily(name: "Familjen", ownerName: String(repeating: "x", count: 81))
+        XCTAssertNil(store.family)
+    }
+
 }

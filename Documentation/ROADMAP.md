@@ -39,6 +39,7 @@ Each iPhone stores its own independent family data. There is no shared calendar,
 - [ ] Push notifications if needed after CloudKit and Apple Developer setup
 
 ## Planerad funktion: familjemedlemmar i kalendern
+- [x] Införa bakåtkompatibel grundmodell för flera berörda personer, explicit Hela familjen och separat ansvarig person (CI-verifiering inväntas).
 
 - [ ] Hantera familjeprofiler i Inställningar: vuxna och barn utan krav på egna konton.
 - [ ] Vid skapande och redigering av kalenderhändelse kunna välja en eller flera berörda personer.

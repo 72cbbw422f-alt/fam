@@ -17,6 +17,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     private let fileURL: URL
+    private var persistenceBlockedByCorruption = false
 
     private convenience init() {
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -125,8 +126,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
 
     func addShoppingItem(_ title: String) {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !clean.isEmpty, clean.count <= 160 else { return }
-        shoppingItems.append(ShoppingItem(id: UUID(), listID: family?.id ?? UUID(),
+        guard let family, !clean.isEmpty, clean.count <= 160 else { return }
+        shoppingItems.append(ShoppingItem(id: UUID(), listID: family.id,
                                           title: clean,
                                           isChecked: false, createdAt: .now))
         saveToDisk()
@@ -193,11 +194,17 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             // Preserve an unreadable snapshot before any later write can replace it.
             let recoveryURL = fileURL.deletingLastPathComponent()
                 .appendingPathComponent("\(fileURL.lastPathComponent).corrupt-\(UUID().uuidString)")
-            try? FileManager.default.moveItem(at: fileURL, to: recoveryURL)
+            do {
+                try FileManager.default.moveItem(at: fileURL, to: recoveryURL)
+            } catch {
+                // Never overwrite the only copy if recovery preservation failed.
+                persistenceBlockedByCorruption = true
+            }
         }
     }
 
     private func saveToDisk() {
+        guard !persistenceBlockedByCorruption else { return }
         let snapshot = Snapshot(family: family, members: members, items: items,
                                 shoppingItems: shoppingItems, notifications: notifications, messages: messages)
         guard let data = try? JSONEncoder().encode(snapshot) else { return }

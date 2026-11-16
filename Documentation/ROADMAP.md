@@ -120,6 +120,11 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Återställ familjeprofil och berörda kalenderkopplingar om profilborttagning inte kan sparas (FAM-021; CI inväntas).
 - [x] Lägg till regressionstester för de tre skrivfelen (CI inväntas).
 
+## Kalender: återkoppling vid lagringsfel (2026-11-17)
+- [x] Låt inte kalenderredigeraren stängas om lokal persistens misslyckas (FAM-024; CI inväntas).
+- [x] Visa fel när kalenderpost inte kan raderas och återställs efter skrivfel.
+- [x] Lägg till regressionstest för view model och användarflöde.
+
 ## Kalender: årlig återkomst (2026-11-17)
 - [x] Tillåt årlig återkomst för samtliga kalenderkategorier, med bevarat ursprungligt datumankare (FAM-023; CI inväntas).
 - [x] Testa projektion och redigering av en återkommande händelse som inte är en födelsedag.

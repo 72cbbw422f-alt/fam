@@ -21,7 +21,7 @@ struct DashboardView: View {
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 12)
-                .padding(.bottom, 34)
+                .padding(.bottom, 72)
             }
             .background(FamiljenTheme.paper.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
@@ -311,14 +311,14 @@ struct DashboardView: View {
     private var upcomingAppointments: some View {
         VStack(alignment: .leading, spacing: 11) {
             HStack {
-                sectionTitle("Kommande tider", subtitle: "Det närmaste i familjens kalender")
+                sectionTitle("Kommande tider", subtitle: "Bokade besök och tider")
                 Spacer()
                 NavigationLink("Visa alla") { FamilyCalendarView() }
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(FamiljenTheme.navy)
             }
             if model.upcomingAppointments.isEmpty {
-                emptyCard("Här visas läkarbesök, tandläkare och andra bokade tider.", symbol: "stethoscope")
+                emptyCard("Läkarbesök, tandläkare och andra bokningar visas här.", symbol: "stethoscope")
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(model.upcomingAppointments)) { item in
@@ -407,7 +407,7 @@ struct DashboardView: View {
                     .foregroundStyle(FamiljenTheme.navy)
             }
             if model.upcomingEvents.isEmpty {
-                emptyCard("Familjens kommande händelser visas här.", symbol: "sparkles")
+                emptyCard("Resor, skola och familjeaktiviteter visas här.", symbol: "sparkles")
             } else {
                 VStack(spacing: 0) {
                     ForEach(model.upcomingEvents) { appointmentRow($0) }
@@ -503,7 +503,8 @@ struct DashboardView: View {
                 .foregroundStyle(FamiljenTheme.muted)
             Spacer(minLength: 0)
         }
-        .padding(14)
+        .padding(.horizontal, 13)
+        .padding(.vertical, 10)
         .background(.white.opacity(0.8), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 

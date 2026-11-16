@@ -17,6 +17,29 @@ struct FamilyCalendarView: View {
         return model.items.filter { $0.kind == selectedKind }
     }
 
+    private var pageTitle: String {
+        switch selectedKind {
+        case .healthVisit: return "Hälsa"
+        case .birthday: return "Födelsedagar"
+        default: return "Familjekalender"
+        }
+    }
+
+    private var emptyTitle: String {
+        selectedKind == nil ? "Inget inplanerat" : "Inga träffar"
+    }
+
+    private var emptyDescription: String {
+        switch selectedKind {
+        case .healthVisit:
+            return "Lägg till vårdbesök, vaccinationer och andra hälsorelaterade händelser för familjen."
+        case .birthday:
+            return "Lägg till födelsedagar så samlas familjens viktiga dagar här."
+        default:
+            return "Lägg till bokningar, födelsedagar, evenemang och vårdbesök så samlas familjens planer här."
+        }
+    }
+
     var body: some View {
         List {
             Section {
@@ -32,15 +55,32 @@ struct FamilyCalendarView: View {
                             filterChip(kind.displayName, kind: kind)
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 5)
                 }
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .contentMargins(.horizontal, 0)
+                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
             }
 
             if visibleItems.isEmpty && !model.isLoading {
-                ContentUnavailableView(selectedKind == nil ? "Inget inplanerat" : "Inga träffar", systemImage: "calendar",
-                    description: Text("Lägg till bokningar, födelsedagar, evenemang och vårdbesök."))
-                    .listRowBackground(Color.clear)
+                ContentUnavailableView {
+                    Label(emptyTitle, systemImage: selectedKind == .healthVisit ? "heart.text.square" : "calendar")
+                } description: {
+                    Text(emptyDescription)
+                        .multilineTextAlignment(.center)
+                } actions: {
+                    Button {
+                        editingItem = nil
+                        showingEditor = true
+                    } label: {
+                        Label("Lägg till", systemImage: "plus")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(FamiljenTheme.navy)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 34)
+                .listRowBackground(Color.clear)
             } else {
                 ForEach(visibleItems) { item in
                     Button {
@@ -62,7 +102,7 @@ struct FamilyCalendarView: View {
         }
         .scrollContentBackground(.hidden)
         .background(FamiljenTheme.paper)
-        .navigationTitle("Familjekalender")
+        .navigationTitle(pageTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

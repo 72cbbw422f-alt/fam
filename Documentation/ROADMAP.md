@@ -66,6 +66,7 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 
 #### P0 – kvalitet och grund
 - [ ] Slutför verifiering av de senast tillagda födelsedagsregressionstesterna i CI; senaste kända run `43941033673` avbröts och räknas inte som godkänd.
+- [x] Förhindra dataförlust när en familjeprofil tas bort: behåll kalenderhändelser och rensa endast personkopplingen (CI-verifiering inväntas).
 - [ ] Fortsätt regressionstesta lokal persistens, kalenderredigering och notiser innan större funktionsbyggen.
 
 #### P1 – kärnupplevelsen i familjekalendern

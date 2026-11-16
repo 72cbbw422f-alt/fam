@@ -55,7 +55,7 @@ final class FamilyStore: ObservableObject {
     func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
                           kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
                           responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int],
-                          location: String?) {
+                          location: String? = nil) {
         repository.saveCalendarItem(id: id, title: title, details: details, startsAt: startsAt,
                                     kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
                                     responsibleMemberID: responsibleMemberID, recurring: recurring,

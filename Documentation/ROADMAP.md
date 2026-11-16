@@ -8,7 +8,9 @@
 - [x] Add, edit and delete appointments, birthdays, events and health visits
 - [x] Yearly birthdays, including 29 February birthdays observed on 28 February in non-leap years
 - [x] On-device OCR for screenshots; images are not uploaded
-- [x] Local notification scheduling one day and one hour before activities
+- [x] Per-activity reminder choices (one week, one day, one hour, 15 minutes, at start)
+- [x] Apple Calendar read-only import for upcoming events
+- [x] Local family group chat and private conversation UI (device-local prototype only)
 - [ ] Verify persistence, CRUD and reminders on physical iPhones
 - [ ] Verify unsigned iOS Simulator build in CI after local-first refactor
 - [ ] Prepare signed device build when signing credentials are available
@@ -18,7 +20,8 @@ Each iPhone stores its own independent family data. There is no shared calendar,
 
 ## Later: Apple ecosystem
 - [ ] CloudKit private/shared databases and CKShare for family sharing
+- [ ] CloudKit-backed family group and private messaging, read state and cross-device sync
 - [ ] Safe migration from each phone's local data to CloudKit
 - [ ] Conflict handling and family membership permissions
-- [ ] Optional Apple Calendar integration via EventKit
+- [x] Apple Calendar read-only integration via EventKit (calendar selection still pending)
 - [ ] Push notifications if needed after CloudKit and Apple Developer setup

@@ -153,9 +153,9 @@ struct FamilyCalendarView: View {
             if model.isLoading && model.items.isEmpty { ProgressView("Hämtar kalendern …") }
         }
         .sheet(isPresented: $showingEditor, onDismiss: { editingItem = nil }) {
-            FamilyItemEditor(item: editingItem, members: model.members) { title, details, date, kind, memberID, recurring in
+            FamilyItemEditor(item: editingItem, members: model.members) { title, details, date, kind, memberID, recurring, reminderOffsets in
                 await model.save(id: editingItem?.id, title: title, details: details, startsAt: date,
-                                 kind: kind, memberID: memberID, isRecurringYearly: recurring)
+                                 kind: kind, memberID: memberID, isRecurringYearly: recurring, reminderOffsets: reminderOffsets)
             }
         }
         .refreshable { await model.load() }
@@ -248,7 +248,7 @@ private struct FamilyItemEditor: View {
     @Environment(\.dismiss) private var dismiss
     let item: FamilyItem?
     let members: [FamilyMember]
-    let onSave: (String, String?, Date, FamilyItemKind, UUID?, Bool) async -> Bool
+    let onSave: (String, String?, Date, FamilyItemKind, UUID?, Bool, [Int]) async -> Bool
 
     @State private var title: String
     @State private var details: String
@@ -256,13 +256,14 @@ private struct FamilyItemEditor: View {
     @State private var kind: FamilyItemKind
     @State private var memberSelection: String
     @State private var isRecurringYearly: Bool
+    @State private var selectedReminderOffsets: Set<Int>
     @State private var isSaving = false
     @State private var errorMessage: String?
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var isReadingImage = false
     @State private var importMessage: String?
 
-    init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, Date, FamilyItemKind, UUID?, Bool) async -> Bool) {
+    init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, Date, FamilyItemKind, UUID?, Bool, [Int]) async -> Bool) {
         self.item = item
         self.members = members
         self.onSave = onSave
@@ -272,6 +273,7 @@ private struct FamilyItemEditor: View {
         _kind = State(initialValue: item?.kind ?? .appointment)
         _memberSelection = State(initialValue: item?.memberID?.uuidString ?? "")
         _isRecurringYearly = State(initialValue: item?.isRecurringYearly ?? true)
+        _selectedReminderOffsets = State(initialValue: Set(item?.reminderOffsets ?? [24 * 60 * 60, 60 * 60]))
     }
 
     var body: some View {
@@ -334,6 +336,20 @@ private struct FamilyItemEditor: View {
                     }
                     TextField("Anteckningar (valfritt)", text: $details, axis: .vertical).lineLimit(2...5)
                 }
+                Section {
+                    Text("Välj när Familjen ska påminna dig inför aktiviteten. Du kan välja flera alternativ.")
+                        .font(.caption)
+                        .foregroundStyle(FamiljenTheme.muted)
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 9) {
+                        reminderChoice("En vecka före", offset: 7 * 24 * 60 * 60, symbol: "calendar")
+                        reminderChoice("En dag före", offset: 24 * 60 * 60, symbol: "sun.max")
+                        reminderChoice("En timme före", offset: 60 * 60, symbol: "clock")
+                        reminderChoice("15 minuter före", offset: 15 * 60, symbol: "timer")
+                        reminderChoice("Vid start", offset: 0, symbol: "bell")
+                    }
+                } header: {
+                    Text("Påminnelser")
+                }
                 Section("Vem gäller det?") {
                     Picker("Familjemedlem", selection: $memberSelection) {
                         Text("Ingen särskild").tag("")
@@ -358,6 +374,37 @@ private struct FamilyItemEditor: View {
                 }
             }
         }
+    }
+
+    private func reminderChoice(_ title: String, offset: Int, symbol: String) -> some View {
+        let isSelected = selectedReminderOffsets.contains(offset)
+        return Button {
+            withAnimation(.easeInOut(duration: 0.16)) {
+                if isSelected { selectedReminderOffsets.remove(offset) }
+                else { selectedReminderOffsets.insert(offset) }
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: symbol)
+                    .font(.system(size: 15, weight: .semibold))
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                Spacer(minLength: 0)
+                if isSelected { Image(systemName: "checkmark.circle.fill") }
+            }
+            .foregroundStyle(isSelected ? FamiljenTheme.navy : FamiljenTheme.ink)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 12)
+            .background(isSelected ? FamiljenTheme.sand.opacity(0.62) : .white,
+                        in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .stroke(isSelected ? FamiljenTheme.champagneDeep.opacity(0.75) : FamiljenTheme.sand.opacity(0.8),
+                            lineWidth: isSelected ? 1.4 : 0.8)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func readAppointmentImage(_ photo: PhotosPickerItem) async {
@@ -392,7 +439,7 @@ private struct FamilyItemEditor: View {
         let cleanDetails = details.trimmingCharacters(in: .whitespacesAndNewlines)
         let memberID = UUID(uuidString: memberSelection)
         let saved = await onSave(title, cleanDetails.isEmpty ? nil : cleanDetails, startsAt,
-                                 kind, memberID, kind == .birthday && isRecurringYearly)
+                                 kind, memberID, kind == .birthday && isRecurringYearly, Array(selectedReminderOffsets).sorted(by: >))
         if saved { dismiss() }
         else { errorMessage = "Det gick inte att spara. Kontrollera uppgifterna och försök igen." }
     }

@@ -33,11 +33,13 @@ struct FamilyMembersView: View {
                         if member.role == .child { Image(systemName: "ellipsis").foregroundStyle(FamiljenTheme.muted) }
                     }
                     .contentShape(Rectangle())
-                    .onTapGesture { if member.role == .child { editingChild = member; showingEditor = true } }
+                    .onTapGesture { if member.role != .owner { editingChild = member; showingEditor = true } }
                     .contextMenu {
-                        if member.role == .child {
+                        if member.role != .owner {
                             Button { editingChild = member; showingEditor = true } label: { Label("Redigera namn", systemImage: "pencil") }
-                            Button(role: .destructive) { childToDelete = member; showingDeleteConfirmation = true } label: { Label("Ta bort barnprofil", systemImage: "trash") }
+                            Button(role: .destructive) { childToDelete = member; showingDeleteConfirmation = true } label: {
+                                Label(member.role == .child ? "Ta bort barnprofil" : "Ta bort vuxenprofil", systemImage: "trash")
+                            }
                         }
                     }
                 }
@@ -72,7 +74,7 @@ struct FamilyMembersView: View {
                 }
             }
         }
-        .confirmationDialog("Ta bort barnprofilen?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
+        .confirmationDialog(childToDelete?.role == .child ? "Ta bort barnprofilen?" : "Ta bort vuxenprofilen?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
             Button("Ta bort", role: .destructive) {
                 if let childToDelete { LocalFamilyStore.shared.deleteMember(id: childToDelete.id); loadMembers() }
             }

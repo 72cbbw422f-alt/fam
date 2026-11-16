@@ -46,7 +46,7 @@ final class AppleCalendarImport: ObservableObject {
         guard let end = calendar.date(byAdding: .month, value: 12, to: start) else { return }
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
         entries = store.events(matching: predicate)
-            .filter { !$0.isCanceled }
+            .filter { $0.status != .canceled }
             .sorted { $0.startDate < $1.startDate }
             .map {
                 AppleCalendarEntry(

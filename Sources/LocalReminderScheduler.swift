@@ -11,11 +11,13 @@ struct ReminderCandidate: Identifiable {
     }
 }
 
+@MainActor
 enum LocalReminderScheduler {
     private static let center = UNUserNotificationCenter.current()
     private static let identifierPrefix = "familjen-item-"
     private static let maximumPendingReminders = 60
     private static let defaultOffsets = [24 * 60 * 60, 60 * 60]
+    private static var operationTask: Task<Void, Never>?
 
     static func requestPermission() async -> Bool {
         do {
@@ -49,6 +51,16 @@ enum LocalReminderScheduler {
     }
 
     static func schedule(for items: [FamilyItem]) async {
+        let previous = operationTask
+        let current = Task { @MainActor in
+            await previous?.value
+            await performSchedule(for: items)
+        }
+        operationTask = current
+        await current.value
+    }
+
+    private static func performSchedule(for items: [FamilyItem]) async {
         let pending = await center.pendingNotificationRequests()
         let oldIDs = pending.map(\.identifier).filter { $0.hasPrefix(identifierPrefix) }
         let candidates = makeCandidates(for: items, now: .now)
@@ -103,6 +115,16 @@ enum LocalReminderScheduler {
     }
 
     static func clearAll() async {
+        let previous = operationTask
+        let current = Task { @MainActor in
+            await previous?.value
+            await performClearAll()
+        }
+        operationTask = current
+        await current.value
+    }
+
+    private static func performClearAll() async {
         let pending = await center.pendingNotificationRequests()
         let ids = pending.map(\.identifier).filter { $0.hasPrefix(identifierPrefix) }
         center.removePendingNotificationRequests(withIdentifiers: ids)

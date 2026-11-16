@@ -79,6 +79,14 @@ jobs:
         run: |
           APP_PATH="build/Build/Products/Release-iphoneos/Familjen.app"
           test -d "$APP_PATH"
+          echo "===== BUILT APP INFO.PLIST ====="
+          /usr/libexec/PlistBuddy -c "Print :UIDeviceFamily" "$APP_PATH/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Print :UIRequiresFullScreen" "$APP_PATH/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Print :UISupportedInterfaceOrientations" "$APP_PATH/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$APP_PATH/Info.plist" || true
+          echo "===== APP EXECUTABLE / BUNDLE ====="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleSupportedPlatforms" "$APP_PATH/Info.plist"
           mkdir -p package/Payload
           cp -R "$APP_PATH" package/Payload/
           cd package

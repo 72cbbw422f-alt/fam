@@ -4,15 +4,22 @@ struct RootView: View {
     @StateObject private var store = LocalFamilyStore.shared
 
     var body: some View {
-        Group {
-            if store.family == nil {
-                FamilyOnboardingView()
-            } else {
-                FamilyTabShell()
+        ZStack {
+            FamiljenTheme.paper
+                .ignoresSafeArea(.all)
+
+            Group {
+                if store.family == nil {
+                    FamilyOnboardingView()
+                } else {
+                    FamilyTabShell()
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(FamiljenTheme.paper.ignoresSafeArea())
+        .background(FamiljenTheme.paper.ignoresSafeArea(.all))
+        .ignoresSafeArea(.container, edges: [.top, .bottom])
         .animation(.easeInOut(duration: 0.2), value: store.family != nil)
     }
 }

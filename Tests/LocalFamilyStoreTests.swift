@@ -179,6 +179,35 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertNil(legacyItem.location)
     }
 
+    func testCalendarViewModelReportsFailedSaveAndDeleteWithoutClosingEditor() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let futureDate = Date(timeIntervalSince1970: 1_900_000_000)
+        store.saveItem(id: nil, title: "Tandläkare", details: nil, startsAt: futureDate,
+                       kind: .dentist, memberID: nil, recurring: false, reminderOffsets: [])
+        let originalItem = try XCTUnwrap(store.items.first)
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+
+        let viewModel = FamilyCalendarViewModel(store: store)
+        let saved = await viewModel.save(
+            id: originalItem.id, title: "Ändrad bokning", details: nil,
+            startsAt: futureDate.addingTimeInterval(3600), kind: .dentist,
+            memberIDs: [], isForEveryone: false, responsibleMemberID: nil,
+            isRecurringYearly: false, reminderOffsets: [], location: "Hudiksvall"
+        )
+        XCTAssertFalse(saved)
+        XCTAssertEqual(store.items, [originalItem])
+        XCTAssertNotNil(viewModel.errorMessage)
+
+        await viewModel.delete(originalItem)
+        XCTAssertEqual(store.items, [originalItem])
+        XCTAssertEqual(viewModel.items, [originalItem])
+        XCTAssertNotNil(viewModel.errorMessage)
+    }
+
     func testRepositoryFactoryUsesLocalImplementationUntilCloudIsConfigured() {
         let repository = FamilyRepositoryFactory.makeDefault()
         XCTAssertTrue(repository is LocalFamilyStore)

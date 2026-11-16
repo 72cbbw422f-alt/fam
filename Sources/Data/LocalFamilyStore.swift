@@ -149,13 +149,13 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             items[index].memberIDs = isForEveryone ? [] : validMemberIDs
             items[index].isForEveryone = isForEveryone
             items[index].responsibleMemberID = validResponsibleID
-            items[index].isRecurringYearly = kind == .birthday && recurring
+            items[index].isRecurringYearly = recurring
             items[index].reminderOffsets = reminderOffsets
         } else {
             items.append(FamilyItem(id: UUID(), familyID: family.id, title: clean,
                                     details: details, startsAt: startsAt, endsAt: nil,
                                     kind: kind, memberID: nil,
-                                    isRecurringYearly: kind == .birthday && recurring,
+                                    isRecurringYearly: recurring,
                                     reminderOffsets: reminderOffsets,
                                     memberIDs: isForEveryone ? [] : validMemberIDs,
                                     isForEveryone: isForEveryone,

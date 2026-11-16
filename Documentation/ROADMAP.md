@@ -14,11 +14,11 @@
 - [x] Add a provider-neutral `FamilyRepository` contract and local repository factory
 - [x] Inject the repository contract into dashboard, calendar, shopping and notification view models
 - [x] Add an observable UI facade so SwiftUI screens no longer depend directly on the local storage implementation
-- [x] Route family profiles, messages, settings and app root through the facade
+- [x] Route family profiles, messages, settings, app root, onboarding and dashboard through the facade
 - [x] Expose repository change notifications so view state refreshes after mutations
 - [x] Explicitly include the unit-test bundle in the XcodeGen test scheme
 - [x] Make local storage file location injectable for isolated persistence tests
-- [x] Add unit tests for family/profile/shopping persistence, calendar CRUD and default provider selection
+- [x] Add unit tests for family/profile/shopping persistence, calendar CRUD, message read state, input validation and observable facade behavior
 - [x] Run unit tests in the iOS Simulator CI workflow
 - [ ] Verify persistence, CRUD and reminders on physical iPhones
 - [ ] Verify the new repository abstraction and unit tests pass in CI

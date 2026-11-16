@@ -32,6 +32,15 @@ jobs:
       - name: Resolve Swift packages
         run: xcodebuild -resolvePackageDependencies -project Familjen.xcodeproj -scheme Familjen
 
+      - name: Run unit tests
+        run: |
+          xcodebuild \
+            -project Familjen.xcodeproj \
+            -scheme Familjen \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            CODE_SIGNING_ALLOWED=NO \
+            test
+
       - name: Build for iOS Simulator
         run: |
           xcodebuild \

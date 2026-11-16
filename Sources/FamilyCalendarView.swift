@@ -27,6 +27,18 @@ struct FamilyCalendarView: View {
         }
     }
 
+    private var calendarToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                editingItem = nil
+                showingEditor = true
+            } label: {
+                Image(systemName: "plus").foregroundStyle(FamiljenTheme.navy)
+            }
+            .accessibilityLabel("Lägg till aktivitet")
+        }
+    }
+
     private var emptyTitle: String {
         selectedKind == nil ? "Inget inplanerat" : "Inga träffar"
     }
@@ -157,15 +169,7 @@ struct FamilyCalendarView: View {
         .navigationTitle(pageTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    editingItem = nil
-                    showingEditor = true
-                } label: {
-                    Image(systemName: "plus").foregroundStyle(FamiljenTheme.navy)
-                }
-                .accessibilityLabel("Lägg till aktivitet")
-            }
+            calendarToolbar
         }
         .overlay {
             if model.isLoading && model.items.isEmpty { ProgressView("Hämtar kalendern …") }

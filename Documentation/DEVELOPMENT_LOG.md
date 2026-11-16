@@ -560,3 +560,23 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 
 **Avgränsning**
 - Denna korrigering omfattar kalenderposter och profilborttagning som påverkar kalenderkopplingar. Övriga lokala mutationer har ännu inte fått samma transaktionella rollback.
+
+
+### 2026-11-17 – FAM-022: strukturerad plats för kalenderhändelser
+
+**Fynd**
+- Kalenderhändelser kunde ha anteckningar men saknade ett separat plats-/adressfält. Det gjorde det svårt att snabbt se var ett vårdbesök, en aktivitet eller en bokning äger rum.
+
+**Åtgärd**
+- Lade till ett valfritt platsfält i kalenderns datamodell med bakåtkompatibel avkodning av äldre snapshots.
+- Plats kan anges och redigeras separat från anteckningar.
+- Platsen visas diskret i kalenderlistan och sparas genom repository, FamilyStore och LocalFamilyStore.
+- Äldre save-anrop fortsätter att fungera utan platsvärde.
+- Regressionstest täcker persistens efter omladdning och äldre poster utan platsfält.
+- Filer: Sources/Domain/FamilyModels.swift, Sources/Data/FamilyRepository.swift, Sources/Data/FamilyStore.swift, Sources/Data/LocalFamilyStore.swift, Sources/Data/FamilyCalendarViewModel.swift, Sources/FamilyCalendarView.swift, Tests/LocalFamilyStoreTests.swift.
+- Commits: 17bc3b98, 02e6b5e4, c4de61df, 9d148ea3, e1329f50, f14e8f3c, 5d41e93c, 36e8d882, a72b6848, 7581772d, 26d83621.
+
+**Verifiering**
+- Källkod och regressionstest är incheckade. CI-verifiering inväntas.
+- Äldre snapshots får location = nil och fortsätter därför att kunna läsas.
+- Fysisk iPhone-testning är inte utförd.

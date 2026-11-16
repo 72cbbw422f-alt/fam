@@ -8,7 +8,7 @@ settings:
     SWIFT_VERSION: "5.9"
     TARGETED_DEVICE_FAMILY: "1"
     INFOPLIST_KEY_UIRequiresFullScreen: YES
-    INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
     GENERATE_INFOPLIST_FILE: YES
     PRODUCT_BUNDLE_IDENTIFIER: se.familjen.app
     INFOPLIST_KEY_CFBundleDisplayName: Familjen

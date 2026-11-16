@@ -422,3 +422,21 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Verifiering**
 - Källorna har kontrollerats igen för dubbla backslash-tecken före key-path-uttryck.
 - Ny CI-körning för commit 7c8c2ee inväntas. Felet räknas inte som åtgärdat/verifierat förrän simulatorbygget och testerna passerar.
+
+
+
+### 2026-11-16 – FAM-015: förenkla SwiftUI-kalenderns toolbar efter CI-kompileringsfel
+
+**Fynd**
+- CI-run `43944814343` (commit `092908268fd865030124a14082d5d7e6ea238e08`) misslyckades i både simulator- och iPhone-bygget.
+- Simulatorloggen pekade på `Sources/FamilyCalendarView.swift:160`: Swift kunde inte typkontrollera det sammansatta SwiftUI-uttrycket inom rimlig tid. Testerna startade därför aldrig; detta var ett kompileringsfel, inte ett konstaterat testfel.
+
+**Åtgärd**
+- Flyttade toolbarens `ToolbarItem` till en separat beräknad `some ToolbarContent`-egenskap (`calendarToolbar`) och lät vyn använda den egenskapen. Syftet är att minska typinferensens komplexitet utan att ändra beteendet.
+- Fil: `Sources/FamilyCalendarView.swift`.
+- Commit: `b1f831efe8af4470d310b1c39217119e3395a36a`.
+
+**Verifiering**
+- Ändringen är incheckad. En ny CI-körning krävs för att avgöra om uttrycket nu kompilerar och om enhetstesterna passerar.
+- Ingen IPA skapades i run `43944814343`; paketerings- och uppladdningsstegen hoppades över efter byggfelet.
+- Ingen fysisk iPhone-testning är utförd.

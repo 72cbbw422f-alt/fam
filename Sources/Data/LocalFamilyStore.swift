@@ -37,7 +37,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func createFamily(name: String, ownerName: String) {
         let cleanFamilyName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanOwnerName = ownerName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleanFamilyName.isEmpty, cleanFamilyName.count <= 80,
+        guard family == nil,
+              !cleanFamilyName.isEmpty, cleanFamilyName.count <= 80,
               !cleanOwnerName.isEmpty, cleanOwnerName.count <= 80 else { return }
         let family = Family(id: UUID(), name: cleanFamilyName)
         let owner = FamilyMember(id: UUID(), familyID: family.id,

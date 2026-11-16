@@ -20,7 +20,8 @@
 - [x] Make local storage file location injectable for isolated persistence tests
 - [x] Preserve unreadable local snapshots as recovery files instead of silently overwriting them
 - [x] Add unit tests for family/profile/shopping persistence, calendar CRUD, message read state, input validation, repeat-onboarding protection, observable facade behavior, birthday projection edge cases and local-time-zone handling, reminder persistence, legacy snapshot compatibility and corrupt-snapshot recovery
-- [x] Run unit tests in the iOS Simulator CI workflow
+- [x] Add unit tests for reminder deduplication, future filtering, legacy fallback and the 60-reminder cap
+- [ ] Verify all unit tests pass in the iOS Simulator CI workflow
 - [ ] Verify persistence, CRUD and reminders on physical iPhones
 - [ ] Verify the new repository abstraction and unit tests pass in CI
 - [ ] Verify unsigned iOS Simulator build in CI after local-first refactor

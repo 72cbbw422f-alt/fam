@@ -56,7 +56,7 @@ final class FamilyCalendarViewModel: ObservableObject {
             errorMessage = "Ange en rubrik på 1–160 tecken."
             return false
         }
-        let persistedDate = preservedBirthdayDate(
+        let persistedDate = preservedRecurringDate(
             id: id, proposedDate: startsAt, kind: kind, recurring: isRecurringYearly
         )
         store.saveCalendarItem(id: id, title: clean, details: details, startsAt: persistedDate,
@@ -81,11 +81,11 @@ final class FamilyCalendarViewModel: ObservableObject {
 
     // The calendar displays a recurring birthday in its next upcoming year.
     // Persist the original birth year when that projected row is edited.
-    private func preservedBirthdayDate(id: UUID?, proposedDate: Date,
+    private func preservedRecurringDate(id: UUID?, proposedDate: Date,
                                        kind: FamilyItemKind, recurring: Bool) -> Date {
-        guard kind == .birthday, recurring, let id,
+        guard recurring, let id,
               let original = store.items.first(where: { $0.id == id }),
-              original.kind == .birthday, original.isRecurringYearly else {
+              original.isRecurringYearly else {
             return proposedDate
         }
 

@@ -185,11 +185,11 @@ struct FamilyCalendarView: View {
             if model.isLoading && model.items.isEmpty { ProgressView("Hämtar kalendern …") }
         }
         .sheet(isPresented: $showingEditor, onDismiss: { editingItem = nil }) {
-            FamilyItemEditor(item: editingItem, members: model.members) { title, details, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurring, reminderOffsets in
+            FamilyItemEditor(item: editingItem, members: model.members) { title, details, location, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurring, reminderOffsets in
                 await model.save(id: editingItem?.id, title: title, details: details, startsAt: date,
                                  kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
                                  responsibleMemberID: responsibleMemberID, isRecurringYearly: recurring,
-                                 reminderOffsets: reminderOffsets)
+                                 reminderOffsets: reminderOffsets, location: location)
             }
         }
         .refreshable { await model.load() }
@@ -303,6 +303,11 @@ struct FamilyCalendarView: View {
                     Text("Ansvarig: \(responsible.displayName)")
                         .font(.caption2).foregroundStyle(FamiljenTheme.muted)
                 }
+                if let location = item.location, !location.isEmpty {
+                    Label(location, systemImage: "mappin.and.ellipse")
+                        .font(.caption2).foregroundStyle(FamiljenTheme.muted)
+                        .lineLimit(1)
+                }
             }
             Spacer()
             CategoryIcon(kind: item.kind, size: 38)
@@ -315,10 +320,11 @@ private struct FamilyItemEditor: View {
     @Environment(\.dismiss) private var dismiss
     let item: FamilyItem?
     let members: [FamilyMember]
-    let onSave: (String, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, Bool, [Int]) async -> Bool
+    let onSave: (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, Bool, [Int]) async -> Bool
 
     @State private var title: String
     @State private var details: String
+    @State private var location: String
     @State private var startsAt: Date
     @State private var kind: FamilyItemKind
     @State private var selectedMemberIDs: Set<UUID>
@@ -332,12 +338,13 @@ private struct FamilyItemEditor: View {
     @State private var isReadingImage = false
     @State private var importMessage: String?
 
-    init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, Bool, [Int]) async -> Bool) {
+    init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, Bool, [Int]) async -> Bool) {
         self.item = item
         self.members = members
         self.onSave = onSave
         _title = State(initialValue: item?.title ?? "")
         _details = State(initialValue: item?.details ?? "")
+        _location = State(initialValue: item?.location ?? "")
         _startsAt = State(initialValue: item?.startsAt ?? .now)
         _kind = State(initialValue: item?.kind ?? .appointment)
         _selectedMemberIDs = State(initialValue: Set(item?.memberIDs ?? []))
@@ -405,6 +412,8 @@ private struct FamilyItemEditor: View {
                         Text("Födelsedagen visas automatiskt på nästa kommande datum varje år.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
+                    TextField("Plats eller adress (valfritt)", text: $location)
+                        .textContentType(.fullStreetAddress)
                     TextField("Anteckningar (valfritt)", text: $details, axis: .vertical).lineLimit(2...5)
                 }
                 Section {
@@ -548,8 +557,10 @@ private struct FamilyItemEditor: View {
         isSaving = true
         defer { isSaving = false }
         let cleanDetails = details.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
         let responsibleMemberID = UUID(uuidString: responsibleSelection)
-        let saved = await onSave(title, cleanDetails.isEmpty ? nil : cleanDetails, startsAt,
+        let saved = await onSave(title, cleanDetails.isEmpty ? nil : cleanDetails,
+                                 cleanLocation.isEmpty ? nil : cleanLocation, startsAt,
                                  kind, Array(selectedMemberIDs), isForEveryone, responsibleMemberID,
                                  kind == .birthday && isRecurringYearly, Array(selectedReminderOffsets).sorted(by: >))
         if saved { dismiss() }

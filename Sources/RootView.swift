@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct RootView: View {
-    @StateObject private var store = LocalFamilyStore.shared
+    @StateObject private var store = FamilyStore.shared
 
     var body: some View {
         ZStack {

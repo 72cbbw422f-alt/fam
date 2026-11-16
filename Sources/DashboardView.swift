@@ -107,10 +107,11 @@ struct DashboardView: View {
                     .offset(x: proxy.size.width - 150, y: 55)
             }
             VStack(alignment: .leading, spacing: 7) {
-                HStack {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "sv_SE"))).capitalized)
-                    Spacer()
+                    Spacer(minLength: 8)
                     Text("v. \(Calendar(identifier: .iso8601).component(.weekOfYear, from: .now))")
+                        .frame(minWidth: 38, alignment: .trailing)
                 }
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.88))

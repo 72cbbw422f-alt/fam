@@ -11,6 +11,9 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     @Published private(set) var shoppingItems: [ShoppingItem] = []
     @Published private(set) var notifications: [FamilyNotification] = []
     @Published private(set) var messages: [FamilyMessage] = []
+    @Published private(set) var persistenceError: String?
+
+    private let persistenceFailureMessage = "Ändringen kunde inte sparas. Den kan försvinna om appen stängs."
 
     var changePublisher: AnyPublisher<Void, Never> {
         objectWillChange.map { _ in () }.eraseToAnyPublisher()
@@ -27,10 +30,14 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     /// Injectable file location keeps persistence tests isolated from the user's real app data.
     init(fileURL: URL) {
         self.fileURL = fileURL
-        try? FileManager.default.createDirectory(
-            at: fileURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
+        do {
+            try FileManager.default.createDirectory(
+                at: fileURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+        } catch {
+            persistenceError = persistenceFailureMessage
+        }
         loadFromDisk()
     }
 
@@ -229,6 +236,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             } catch {
                 // Never overwrite the only copy if recovery preservation failed.
                 persistenceBlockedByCorruption = true
+                persistenceError = "Befintliga familjedata kunde inte återställas. Skrivningar har spärrats för att skydda originalfilen."
             }
         }
     }
@@ -237,7 +245,12 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         guard !persistenceBlockedByCorruption else { return }
         let snapshot = Snapshot(family: family, members: members, items: items,
                                 shoppingItems: shoppingItems, notifications: notifications, messages: messages)
-        guard let data = try? JSONEncoder().encode(snapshot) else { return }
-        try? data.write(to: fileURL, options: .atomic)
+        do {
+            let data = try JSONEncoder().encode(snapshot)
+            try data.write(to: fileURL, options: .atomic)
+            persistenceError = nil
+        } catch {
+            persistenceError = persistenceFailureMessage
+        }
     }
 }

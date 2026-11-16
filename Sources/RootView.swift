@@ -67,7 +67,7 @@ private struct FamilyTabShell: View {
                 case .shopping:
                     ShoppingListView()
                 case .more:
-                    FamilyMembersView()
+                    FamilyMoreView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

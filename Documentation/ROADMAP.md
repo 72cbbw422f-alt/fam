@@ -37,3 +37,17 @@ Each iPhone stores its own independent family data. There is no shared calendar,
 - [ ] Conflict handling and family membership permissions
 - [x] Apple Calendar read-only integration via EventKit (calendar selection still pending)
 - [ ] Push notifications if needed after CloudKit and Apple Developer setup
+
+## Planerad funktion: familjemedlemmar i kalendern
+
+- [ ] Hantera familjeprofiler i Inställningar: vuxna och barn utan krav på egna konton.
+- [ ] Vid skapande och redigering av kalenderhändelse kunna välja en eller flera berörda personer.
+- [ ] Ha ett tydligt val för **Hela familjen**, skilt från en händelse som ännu inte har tilldelats någon.
+- [ ] Filtrera kalendern på hela familjen, en person eller flera valda personer.
+- [ ] Visa personkopplingar tydligt i kalendern med konsekvent färg-/profilmarkering.
+- [ ] Göra datamodellsändringen bakåtkompatibel så befintliga händelser och lokala snapshots bevaras.
+- [ ] Lägga till tester för äldre data, flera deltagare, familjeomfattande händelser och kalenderfilter.
+
+**Designprincip:** Barn ska kunna finnas som profiler utan egna konton. Funktionen ska stödja praktisk familjeplanering, inte bli ett generellt uppgiftssystem.
+
+**Status:** Produktbeslut/plan dokumenterat 2026-11-16. Inte implementerat ännu.

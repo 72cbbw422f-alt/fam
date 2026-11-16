@@ -150,6 +150,35 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
     }
 
+    func testCalendarLocationPersistsAndOlderItemsRemainCompatible() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.saveCalendarItem(
+            id: nil, title: "Läkarbesök", details: "Ta med legitimation",
+            startsAt: Date(timeIntervalSince1970: 1_800_000_000), kind: .healthVisit,
+            memberIDs: [], isForEveryone: false, responsibleMemberID: nil,
+            recurring: false, reminderOffsets: [], location: "Hudiksvalls sjukhus"
+        )
+
+        let saved = try XCTUnwrap(store.items.first)
+        XCTAssertEqual(saved.location, "Hudiksvalls sjukhus")
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.items.first?.location, "Hudiksvalls sjukhus")
+
+        let legacyJSON = """
+        {
+          "id": "\(UUID().uuidString)",
+          "family_id": "\(UUID().uuidString)",
+          "title": "Äldre bokning",
+          "starts_at": 0,
+          "kind": "appointment"
+        }
+        """
+        let legacyItem = try JSONDecoder().decode(FamilyItem.self, from: Data(legacyJSON.utf8))
+        XCTAssertNil(legacyItem.location)
+    }
+
     func testRepositoryFactoryUsesLocalImplementationUntilCloudIsConfigured() {
         let repository = FamilyRepositoryFactory.makeDefault()
         XCTAssertTrue(repository is LocalFamilyStore)

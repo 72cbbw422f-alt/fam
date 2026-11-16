@@ -45,12 +45,12 @@ final class FamilyCalendarViewModel: ObservableObject {
         await save(id: id, title: title, details: details, startsAt: startsAt, kind: kind,
                    memberIDs: memberID.map { [$0] } ?? [], isForEveryone: false,
                    responsibleMemberID: nil, isRecurringYearly: isRecurringYearly,
-                   reminderOffsets: reminderOffsets)
+                   reminderOffsets: reminderOffsets, location: nil)
     }
 
     func save(id: UUID?, title: String, details: String?, startsAt: Date, kind: FamilyItemKind,
               memberIDs: [UUID], isForEveryone: Bool, responsibleMemberID: UUID?,
-              isRecurringYearly: Bool, reminderOffsets: [Int]) async -> Bool {
+              isRecurringYearly: Bool, reminderOffsets: [Int], location: String?) async -> Bool {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 160 else {
             errorMessage = "Ange en rubrik på 1–160 tecken."
@@ -62,7 +62,7 @@ final class FamilyCalendarViewModel: ObservableObject {
         store.saveCalendarItem(id: id, title: clean, details: details, startsAt: persistedDate,
                                kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
                                responsibleMemberID: responsibleMemberID, recurring: isRecurringYearly,
-                               reminderOffsets: reminderOffsets)
+                               reminderOffsets: reminderOffsets, location: location)
         await load()
         return true
     }

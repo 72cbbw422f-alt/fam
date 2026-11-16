@@ -21,7 +21,7 @@ struct DashboardView: View {
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 12)
-                .padding(.bottom, 72)
+                .padding(.bottom, 124)
             }
             .background(FamiljenTheme.paper.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
@@ -410,29 +410,6 @@ struct DashboardView: View {
         .padding(.vertical, 11)
     }
 
-    private func shortcutCard(_ title: String, detail: String, symbol: String) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            CategoryIcon(kind: categoryKind(for: title), size: 42)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(FamiljenTheme.ink)
-                Text(detail)
-                    .font(.system(size: 10))
-                    .foregroundStyle(FamiljenTheme.muted)
-                    .lineLimit(1)
-            }
-        }
-        .frame(maxWidth: .infinity, minHeight: 98, alignment: .leading)
-        .padding(14)
-        .background(.white.opacity(0.92), in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 17, style: .continuous)
-                .stroke(FamiljenTheme.sand.opacity(0.65), lineWidth: 1)
-        }
-        .shadow(color: FamiljenTheme.navy.opacity(0.025), radius: 8, x: 0, y: 3)
-    }
-
     private func emptyCard(_ text: String, symbol: String) -> some View {
         HStack(spacing: 11) {
             Image(systemName: symbol)
@@ -458,12 +435,4 @@ struct DashboardView: View {
         member.role == .child ? FamiljenTheme.champagne.opacity(0.38) : FamiljenTheme.sand
     }
 
-    private func categoryKind(for title: String) -> FamilyItemKind {
-        switch title {
-        case "Hälsa": return .healthVisit
-        case "Födelsedagar": return .birthday
-        case "Inköpslista": return .shopping
-        default: return .appointment
-        }
-    }
 }

@@ -48,7 +48,7 @@ final class DashboardViewModel: ObservableObject {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .current
         return source.compactMap { item in
-            guard item.kind == .birthday && item.isRecurringYearly else {
+            guard item.isRecurringYearly else {
                 return item.startsAt >= date ? item : nil
             }
             let parts = calendar.dateComponents([.month, .day, .hour, .minute], from: item.startsAt)

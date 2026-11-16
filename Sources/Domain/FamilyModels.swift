@@ -93,6 +93,7 @@ struct FamilyItem: Identifiable, Codable, Equatable {
     var kind: FamilyItemKind
     var memberID: UUID?
     var isRecurringYearly: Bool
+    var reminderOffsets: [Int]?
 
     enum CodingKeys: String, CodingKey {
         case id, title, details, kind
@@ -101,5 +102,6 @@ struct FamilyItem: Identifiable, Codable, Equatable {
         case endsAt = "ends_at"
         case memberID = "member_id"
         case isRecurringYearly = "is_recurring_yearly"
+        case reminderOffsets = "reminder_offsets"
     }
 }

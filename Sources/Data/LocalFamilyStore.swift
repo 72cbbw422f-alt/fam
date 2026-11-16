@@ -2,7 +2,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class LocalFamilyStore: ObservableObject {
+final class LocalFamilyStore: ObservableObject, FamilyRepository {
     static let shared = LocalFamilyStore()
 
     @Published private(set) var family: Family?
@@ -14,10 +14,18 @@ final class LocalFamilyStore: ObservableObject {
 
     private let fileURL: URL
 
-    private init() {
+    private convenience init() {
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        fileURL = directory.appendingPathComponent("familjen-local-data.json")
+        self.init(fileURL: directory.appendingPathComponent("familjen-local-data.json"))
+    }
+
+    /// Injectable file location keeps persistence tests isolated from the user's real app data.
+    init(fileURL: URL) {
+        self.fileURL = fileURL
+        try? FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
         loadFromDisk()
     }
 

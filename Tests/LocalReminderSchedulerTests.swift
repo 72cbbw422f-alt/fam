@@ -1,6 +1,7 @@
 import XCTest
 @testable import Familjen
 
+@MainActor
 final class LocalReminderSchedulerTests: XCTestCase {
     private func makeItem(
         startsAt: Date,

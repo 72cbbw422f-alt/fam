@@ -3,12 +3,10 @@ name: iOS build
 on:
   push:
     branches: [main, local-first-beta]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: ios-build-${{ github.head_ref || github.ref }}
+  group: ios-build-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:

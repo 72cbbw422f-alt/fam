@@ -375,4 +375,95 @@ final class LocalFamilyStoreTests: XCTestCase {
     }
 
 
+
+    func testSavingMultipleCalendarParticipantsAndResponsibleAdultPersists() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        store.addMember(name: "Villemo", role: .member)
+        let child = try XCTUnwrap(store.members.first(where: { $0.role == .child }))
+        let adult = try XCTUnwrap(store.members.first(where: { $0.displayName == "Villemo" }))
+
+        store.saveCalendarItem(
+            id: nil, title: "Skolavslutning", details: nil,
+            startsAt: Date(timeIntervalSince1970: 1_800_000_000), kind: .event,
+            memberIDs: [child.id, adult.id, child.id], isForEveryone: false,
+            responsibleMemberID: adult.id, recurring: false, reminderOffsets: []
+        )
+
+        let saved = try XCTUnwrap(store.items.first)
+        XCTAssertEqual(saved.memberIDs, [child.id, adult.id])
+        XCTAssertEqual(saved.responsibleMemberID, adult.id)
+        XCTAssertFalse(saved.isForEveryone)
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.items.first?.memberIDs, [child.id, adult.id])
+        XCTAssertEqual(reloaded.items.first?.responsibleMemberID, adult.id)
+    }
+
+    func testFamilyWideAssignmentClearsParticipantsButKeepsResponsibleAdult() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first(where: { $0.role == .child }))
+        let owner = try XCTUnwrap(store.members.first(where: { $0.role == .owner }))
+
+        store.saveCalendarItem(
+            id: nil, title: "Utflykt", details: nil,
+            startsAt: Date(timeIntervalSince1970: 1_800_000_000), kind: .trip,
+            memberIDs: [child.id], isForEveryone: true,
+            responsibleMemberID: owner.id, recurring: false, reminderOffsets: []
+        )
+
+        let saved = try XCTUnwrap(store.items.first)
+        XCTAssertTrue(saved.memberIDs.isEmpty)
+        XCTAssertTrue(saved.isForEveryone)
+        XCTAssertEqual(saved.responsibleMemberID, owner.id)
+    }
+
+    func testCalendarPersonFilterMatchesAnySelectedPersonAndFamilyWideItems() throws {
+        let familyID = UUID()
+        let firstID = UUID()
+        let secondID = UUID()
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        let forFirst = FamilyItem(
+            id: UUID(), familyID: familyID, title: "Besök",
+            details: nil, startsAt: date, endsAt: nil, kind: .healthVisit,
+            memberID: nil, isRecurringYearly: false, reminderOffsets: [],
+            memberIDs: [firstID]
+        )
+        let forSecond = FamilyItem(
+            id: UUID(), familyID: familyID, title: "Träning",
+            details: nil, startsAt: date, endsAt: nil, kind: .activity,
+            memberID: nil, isRecurringYearly: false, reminderOffsets: [],
+            memberIDs: [secondID]
+        )
+        let forEveryone = FamilyItem(
+            id: UUID(), familyID: familyID, title: "Middag",
+            details: nil, startsAt: date, endsAt: nil, kind: .event,
+            memberID: nil, isRecurringYearly: false, reminderOffsets: [],
+            isForEveryone: true
+        )
+        let unassigned = FamilyItem(
+            id: UUID(), familyID: familyID, title: "Preliminärt",
+            details: nil, startsAt: date, endsAt: nil, kind: .appointment,
+            memberID: nil, isRecurringYearly: false, reminderOffsets: []
+        )
+
+        let filtered = FamilyCalendarViewModel.filteredItems(
+            [forFirst, forSecond, forEveryone, unassigned],
+            selectedMemberIDs: [secondID]
+        )
+        XCTAssertEqual(Set(filtered.map(\\.id)), Set([forSecond.id, forEveryone.id]))
+        XCTAssertEqual(
+            FamilyCalendarViewModel.filteredItems(
+                [forFirst, forSecond, forEveryone, unassigned], selectedMemberIDs: []
+            ).count,
+            4
+        )
+    }
+
+
 }

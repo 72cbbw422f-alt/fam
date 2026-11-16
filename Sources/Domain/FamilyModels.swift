@@ -105,3 +105,28 @@ struct FamilyItem: Identifiable, Codable, Equatable {
         case reminderOffsets = "reminder_offsets"
     }
 }
+
+
+enum FamilyConversationKind: String, Codable {
+    case family
+    case direct
+}
+
+struct FamilyMessage: Identifiable, Codable, Equatable {
+    let id: UUID
+    var conversationID: String
+    var kind: FamilyConversationKind
+    var senderID: UUID
+    var text: String
+    var sentAt: Date
+    var readAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id, text
+        case conversationID = "conversation_id"
+        case kind
+        case senderID = "sender_id"
+        case sentAt = "sent_at"
+        case readAt = "read_at"
+    }
+}

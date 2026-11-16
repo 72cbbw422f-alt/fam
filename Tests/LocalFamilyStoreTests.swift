@@ -466,4 +466,38 @@ final class LocalFamilyStoreTests: XCTestCase {
     }
 
 
+
+    func testDeletingMemberRemovesOnlyTheirCalendarAssignmentAndResponsibility() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        store.addMember(name: "Villemo", role: .member)
+        let child = try XCTUnwrap(store.members.first(where: { $0.role == .child }))
+        let adult = try XCTUnwrap(store.members.first(where: { $0.displayName == "Villemo" }))
+
+        store.saveCalendarItem(
+            id: nil, title: "Familjeaktivitet", details: nil,
+            startsAt: Date(timeIntervalSince1970: 1_800_000_000), kind: .event,
+            memberIDs: [child.id, adult.id], isForEveryone: false,
+            responsibleMemberID: child.id, recurring: false, reminderOffsets: []
+        )
+        store.deleteMember(id: child.id)
+
+        let saved = try XCTUnwrap(store.items.first)
+        XCTAssertEqual(saved.memberIDs, [adult.id])
+        XCTAssertNil(saved.responsibleMemberID)
+        XCTAssertEqual(saved.title, "Familjeaktivitet")
+
+        store.deleteMember(id: adult.id)
+        let afterSecondRemoval = try XCTUnwrap(store.items.first)
+        XCTAssertTrue(afterSecondRemoval.memberIDs.isEmpty)
+        XCTAssertNil(afterSecondRemoval.responsibleMemberID)
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.items.first?.memberIDs.isEmpty == true)
+        XCTAssertNil(reloaded.items.first?.responsibleMemberID)
+    }
+
+
 }

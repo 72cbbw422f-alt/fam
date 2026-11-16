@@ -142,6 +142,24 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Källkod och tester är incheckade.
 - Testerna är ännu inte verifierade i CI; bygg- och testresultat rapporteras separat när workflow-körningen avslutats.
 
+
+### 2026-11-16 – CI: eliminera dubbla workflow-körningar
+
+**Fynd**
+- Varje commit på arbetsgrenen startade två körningar med samma SHA: en från `push` och en från `pull_request`.
+- Körningarna låg samtidigt i kö och tidigare uppdateringar avbröts ofta innan jobb hann starta. Det gjorde CI-resultaten svårtolkade och slösade byggkapacitet.
+
+**Åtgärd**
+- Behöll `push` för `main` och `local-first-beta` samt manuell `workflow_dispatch`.
+- Tog bort den redundanta `pull_request`-triggern. Push-körningen är fortfarande kopplad till samma commit som PR:n.
+- Förenklade concurrency-gruppen till workflow-ref så körningar på samma gren hanteras konsekvent.
+- Fil: `.github/workflows/ios-build.yml`.
+- Commit: `97053bc5bb3dafa99aa8ca024e0344e84dced0b5`.
+
+**Verifiering**
+- Workflow-konfigurationen är uppdaterad på arbetsgrenen.
+- Ny körning ska kontrolleras separat; inga bygg- eller testresultat är ännu godkända.
+
 ## Test- och leveransregler
 
 - Ett test räknas som godkänt först när CI-resultat/logg visar att det passerat.

@@ -51,3 +51,53 @@ Each iPhone stores its own independent family data. There is no shared calendar,
 **Designprincip:** Barn ska kunna finnas som profiler utan egna konton. Funktionen ska stödja praktisk familjeplanering, inte bli ett generellt uppgiftssystem.
 
 **Status:** Produktbeslut/plan dokumenterat 2026-11-16. Inte implementerat ännu.
+
+## Produktgranskning: jämförelse med familjeappar (2026-11-16)
+
+Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. Slutsatsen är att Familjen ska prioritera en stark familjekalender och en genomtänkt iOS-upplevelse, inte försöka kopiera alla konkurrenters moduler.
+
+### Befintligt som ska byggas vidare på
+- Familjeprofiler för vuxna och barn finns redan i `FamilyMembersView`; återanvänd den befintliga hanteringen i Inställningar i stället för att skapa ett parallellt profilsystem.
+- Kalendern har redan aktivitetskategorier, lokal påminnelsehantering och läsning av Apple Kalender via EventKit.
+- Lokal OCR finns redan i projektet. Nästa steg bör vara ett granskat importflöde, inte en separat OCR-funktion.
+- Repository-abstraktion finns, men local-first-betan har ännu inte gemensam data mellan telefoner.
+
+### Prioritering
+
+#### P0 – kvalitet och grund
+- [ ] Slutför verifiering av de senast tillagda födelsedagsregressionstesterna i CI; senaste kända run `43941033673` avbröts och räknas inte som godkänd.
+- [ ] Fortsätt regressionstesta lokal persistens, kalenderredigering och notiser innan större funktionsbyggen.
+
+#### P1 – kärnupplevelsen i familjekalendern
+- [ ] Familjemedlemmar i kalendern: koppla en händelse till en eller flera profiler.
+- [ ] Separat och tydligt val för **Hela familjen**.
+- [ ] Filter för alla, en person och flera valda personer.
+- [ ] Skilj på deltagare/berörda personer och ansvarig vuxen för händelsen.
+- [ ] Bakåtkompatibel datamodell från nuvarande `memberID` till stöd för flera personer; bevara befintliga snapshots och poster.
+- [ ] Förbättra händelsedetaljer med plats/adress och tydliga anteckningar; undersök kontaktuppgifter och bilagor först när integritet och lagring är definierade.
+- [ ] Utöka återkommande aktiviteter utöver födelsedagar när kalenderns grundflöde är stabilt; börja med veckovis/månadsvis och stöd för att ändra en förekomst eller hela serien.
+
+#### P2 – minska manuellt arbete och förbättra iOS-åtkomst
+- [ ] Bygg vidare på befintlig OCR till ett importflöde: bild/PDF → extraherat förslag på titel, datum, tid och plats → användaren granskar → väljer familjemedlem → sparar.
+- [ ] Lägg till kalenderwidget med dagens och närmaste familjehändelser.
+- [ ] Lägg till snabbregistrering av händelser med rimliga standardvärden och så få tryck som möjligt.
+- [ ] Undersök prenumeration/import av externa kalendrar (t.ex. iCal/ICS) med tydlig källa och utan att blanda ihop importerade poster med Familjens egna.
+
+#### P3 – samordning och utökning
+- [ ] Aktivitetsflöde som visar vem som lagt till eller ändrat en händelse, när gemensam synk finns.
+- [ ] Utvärdera flera inköpslistor först efter att kalender och synk är stabila.
+- [ ] Gemensam synk och säkerhetskopiering mellan familjens telefoner krävs för att appen ska fungera som ett gemensamt familjeverktyg. Planera CloudKit/CKShare separat med migrering, behörigheter och konfliktlösning; påbörja inte migreringen utan uttryckligt beslut.
+
+### Medvetet utanför nuvarande produktfokus
+- Hushållssysslor, poängsystem och generella att-göra-listor.
+- GPS-spårning och ankomstaviseringar.
+- Budgetering, recept-/måltidsplanering och ett separat socialt fotoalbum.
+
+### Produktprinciper
+- Funktioner ska lösa ett återkommande familjebehov; undvik funktionsmängd för sin egen skull.
+- Import från bilder eller dokument ska alltid presenteras som ett förslag som användaren godkänner, aldrig skapa kalenderposter utan bekräftelse.
+- Visa tydligt om data är lokal, importerad eller gemensamt synkroniserad.
+- Barn ska kunna vara profiler utan egna konton.
+- Håll gränssnittet kompakt, lättläst och i linje med Scandinavian Premium / Modern iOS.
+
+**Status:** Produktgranskning dokumenterad. Detta är en prioriterad plan, inte ett påstående om att dessa funktioner redan är implementerade.

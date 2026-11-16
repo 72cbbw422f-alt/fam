@@ -340,3 +340,28 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Verifiering**
 - Regressionstestet är incheckat men ännu inte verifierat i CI.
 - Nästa CI-körning ska kontrollera simulatorbuild och hela enhetstestsviten.
+
+
+### 2026-11-16 – bakåtkompatibel datamodell för flera personer i kalendern
+
+**Mål**
+- Förbereda kalendern för flera berörda familjemedlemmar, en separat ansvarig vuxen och ett uttryckligt val för Hela familjen utan att bryta äldre lokala snapshots.
+
+**Ändringar**
+- FamilyItem har nu memberIDs för noll eller flera berörda personer.
+- isForEveryone skiljer en familjeomfattande händelse från en händelse utan personkoppling.
+- responsibleMemberID lagrar separat vem som ansvarar för samordningen.
+- Den äldre memberID-egenskapen finns kvar som kompatibilitetsaccessor för befintliga anropsställen.
+- Avkodning läser äldre member_id när member_ids saknas. Kodning skriver den nya modellen och behåller även legacy-nyckeln member_id med första valda personen.
+- Filer: Sources/Domain/FamilyModels.swift, Tests/LocalFamilyStoreTests.swift.
+- Commits: 602be874532bb8131ecad79f0b7b33d4d5e9860e (modell), 25313e264d6b8a9ff7b2dae191f3392e8b991365 (tester).
+
+**Tester tillagda**
+- Äldre JSON med enbart member_id avkodas till en deltagare.
+- Ny JSON med flera member_ids och separat ansvarig person överlever encode/decode.
+- Hela familjen hålls åtskilt från ingen tilldelning.
+
+**Avgränsning**
+- Detta är datamodellens första steg. Kalenderformuläret, repository-metoderna och filtreringen använder ännu inte de nya fälten.
+- memberID-kompatibiliteten håller befintliga anropsställen fungerande under övergången; den nya UI-implementationen ska använda de explicita fälten.
+- CI-verifiering inväntas. Inga tester markeras som godkända innan simulatorjobbet har passerat.

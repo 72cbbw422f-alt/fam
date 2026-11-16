@@ -8,9 +8,9 @@
 - Arbetsgren: `local-first-beta`
 - Pull request: [#1 – Convert Familjen to local-first iOS beta](https://github.com/72cbbw422f-alt/fam/pull/1)
 - PR-status vid senaste kontroll: öppen, draft.
-- Senast verifierade commit: `2c533c79804337b06aca1d565f42b2c186e230b4`
+- Senast verifierade commit: `309834fdd78bf7feac2cf06fc8ced03111297017`
 - Jämförelse mot `main`: 147 commits före, 0 bakom vid senaste kontroll.
-- CI: Run `43922355483` (commit `66fdf9aa959edfed292922cc4cb2fd56010ee5f5`) avslutades med fel i både simulator-testjobbet och unsigned iPhone-bygget. Båda stoppade på samma Swift actor-isoleringsfel i fyra ViewModels. Korrigeringar är nu incheckade; ny CI-körning inväntas.
+- CI: Run `43939559116` på commit `309834fdd78bf7feac2cf06fc8ced03111297017` är verifierad grön. Simulatorjobb och unsigned iPhone-bygge lyckades. Samtliga 18 enhetstester passerade (14 LocalFamilyStoreTests + 4 LocalReminderSchedulerTests). IPA-artefakten `Familjen-unsigned-IPA` skapades och laddades upp; den är osignerad och fysisk iPhone-test är inte genomförd.
 - Fysisk iPhone-test: inte genomförd/verifierad.
 - Tvåtelefonssynk: inte implementerad i local-first-betan. Varje enhet har separat lokal data.
 
@@ -101,7 +101,7 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Korrigeringen är incheckad, men ännu inte verifierad av en ny CI-körning.
 - Ingen IPA har skapats eller delats från den misslyckade körningen; paketeringssteget hoppades över.
 
-### Tidigare local-first-arbete – sammanfattning
+### 2026-11-16 – verifierad CI efter MainActor-korrigering\n\n**Resultat**\n- Workflow run: `43939559116` – [öppna körningen](https://github.com/72cbbw422f-alt/fam/actions/runs/43939559116).\n- Commit: `309834fdd78bf7feac2cf06fc8ced03111297017`.\n- `Build Familjen (iOS Simulator)`: lyckades.\n- `Run unit tests`: lyckades; 18 tester, 0 fel. `LocalFamilyStoreTests`: 14/14. `LocalReminderSchedulerTests`: 4/4.\n- `Build for iOS Simulator`: lyckades.\n- `Build unsigned IPA (iPhone)`: lyckades. Appens bundle identifier verifierades som `se.familjen.app`, plattform `iPhoneOS` och minsta iOS-version 17.0.\n- Artefakt: `Familjen-unsigned-IPA`, artifact ID `14262816270`, SHA-256 `b87ab32cd933d629012621a7e1bdb358e5956b32926edbc0ac03dc1e0e6ecb91`. Artefakten finns till 2026-11-30.\n\n**Bedömning och begränsningar**\n- MainActor-standardargumentfelet är verifierat åtgärdat genom lyckad kompilering i båda byggspåren.\n- Detta verifierar kompilering och befintliga automatiserade tester, inte appens visuella beteende eller fysisk installation/notisleverans.\n- IPA:n är uttryckligen osignerad; den får inte beskrivas som signerad eller distributionsklar.\n- Nästa steg: utöka testtäckningen för kalenderredigering, radering, tidszon/DST och repository-fasadens uppdateringar; därefter fysisk installationstest via tillgänglig sideload-process.\n\n### Tidigare local-first-arbete – sammanfattning
 
 - Native SwiftUI local-first-beta sattes upp med lokala familjeprofiler, kalender, inköpslista, meddelanden och notiser.
 - Repository-abstraktion och UI-fasad infördes för att minska kopplingen till lokal lagring.

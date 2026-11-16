@@ -18,34 +18,54 @@ enum LocalReminderScheduler {
         let oldIDs = pending.map(\.identifier).filter { $0.hasPrefix(identifierPrefix) }
         center.removePendingNotificationRequests(withIdentifiers: oldIDs)
 
-        // iOS limits the number of pending local notifications. Keep the
-        // next 30 activities (two reminders each) rather than over-scheduling.
-        for item in items.sorted(by: { $0.startsAt < $1.startsAt }).prefix(30) {
-            for offset in [24 * 60 * 60, 60 * 60] {
-                let fireDate = item.startsAt.addingTimeInterval(TimeInterval(-offset))
-                guard fireDate > .now else { continue }
-
-                let content = UNMutableNotificationContent()
-                content.title = offset == 3600 ? "Påminnelse: om en timme" : "Påminnelse: imorgon"
-                content.body = "\(item.title) · \(item.startsAt.formatted(.dateTime.hour().minute()))"
-                content.sound = .default
-
-                let components = Calendar.current.dateComponents(
-                    [.year, .month, .day, .hour, .minute, .second],
-                    from: fireDate
-                )
-                let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-                let request = UNNotificationRequest(
-                    identifier: "\(identifierPrefix)\(item.id.uuidString)-\(offset)",
-                    content: content,
-                    trigger: trigger
-                )
-                do {
-                    try await center.add(request)
-                } catch {
-                    // A failed local reminder must not block calendar usage.
-                }
+        // iOS allows a limited number of pending local notifications.
+        // Keep the 60 soonest reminders across all calendar activities.
+        let candidates = items.flatMap { item in
+            (item.reminderOffsets ?? [24 * 60 * 60, 60 * 60]).map { offset in
+                (item: item, offset: offset,
+                 fireDate: item.startsAt.addingTimeInterval(TimeInterval(-offset)))
             }
+        }
+        .filter { $0.fireDate > .now }
+        .sorted { $0.fireDate < $1.fireDate }
+        .prefix(60)
+
+        for candidate in candidates {
+            let item = candidate.item
+            let offset = candidate.offset
+            let fireDate = candidate.fireDate
+
+            let content = UNMutableNotificationContent()
+            content.title = "Påminnelse: \(reminderLabel(for: offset))"
+            content.body = "\(item.title) · \(item.startsAt.formatted(.dateTime.hour().minute()))"
+            content.sound = .default
+
+            let components = Calendar.current.dateComponents(
+                [.year, .month, .day, .hour, .minute, .second],
+                from: fireDate
+            )
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            let request = UNNotificationRequest(
+                identifier: "\(identifierPrefix)\(item.id.uuidString)-\(offset)",
+                content: content,
+                trigger: trigger
+            )
+            do {
+                try await center.add(request)
+            } catch {
+                // A failed local reminder must not block calendar usage.
+            }
+        }
+    }
+
+    private static func reminderLabel(for offset: Int) -> String {
+        switch offset {
+        case 7 * 24 * 60 * 60: return "om en vecka"
+        case 24 * 60 * 60: return "imorgon"
+        case 60 * 60: return "om en timme"
+        case 15 * 60: return "om 15 minuter"
+        case 0: return "nu"
+        default: return "snart"
         }
     }
 

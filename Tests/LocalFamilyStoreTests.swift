@@ -121,4 +121,39 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(store.members.map(\.displayName), ["Niklas", "Cleo"])
     }
 
+
+    func testRecurringLeapDayBirthdayProjectsToFebruary28InNonLeapYear() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let birthDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2000, month: 2, day: 29, hour: 9)))
+        let familyID = UUID()
+        let birthday = FamilyItem(id: UUID(), familyID: familyID, title: "Födelsedag",
+                                  details: nil, startsAt: birthDate, endsAt: nil,
+                                  kind: .birthday, memberID: nil, isRecurringYearly: true,
+                                  reminderOffsets: [])
+        let referenceDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2025, month: 1, day: 1)))
+        let projected = try XCTUnwrap(DashboardViewModel.project([birthday], from: referenceDate).first)
+        let parts = calendar.dateComponents([.year, .month, .day, .hour], from: projected.startsAt)
+        XCTAssertEqual(parts.year, 2025)
+        XCTAssertEqual(parts.month, 2)
+        XCTAssertEqual(parts.day, 28)
+        XCTAssertEqual(parts.hour, 9)
+    }
+
+    func testRecurringBirthdayProjectsIntoNextYearWhenThisYearsDateHasPassed() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let birthDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 1990, month: 3, day: 12, hour: 8)))
+        let birthday = FamilyItem(id: UUID(), familyID: UUID(), title: "Födelsedag",
+                                  details: nil, startsAt: birthDate, endsAt: nil,
+                                  kind: .birthday, memberID: nil, isRecurringYearly: true,
+                                  reminderOffsets: [])
+        let referenceDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 16)))
+        let projected = try XCTUnwrap(DashboardViewModel.project([birthday], from: referenceDate).first)
+        let parts = calendar.dateComponents([.year, .month, .day], from: projected.startsAt)
+        XCTAssertEqual(parts.year, 2027)
+        XCTAssertEqual(parts.month, 3)
+        XCTAssertEqual(parts.day, 12)
+    }
+
 }

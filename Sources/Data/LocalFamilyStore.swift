@@ -34,9 +34,13 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     func createFamily(name: String, ownerName: String) {
-        let family = Family(id: UUID(), name: name.trimmingCharacters(in: .whitespacesAndNewlines))
+        let cleanFamilyName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanOwnerName = ownerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanFamilyName.isEmpty, cleanFamilyName.count <= 80,
+              !cleanOwnerName.isEmpty, cleanOwnerName.count <= 80 else { return }
+        let family = Family(id: UUID(), name: cleanFamilyName)
         let owner = FamilyMember(id: UUID(), familyID: family.id,
-                                 displayName: ownerName.trimmingCharacters(in: .whitespacesAndNewlines),
+                                 displayName: cleanOwnerName,
                                  role: .owner, linkedUserID: nil)
         self.family = family
         members = [owner]
@@ -56,9 +60,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     func addChild(name: String) {
-        guard let family, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let family, !clean.isEmpty, clean.count <= 80 else { return }
         members.append(FamilyMember(id: UUID(), familyID: family.id,
-                                    displayName: name.trimmingCharacters(in: .whitespacesAndNewlines),
+                                    displayName: clean,
                                     role: .child, linkedUserID: nil))
         saveToDisk()
     }
@@ -119,9 +124,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     func addShoppingItem(_ title: String) {
-        guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, clean.count <= 160 else { return }
         shoppingItems.append(ShoppingItem(id: UUID(), listID: family?.id ?? UUID(),
-                                          title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                                          title: clean,
                                           isChecked: false, createdAt: .now))
         saveToDisk()
     }

@@ -126,7 +126,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
                           kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
                           responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int],
-                          location: String?) {
+                          location: String? = nil) {
         guard let family else { return }
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }

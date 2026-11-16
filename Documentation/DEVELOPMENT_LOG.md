@@ -126,6 +126,7 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 | FAM-010 | Signering | Unsigned IPA är inte direkt likvärdig med signerad distributionsklar app. | Känd begränsning: signera och testa via tillgänglig sideload-process; Apple Developer senare. |
 | FAM-011 | Swift concurrency | MainActor-isolerad repository-fabrik anropades i default arguments för fyra ViewModels, vilket stoppade simulator- och device-kompilering. | Åtgärdad och verifierad: båda byggspåren gröna i run `43939559116`. |\n| FAM-012 | Födelsedagsredigering | Regressionstäckningen saknade kontroll av att projicerade födelsedagar behåller födelseåret och att 29 februari bevaras vid oförändrad projicering. | Två regressionstester tillagda i `701de43`; CI-verifiering inväntas. Känd UX-tvetydighet för avsiktlig ändring 29→28 februari dokumenterad ovan. |
 | FAM-013 | Familjeprofiler / kalenderhistorik | Att ta bort en familjemedlem raderade tidigare alla kalenderhändelser som var kopplade till profilen. | Åtgärdad i kod: behåll händelserna och rensa endast personkopplingen. Regressionstest tillagt; CI-verifiering inväntas. |
+| FAM-014 | Swift-kompilering | En extra escapad backslash i två nya key-path-uttryck stoppade simulatorns kompilering innan testerna startade. | Korrigerat i commits `3212c077` och `7c8c2ee`; ny CI-verifiering inväntas. |
 
 
 ### 2026-11-16 – korrigering av legacy-snapshot-test
@@ -405,3 +406,19 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Ingen fysisk iPhone-testning har utförts. IPA är osignerad.
 - Personfilter använder OR-semantik: händelsen visas om den gäller minst en vald person. Familjeomfattande händelser visas alltid när ett personfilter är aktivt.
 - Detta är första funktionsversionen. Ingen CloudKit-synk eller delning mellan telefoner ingår.
+
+
+### 2026-11-16 – FAM-014: korrigering av Swift-nyckelvägar efter första CI-körningen
+
+**Fynd**
+- Simulator-CI för commit 565440fa misslyckades under kompilering innan testerna kunde köras.
+- Loggen pekade ut en felaktigt escapad key path i dashboardens deltagarvisning (`DashboardView.swift`). Samma typ av extra backslash fanns i ett nytt filtertest.
+
+**Åtgärd**
+- Korrigerade båda uttrycken till giltig Swift key-path-syntax.
+- Filer: Sources/DashboardView.swift och Tests/LocalFamilyStoreTests.swift.
+- Commits: 3212c0779f9bf8de3f01d10dce27ae732b080643 och 7c8c2ee14793032d77e5b8f5cdf5ced243513e43.
+
+**Verifiering**
+- Källorna har kontrollerats igen för dubbla backslash-tecken före key-path-uttryck.
+- Ny CI-körning för commit 7c8c2ee inväntas. Felet räknas inte som åtgärdat/verifierat förrän simulatorbygget och testerna passerar.

@@ -120,7 +120,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         saveCalendarItem(id: id, title: title, details: details, startsAt: startsAt,
                          kind: kind, memberIDs: memberID.map { [$0] } ?? [],
                          isForEveryone: false, responsibleMemberID: nil,
-                         recurring: recurring, reminderOffsets: reminderOffsets)
+                         recurring: recurring, reminderOffsets: reminderOffsets, location: nil)
     }
 
     func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,

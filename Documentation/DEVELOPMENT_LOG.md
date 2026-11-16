@@ -10,7 +10,7 @@
 - PR-status vid senaste kontroll: öppen, draft.
 - Senast verifierade commit: `2c533c79804337b06aca1d565f42b2c186e230b4`
 - Jämförelse mot `main`: 147 commits före, 0 bakom vid senaste kontroll.
-- CI: GitHub Actions-run `43920508546` var köad vid senaste kontroll. Simulatorjobbet och unsigned IPA-jobbet var båda `queued`. Inget godkänt bygge eller testresultat är verifierat.
+- CI: Run `43922355483` (commit `66fdf9aa959edfed292922cc4cb2fd56010ee5f5`) avslutades med fel i både simulator-testjobbet och unsigned iPhone-bygget. Båda stoppade på samma Swift actor-isoleringsfel i fyra ViewModels. Korrigeringar är nu incheckade; ny CI-körning inväntas.
 - Fysisk iPhone-test: inte genomförd/verifierad.
 - Tvåtelefonssynk: inte implementerad i local-first-betan. Varje enhet har separat lokal data.
 
@@ -79,6 +79,28 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Jobb: `Build Familjen (iOS Simulator)` och `Build unsigned IPA (iPhone)`, båda köade.
 - Inga tester eller byggen markeras som godkända i denna logg förrän körningen har avslutats med verifierad status och relevanta loggar har granskats.
 
+### 2026-11-16 – korrigera MainActor-standardargument i ViewModels
+
+**Fynd**
+- CI-run `43922355483` misslyckades i både `Build unsigned IPA (iPhone)` och `Build Familjen (iOS Simulator)`.
+- Xcode rapporterade fyra kompilatorfel: `FamilyRepositoryFactory.makeDefault()` är MainActor-isolerad men användes direkt i standardargumentet till fyra synkrona initialiserare. Standardargumentets uttryck utvärderas i en icke-isolerad kontext.
+- Berörda filer: `DashboardViewModel.swift`, `NotificationsViewModel.swift`, `FamilyCalendarViewModel.swift` och `ShoppingListViewModel.swift`.
+
+**Åtgärd**
+- Ändrade initialiserarna till valfri injicerad repository med standardvärdet `nil`.
+- Repository-fabriken anropas nu i initialiserarens kropp, där ViewModel-klassen redan är isolerad till MainActor.
+- Behåller testbar dependency injection: tester kan fortfarande skicka in ett explicit repository.
+- Commits:
+  - `eb3996b90da351dfe6feb6f2b45c7f2fb44cc54b` – dashboard.
+  - `b67308809e56bd38ed5c3fed153e1ac990aa1228` – notiser.
+  - `47967ca2a1c8ead8b27e8469ab4bef22b38b9b44` – kalender.
+  - `8aa354fc8aab8ca09af3ac64cc9988f7c6801ddb` – inköpslista.
+
+**Verifiering**
+- CI-loggarna identifierade felet entydigt i samtliga fyra filer.
+- Korrigeringen är incheckad, men ännu inte verifierad av en ny CI-körning.
+- Ingen IPA har skapats eller delats från den misslyckade körningen; paketeringssteget hoppades över.
+
 ### Tidigare local-first-arbete – sammanfattning
 
 - Native SwiftUI local-first-beta sattes upp med lokala familjeprofiler, kalender, inköpslista, meddelanden och notiser.
@@ -102,6 +124,7 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 | FAM-008 | Familjedata | Varje telefon har separat lokal databas. | Känd produktbegränsning: CloudKit/CKShare krävs för gemensam data. |
 | FAM-009 | Enhetskvalitet | Ingen verifierad fysisk iPhone-test ännu. | Öppen: testa installation, persistens, notisbehörighet och notisleverans på enheten. |
 | FAM-010 | Signering | Unsigned IPA är inte direkt likvärdig med signerad distributionsklar app. | Känd begränsning: signera och testa via tillgänglig sideload-process; Apple Developer senare. |
+| FAM-011 | Swift concurrency | MainActor-isolerad repository-fabrik anropades i default arguments för fyra ViewModels, vilket stoppade simulator- och device-kompilering. | Åtgärdad i kod genom att flytta fabriksanropet in i MainActor-isolerade initialiserare. Ny CI-verifiering krävs. |
 
 
 ### 2026-11-16 – korrigering av legacy-snapshot-test

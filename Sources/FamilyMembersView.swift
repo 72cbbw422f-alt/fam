@@ -4,6 +4,7 @@ struct FamilyMembersView: View {
     @State private var members: [FamilyMember] = []
     @State private var birthdays: [UUID: Date] = [:]
     @State private var newChildName = ""
+    @State private var newAdultName = ""
     @State private var editingChild: FamilyMember?
     @State private var showingEditor = false
     @State private var childToDelete: FamilyMember?
@@ -21,7 +22,7 @@ struct FamilyMembersView: View {
                             .background(FamiljenTheme.sand.opacity(0.55), in: Circle())
                         VStack(alignment: .leading, spacing: 3) {
                             Text(member.displayName).font(.subheadline.weight(.semibold)).foregroundStyle(FamiljenTheme.ink)
-                            Text(member.role == .child ? "Barnprofil" : (member.role == .owner ? "Familjeägare" : "Vuxen"))
+                            Text(member.role == .child ? "Barnprofil" : (member.role == .owner ? "Familjeägare" : "Vuxenprofil"))
                                 .font(.caption).foregroundStyle(FamiljenTheme.muted)
                             if let date = birthdays[member.id] {
                                 Text("Födelsedag · " + date.formatted(.dateTime.day().month(.abbreviated)))
@@ -42,12 +43,19 @@ struct FamilyMembersView: View {
                 }
             } header: { Text("Familjemedlemmar") }
             Section {
+                TextField("Vuxens namn", text: $newAdultName).textInputAutocapitalization(.words)
+                Button { addAdult() } label: { Label("Lägg till vuxen", systemImage: "person.badge.plus").foregroundStyle(FamiljenTheme.navy) }
+                    .disabled(newAdultName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Text("Lägg till en vuxen familjemedlem. Profilen kan senare kopplas till ett eget konto när familjedelning aktiveras.")
+                    .font(.caption).foregroundStyle(FamiljenTheme.muted)
+            } header: { Text("Vuxna") }
+            Section {
                 TextField("Barnets namn", text: $newChildName).textInputAutocapitalization(.words)
                 Button { addChild() } label: { Label("Lägg till barnprofil", systemImage: "plus.circle.fill").foregroundStyle(FamiljenTheme.navy) }
                     .disabled(newChildName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 Text("Barnprofiler behöver inget eget konto. Koppla dem till födelsedagar, bokningar och aktiviteter.")
                     .font(.caption).foregroundStyle(FamiljenTheme.muted)
-            } header: { Text("Lägg till familjemedlem") }
+            } header: { Text("Barn") }
             if let infoMessage { Section { Text(infoMessage).font(.footnote).foregroundStyle(.green) } }
             if let errorMessage { Section { Text(errorMessage).font(.footnote).foregroundStyle(.red) } }
         }
@@ -57,8 +65,8 @@ struct FamilyMembersView: View {
         .refreshable { loadMembers() }
         .sheet(isPresented: $showingEditor, onDismiss: { editingChild = nil }) {
             if let editingChild {
-                ChildProfileEditor(member: editingChild) { newName in
-                    LocalFamilyStore.shared.renameChild(id: editingChild.id, name: newName)
+                MemberProfileEditor(member: editingChild) { newName in
+                    LocalFamilyStore.shared.renameMember(id: editingChild.id, name: newName)
                     loadMembers()
                     return true
                 }
@@ -66,7 +74,7 @@ struct FamilyMembersView: View {
         }
         .confirmationDialog("Ta bort barnprofilen?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
             Button("Ta bort", role: .destructive) {
-                if let childToDelete { LocalFamilyStore.shared.deleteChild(id: childToDelete.id); loadMembers() }
+                if let childToDelete { LocalFamilyStore.shared.deleteMember(id: childToDelete.id); loadMembers() }
             }
             Button("Avbryt", role: .cancel) { childToDelete = nil }
         } message: { Text("Profilen tas bort. Kalenderaktiviteter kopplade till profilen tas också bort.") }
@@ -85,9 +93,16 @@ struct FamilyMembersView: View {
         LocalFamilyStore.shared.addChild(name: clean)
         newChildName = ""; infoMessage = "Barnprofilen har lagts till."; loadMembers()
     }
+
+    private func addAdult() {
+        let clean = newAdultName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, clean.count <= 80 else { errorMessage = "Namnet får vara högst 80 tecken."; return }
+        LocalFamilyStore.shared.addMember(name: clean, role: .member)
+        newAdultName = ""; infoMessage = "Vuxenprofilen har lagts till."; loadMembers()
+    }
 }
 
-private struct ChildProfileEditor: View {
+private struct MemberProfileEditor: View {
     @Environment(\.dismiss) private var dismiss
     let member: FamilyMember
     let onSave: (String) async -> Bool
@@ -100,7 +115,7 @@ private struct ChildProfileEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Barnprofil") { TextField("Namn", text: $name).textInputAutocapitalization(.words) }
+                Section(member.role == .child ? "Barnprofil" : "Vuxenprofil") { TextField("Namn", text: $name).textInputAutocapitalization(.words) }
                 if let errorMessage { Section { Text(errorMessage).font(.footnote).foregroundStyle(.red) } }
             }
             .navigationTitle("Redigera profil").navigationBarTitleDisplayMode(.inline)

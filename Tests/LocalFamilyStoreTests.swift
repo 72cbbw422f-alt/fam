@@ -205,7 +205,7 @@ final class LocalFamilyStoreTests: XCTestCase {
 
     func testLegacySnapshotWithoutMessagesLoadsAsEmptyConversationHistory() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FamiljenLegacyTests-\\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("FamiljenLegacyTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
 

@@ -456,7 +456,7 @@ final class LocalFamilyStoreTests: XCTestCase {
             [forFirst, forSecond, forEveryone, unassigned],
             selectedMemberIDs: [secondID]
         )
-        XCTAssertEqual(Set(filtered.map(\\.id)), Set([forSecond.id, forEveryone.id]))
+        XCTAssertEqual(Set(filtered.map(\.id)), Set([forSecond.id, forEveryone.id]))
         XCTAssertEqual(
             FamilyCalendarViewModel.filteredItems(
                 [forFirst, forSecond, forEveryone, unassigned], selectedMemberIDs: []

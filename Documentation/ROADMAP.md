@@ -11,7 +11,13 @@
 - [x] Per-activity reminder choices (one week, one day, one hour, 15 minutes, at start)
 - [x] Apple Calendar read-only import for upcoming events
 - [x] Local family group chat and private conversation UI (device-local prototype only)
+- [x] Add a provider-neutral `FamilyRepository` contract and local repository factory
+- [x] Inject the repository contract into dashboard, calendar, shopping and notification view models
+- [x] Make local storage file location injectable for isolated persistence tests
+- [x] Add unit tests for family/profile/shopping persistence, calendar CRUD and default provider selection
+- [x] Run unit tests in the iOS Simulator CI workflow
 - [ ] Verify persistence, CRUD and reminders on physical iPhones
+- [ ] Verify the new repository abstraction and unit tests pass in CI
 - [ ] Verify unsigned iOS Simulator build in CI after local-first refactor
 - [ ] Prepare signed device build when signing credentials are available
 

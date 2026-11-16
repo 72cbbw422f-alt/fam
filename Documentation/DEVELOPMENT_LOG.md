@@ -249,4 +249,39 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - 
 
 **Beslut**
-- 
+-
+
+### 2026-11-16 – produktbeslut: koppla kalenderhändelser till familjemedlemmar
+
+**Användarbehov**
+- Familjens vuxna och barn ska kunna läggas upp som profiler under Inställningar.
+- När en kalenderhändelse skapas eller redigeras ska användaren kunna välja vem eller vilka händelsen gäller: exempelvis en vuxen, ett visst barn eller flera familjemedlemmar.
+- Det ska finnas ett tydligt alternativ för **Hela familjen**.
+- Kalendern ska kunna filtreras på hela familjen, en enskild person eller flera personer.
+
+**Produkt- och UX-beslut**
+- Barnprofiler ska inte kräva egna användarkonton.
+- Personkoppling ska vara synlig och lätt att förstå i kalendern, exempelvis genom diskreta färgmarkeringar/profilchips.
+- En familjeomfattande händelse ska modelleras uttryckligen och inte blandas ihop med en händelse där ingen person har valts.
+- Inställningar ska vara den naturliga platsen för att hantera familjens profiler; befintlig profilhantering ska återanvändas i stället för att skapa dubbla system.
+- Funktionen ska hålla sig till familjekalenderns syfte. Inga sysslor eller generella att-göra-listor läggs till.
+
+**Teknisk påverkan att utreda före implementation**
+- Nuvarande kalenderpost använder en enskild memberID. För flera personer behöver modellen, repository-kontraktet, lagringslagret, ViewModels och kalenderformuläret stödja flera medlems-ID:n.
+- Bakåtkompatibel avkodning krävs så befintliga lokala JSON-snapshots och kalenderhändelser inte går förlorade.
+- Skilj mellan explicit familjeomfattning och valda personer; exempelvis ett separat scope/flagga eller motsvarande tydlig modell.
+- Kalenderfilter ska byggas på den nya tilldelningsmodellen och testas för både enskilda och kombinerade val.
+
+**Prioriterad implementationsordning**
+1. Granska befintlig profilhantering och kalenderdatamodell.
+2. Utforma bakåtkompatibel datamodell och repository-API för flera personer.
+3. Bygg/återanvänd profilhantering i Inställningar.
+4. Lägg till personval och valet Hela familjen i skapa/redigera-händelse.
+5. Lägg till kalenderfilter och diskreta visuella personmarkeringar.
+6. Lägg till regressionstester för legacy-data, flera personer, familjehändelser och filter.
+7. Uppdatera roadmap och denna logg med implementation, buggar, commits och verifierad CI.
+
+**Status**
+- Beslut och krav är dokumenterade i Documentation/ROADMAP.md.
+- Detta är planerat arbete, inte implementerad funktionalitet.
+- Ingen befintlig kalenderdata ska migreras eller skrivas om förrän kompatibilitetsstrategin är testad.

@@ -21,8 +21,9 @@ final class FamilyStore: ObservableObject {
         self.repository = repository
         refresh()
         cancellable = repository.changePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.refresh() }
+            .sink { [weak self] in
+                Task { @MainActor [weak self] in self?.refresh() }
+            }
     }
 
     func refresh() {

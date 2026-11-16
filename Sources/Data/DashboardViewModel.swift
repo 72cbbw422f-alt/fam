@@ -45,7 +45,8 @@ final class DashboardViewModel: ObservableObject {
     }
 
     static func project(_ source: [FamilyItem], from date: Date) -> [FamilyItem] {
-        let calendar = Calendar(identifier: .gregorian)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
         return source.compactMap { item in
             guard item.kind == .birthday && item.isRecurringYearly else {
                 return item.startsAt >= date ? item : nil

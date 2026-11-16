@@ -21,7 +21,7 @@
 - [x] Preserve unreadable local snapshots as recovery files instead of silently overwriting them
 - [x] Add unit tests for family/profile/shopping persistence, calendar CRUD, message read state, input validation, repeat-onboarding protection, observable facade behavior, birthday projection edge cases and local-time-zone handling, reminder persistence, legacy snapshot compatibility and corrupt-snapshot recovery
 - [x] Add unit tests for reminder deduplication, future filtering, legacy fallback and the 60-reminder cap
-- [ ] Verify all unit tests pass for the latest code in the iOS Simulator CI workflow (run 43950845036 passed 27/27 tests and simulator build on SHA a7378f23; FAM-018 persistence changes still require CI)
+- [x] Verify local-first regression suite in CI (run 43980622324 passed 28/28 tests and both simulator/iPhone unsigned builds on SHA 15ee4303; later FAM-019/FAM-020 changes await CI)
 - [ ] Verify persistence, CRUD and reminders on physical iPhones
 - [x] Verify the repository abstraction, calendar regression tests and reminder tests in CI (27/27 passed in run 43950845036; later FAM-018 change awaits a fresh run)
 - [ ] Verify unsigned iOS Simulator build in CI after local-first refactor
@@ -112,3 +112,9 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Lägg till regressionstest som säkerställer att ett skrivfel exponeras och att befintlig blockeringsfil inte skrivs över.
 - [ ] Verifiera FAM-018 i CI på aktuell commit.
 - **Viktig begränsning:** vid skrivfel behålls ändringen i minnet och användaren varnas; full rollback av den aktuella mutationen ingår inte ännu.
+
+
+## Kvalitetsrunda: kalenderfilter och påminnelser (2026-11-17)
+- [x] Rensa inaktuella levererade Familjen-påminnelser när en händelse ändras/raderas och när påminnelser stängs av (FAM-019; CI inväntas).
+- [x] Säkerställ att andra appars notiser inte påverkas av Familjens rensning (regressionstest tillagt; CI inväntas).
+- [x] Rensa borttagna familjemedlemmar ur aktiva personfilter så kalendern inte fastnar i ett föråldrat filterläge (FAM-020; CI inväntas).

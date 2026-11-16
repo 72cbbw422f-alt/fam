@@ -179,14 +179,22 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     private func loadFromDisk() {
-        guard let data = try? Data(contentsOf: fileURL),
-              let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data) else { return }
-        family = snapshot.family
-        members = snapshot.members
-        items = snapshot.items
-        shoppingItems = snapshot.shoppingItems
-        notifications = snapshot.notifications
-        messages = snapshot.messages ?? []
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let snapshot = try JSONDecoder().decode(Snapshot.self, from: data)
+            family = snapshot.family
+            members = snapshot.members
+            items = snapshot.items
+            shoppingItems = snapshot.shoppingItems
+            notifications = snapshot.notifications
+            messages = snapshot.messages ?? []
+        } catch {
+            // Preserve an unreadable snapshot before any later write can replace it.
+            let recoveryURL = fileURL.deletingLastPathComponent()
+                .appendingPathComponent("\(fileURL.lastPathComponent).corrupt-\(UUID().uuidString)")
+            try? FileManager.default.moveItem(at: fileURL, to: recoveryURL)
+        }
     }
 
     private func saveToDisk() {

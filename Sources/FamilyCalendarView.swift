@@ -213,11 +213,7 @@ struct FamilyCalendarView: View {
         .background(FamiljenTheme.paper)
         .navigationTitle(pageTitle)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                addCalendarItemButton
-            }
-        }
+        .toolbar { calendarToolbar }
         .overlay {
             if model.isLoading && model.items.isEmpty { ProgressView("Hämtar kalendern …") }
         }
@@ -301,6 +297,13 @@ struct FamilyCalendarView: View {
         .onDisappear { Task { await model.stopRealtime() } }
     }
 
+
+    @ToolbarContentBuilder
+    private var calendarToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            addCalendarItemButton
+        }
+    }
 
     private func refreshLocalReminders() async {
         guard localRemindersEnabled else { return }

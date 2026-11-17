@@ -657,4 +657,55 @@ final class LocalFamilyStoreTests: XCTestCase {
     }
 
 
+    func testWeeklyRecurrenceProjectsNextWeekAndKeepsTime() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 9, minute: 30)))
+        let reference = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 17, hour: 12)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Veckomöte",
+                              details: nil, startsAt: anchor, endsAt: nil, kind: .event,
+                              memberID: nil, isRecurringYearly: false, reminderOffsets: [],
+                              recurrenceFrequency: .weekly)
+        let projected = try XCTUnwrap(DashboardViewModel.project([item], from: reference).first)
+        let parts = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: projected.startsAt)
+        XCTAssertEqual(parts.year, 2026)
+        XCTAssertEqual(parts.month, 11)
+        XCTAssertEqual(parts.day, 23)
+        XCTAssertEqual(parts.hour, 9)
+        XCTAssertEqual(parts.minute, 30)
+    }
+
+    func testMonthlyRecurrenceClampsDayToLastDayOfShortMonth() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 31, hour: 8)))
+        let reference = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 2, day: 1)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Månadsrutin",
+                              details: nil, startsAt: anchor, endsAt: nil, kind: .event,
+                              memberID: nil, isRecurringYearly: false, reminderOffsets: [],
+                              recurrenceFrequency: .monthly)
+        let projected = try XCTUnwrap(DashboardViewModel.project([item], from: reference).first)
+        let parts = calendar.dateComponents([.year, .month, .day, .hour], from: projected.startsAt)
+        XCTAssertEqual(parts.year, 2026)
+        XCTAssertEqual(parts.month, 2)
+        XCTAssertEqual(parts.day, 28)
+        XCTAssertEqual(parts.hour, 8)
+    }
+
+    func testMonthlyRecurrenceFrequencyPersistsAcrossReload() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.saveCalendarItem(
+            id: nil, title: "Månadsrutin", details: nil,
+            startsAt: Date(timeIntervalSince1970: 1_800_000_000), kind: .event,
+            memberIDs: [], isForEveryone: false, responsibleMemberID: nil,
+            recurring: false, reminderOffsets: [], location: nil,
+            recurrenceFrequency: .monthly
+        )
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.items.first?.recurrenceFrequency, .monthly)
+        XCTAssertFalse(reloaded.items.first?.isRecurringYearly ?? true)
+    }
+
 }

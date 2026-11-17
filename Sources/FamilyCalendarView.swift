@@ -175,36 +175,6 @@ struct FamilyCalendarView: View {
         AppleCalendarSection(model: model)
     }
 
-    @ViewBuilder
-    private var appleCalendarStatus: some View {
-        Label("Apple Kalender är ansluten", systemImage: "checkmark.circle.fill")
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(FamiljenTheme.champagneDeep)
-    }
-
-    @ViewBuilder
-    private var appleCalendarEntries: some View {
-        if model.appleCalendarEntries.isEmpty {
-            Text("Inga kommande händelser hittades i dina valda kalendrar.")
-                .font(.caption)
-                .foregroundStyle(FamiljenTheme.muted)
-        } else {
-            ForEach(model.appleCalendarEntries) { entry in
-                appleCalendarRow(entry)
-                    .listRowSeparator(.hidden)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var appleCalendarErrorView: some View {
-        if let error = model.appleCalendarError {
-            Text(error)
-                .font(.footnote)
-                .foregroundStyle(.red)
-        }
-    }
-
     private var calendarItemsSection: some View {
         Group {
             if visibleItems.isEmpty && !model.isLoading {
@@ -395,6 +365,7 @@ struct FamilyCalendarView: View {
 private struct AppleCalendarSection: View {
     @ObservedObject var model: FamilyCalendarViewModel
 
+    var body: some View {
         Section {
             if model.isAppleCalendarEnabled {
                 appleCalendarStatus
@@ -464,8 +435,8 @@ private struct AppleCalendarSection: View {
                 Text(entry.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(FamiljenTheme.ink)
-                Text(entry.isAllDay ? "Hela dagen · \(entry.calendarTitle)" :
-                     "\(entry.startsAt.formatted(.dateTime.hour().minute())) · \(entry.calendarTitle)")
+                Text(entry.isAllDay ? "Hela dagen · \\(entry.calendarTitle)" :
+                     "\\(entry.startsAt.formatted(.dateTime.hour().minute())) · \\(entry.calendarTitle)")
                     .font(.caption)
                     .foregroundStyle(FamiljenTheme.muted)
             }
@@ -476,7 +447,6 @@ private struct AppleCalendarSection: View {
         }
         .padding(.vertical, 7)
     }
-
 }
 
 private struct FamilyItemEditor: View {

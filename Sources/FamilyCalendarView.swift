@@ -298,13 +298,13 @@ struct FamilyCalendarView: View {
         .refreshable { await model.load() }
         .task {
             await model.load()
-            if localRemindersEnabled { await LocalReminderScheduler.schedule(for: model.items, skipping: model.skippedOccurrences, overrides: model.occurrenceOverrides) }
+            if localRemindersEnabled { await LocalReminderScheduler.schedule(for: model.sourceItems, skipping: model.skippedOccurrences, overrides: model.occurrenceOverrides) }
         }
         .onChange(of: localRemindersEnabled) { _, enabled in
             Task {
                 if enabled {
                     let granted = await LocalReminderScheduler.requestPermission()
-                    if granted { await LocalReminderScheduler.schedule(for: model.items) }
+                    if granted { await LocalReminderScheduler.schedule(for: model.sourceItems, skipping: model.skippedOccurrences, overrides: model.occurrenceOverrides) }
                     else { localRemindersEnabled = false }
                 } else { await LocalReminderScheduler.clearAll() }
             }
@@ -312,8 +312,14 @@ struct FamilyCalendarView: View {
         .onChange(of: model.members.map(\.id)) { _, memberIDs in
             selectedMemberIDs.formIntersection(Set(memberIDs))
         }
-        .onChange(of: model.items) { _, items in
+        .onChange(of: model.sourceItems) { _, items in
             if localRemindersEnabled { Task { await LocalReminderScheduler.schedule(for: items, skipping: model.skippedOccurrences, overrides: model.occurrenceOverrides) } }
+        }
+        .onChange(of: model.skippedOccurrences) { _, exceptions in
+            if localRemindersEnabled { Task { await LocalReminderScheduler.schedule(for: model.sourceItems, skipping: exceptions, overrides: model.occurrenceOverrides) } }
+        }
+        .onChange(of: model.occurrenceOverrides) { _, overrides in
+            if localRemindersEnabled { Task { await LocalReminderScheduler.schedule(for: model.sourceItems, skipping: model.skippedOccurrences, overrides: overrides) } }
         }
         .onDisappear { Task { await model.stopRealtime() } }
     }

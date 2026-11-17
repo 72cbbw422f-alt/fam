@@ -159,11 +159,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                                     kind: kind, memberID: nil,
                                     isRecurringYearly: recurrenceFrequency == .yearly || (recurrenceFrequency == .none && recurring),
                                     reminderOffsets: reminderOffsets,
-                                    recurrenceFrequency: recurrenceFrequency == .none && recurring ? .yearly : recurrenceFrequency,
+
                                     memberIDs: isForEveryone ? [] : validMemberIDs,
                                     isForEveryone: isForEveryone,
                                     responsibleMemberID: validResponsibleID,
-                                    location: location))
+                                    location: location,\n                                    recurrenceFrequency: recurrenceFrequency == .none && recurring ? .yearly : recurrenceFrequency))
         }
         if !saveToDisk() {
             items = previousItems

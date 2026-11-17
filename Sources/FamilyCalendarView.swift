@@ -225,10 +225,8 @@ struct FamilyCalendarView: View {
         }
     }
 
-    var body: some View {
-        List {
-            calendarFilterSection
-
+    private var calendarItemsSection: some View {
+        Group {
             if visibleItems.isEmpty && !model.isLoading {
                 emptyStateView
             } else {
@@ -236,9 +234,14 @@ struct FamilyCalendarView: View {
                     calendarItemRow(item)
                 }
             }
+        }
+    }
 
+    var body: some View {
+        List {
+            calendarFilterSection
+            calendarItemsSection
             appleCalendarSection
-
             modelErrorSection
         }
         .scrollContentBackground(.hidden)

@@ -411,6 +411,7 @@ private struct FamilyItemEditor: View {
     @Environment(\.dismiss) private var dismiss
     let item: FamilyItem?
     let members: [FamilyMember]
+    var singleOccurrence: Bool = false
     let onSave: (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool
 
     @State private var title: String
@@ -432,6 +433,7 @@ private struct FamilyItemEditor: View {
     init(item: FamilyItem?, members: [FamilyMember], singleOccurrence: Bool = false, onSave: @escaping (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool) {
         self.item = item
         self.members = members
+        self.singleOccurrence = singleOccurrence
         self.onSave = onSave
         _title = State(initialValue: item?.title ?? "")
         _details = State(initialValue: item?.details ?? "")

@@ -68,7 +68,7 @@ final class FamilyCalendarViewModel: ObservableObject {
                                kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
                                responsibleMemberID: responsibleMemberID, recurring: isRecurringYearly,
                                reminderOffsets: reminderOffsets, location: location,
-                               recurrenceFrequency: recurrenceFrequency == .none && isRecurringYearly ? .yearly : recurrenceFrequency)
+                               recurrenceFrequency: recurrenceFrequency == FamilyRecurrenceFrequency.none && isRecurringYearly ? .yearly : recurrenceFrequency)
         await load()
         if let persistenceError = store.persistenceError {
             errorMessage = persistenceError

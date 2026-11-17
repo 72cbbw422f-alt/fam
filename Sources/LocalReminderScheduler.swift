@@ -28,11 +28,13 @@ enum LocalReminderScheduler {
     }
 
     /// Pure candidate generation keeps reminder selection deterministic and unit-testable.
-    static func makeCandidates(for items: [FamilyItem], now: Date) -> [ReminderCandidate] {
+    static func makeCandidates(for items: [FamilyItem], now: Date,
+                               skipping exceptions: [FamilyOccurrenceException] = [],
+                               overrides: [FamilyOccurrenceOverride] = []) -> [ReminderCandidate] {
         var candidates: [ReminderCandidate] = []
 
         // Project recurring items to their next occurrence before calculating reminders.
-        let upcomingItems = DashboardViewModel.project(items, from: now)
+        let upcomingItems = DashboardViewModel.project(items, from: now, skipping: exceptions, overrides: overrides)
         for item in upcomingItems {
             let offsets = item.reminderOffsets ?? defaultOffsets
             for offset in Set(offsets) where offset >= 0 {
@@ -66,21 +68,25 @@ enum LocalReminderScheduler {
         }
     }
 
-    static func schedule(for items: [FamilyItem]) async {
+    static func schedule(for items: [FamilyItem],
+                         skipping exceptions: [FamilyOccurrenceException] = [],
+                         overrides: [FamilyOccurrenceOverride] = []) async {
         let previous = operationTask
         let current = Task { @MainActor in
             await previous?.value
-            await performSchedule(for: items)
+            await performSchedule(for: items, skipping: exceptions, overrides: overrides)
         }
         operationTask = current
         await current.value
     }
 
-    private static func performSchedule(for items: [FamilyItem]) async {
+    private static func performSchedule(for items: [FamilyItem],
+                                        skipping exceptions: [FamilyOccurrenceException],
+                                        overrides: [FamilyOccurrenceOverride]) async {
         let pending = await center.pendingNotificationRequests()
         let delivered = await deliveredRequests()
         let existingIDs = pending.map(\.identifier) + delivered.map { $0.request.identifier }
-        let candidates = makeCandidates(for: items, now: .now)
+        let candidates = makeCandidates(for: items, now: .now, skipping: exceptions, overrides: overrides)
         let desiredIDs = Set(candidates.map { identifierPrefix + identifier(for: $0) })
 
         // Add/update desired reminders before removing obsolete ones. This avoids

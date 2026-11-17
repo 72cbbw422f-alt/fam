@@ -8,7 +8,7 @@ protocol FamilyRepository: AnyObject {
     var changePublisher: AnyPublisher<Void, Never> { get }
     var family: Family? { get }
     var members: [FamilyMember] { get }
-    var items: [FamilyItem] { get }
+    var items: [FamilyItem] { get }\n    var skippedOccurrences: [FamilyOccurrenceException] { get }
     var shoppingItems: [ShoppingItem] { get }
     var notifications: [FamilyNotification] { get }
     var messages: [FamilyMessage] { get }
@@ -28,7 +28,7 @@ protocol FamilyRepository: AnyObject {
                          kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
                          responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int],
                          location: String?, recurrenceFrequency: FamilyRecurrenceFrequency)
-    func deleteItem(_ item: FamilyItem)
+    func deleteItem(_ item: FamilyItem)\n    func skipOccurrence(of item: FamilyItem)
     func addShoppingItem(_ title: String)
     func setShoppingItem(_ id: UUID, checked: Bool)
     func deleteShoppingItem(_ id: UUID)
@@ -37,7 +37,7 @@ protocol FamilyRepository: AnyObject {
     func markNotificationRead(_ id: UUID)
 }
 
-extension FamilyRepository {
+extension FamilyRepository {\n    var skippedOccurrences: [FamilyOccurrenceException] { [] }\n    func skipOccurrence(of item: FamilyItem) { deleteItem(item) }
     var persistenceError: String? { nil }
 
     func addMember(name: String) { addMember(name: name, role: .member) }

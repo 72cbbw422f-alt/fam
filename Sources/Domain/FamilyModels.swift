@@ -205,6 +205,12 @@ struct FamilyItem: Identifiable, Codable, Equatable {
 }
 
 
+struct FamilyOccurrenceException: Codable, Equatable, Identifiable {
+    var id: String { "\(seriesID.uuidString)-\(Int(occurrenceDate.timeIntervalSince1970))" }
+    let seriesID: UUID
+    let occurrenceDate: Date
+}
+
 enum FamilyConversationKind: String, Codable {
     case family
     case direct

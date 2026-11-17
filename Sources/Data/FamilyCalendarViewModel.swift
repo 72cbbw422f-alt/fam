@@ -20,7 +20,7 @@ final class FamilyCalendarViewModel: ObservableObject {
     func load() async {
         isLoading = true
         members = store.members
-        items = DashboardViewModel.project(store.items, from: .now)
+        items = DashboardViewModel.project(store.items, from: .now, skipping: store.skippedOccurrences)
         isLoading = false
     }
 
@@ -81,7 +81,7 @@ final class FamilyCalendarViewModel: ObservableObject {
         }
     }
 
-    func delete(_ item: FamilyItem) async {
+    func skipOccurrence(_ item: FamilyItem) async {\n        store.skipOccurrence(of: item)\n        await load()\n        errorMessage = store.persistenceError\n    }\n\n    func delete(_ item: FamilyItem) async {
         store.deleteItem(item)
         await load()
         errorMessage = store.persistenceError

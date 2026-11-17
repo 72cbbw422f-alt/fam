@@ -7,7 +7,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
 
     @Published private(set) var family: Family?
     @Published private(set) var members: [FamilyMember] = []
-    @Published private(set) var items: [FamilyItem] = []
+    @Published private(set) var items: [FamilyItem] = []\n    @Published private(set) var skippedOccurrences: [FamilyOccurrenceException] = []
     @Published private(set) var shoppingItems: [ShoppingItem] = []
     @Published private(set) var notifications: [FamilyNotification] = []
     @Published private(set) var messages: [FamilyMessage] = []
@@ -178,6 +178,20 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         }
     }
 
+    func skipOccurrence(of item: FamilyItem) {
+        guard let series = items.first(where: { $0.id == item.id }),
+              series.recurrenceFrequency != .none || series.isRecurringYearly else {
+            deleteItem(item)
+            return
+        }
+        guard !skippedOccurrences.contains(where: {
+            $0.seriesID == item.id && Calendar.current.isDate($0.occurrenceDate, inSameDayAs: item.startsAt)
+        }) else { return }
+        let previous = skippedOccurrences
+        skippedOccurrences.append(FamilyOccurrenceException(seriesID: item.id, occurrenceDate: item.startsAt))
+        if !saveToDisk() { skippedOccurrences = previous }
+    }
+
     func addShoppingItem(_ title: String) {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let family, !clean.isEmpty, clean.count <= 160 else { return }
@@ -230,7 +244,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         var items: [FamilyItem]
         var shoppingItems: [ShoppingItem]
         var notifications: [FamilyNotification]
-        var messages: [FamilyMessage]?
+        var messages: [FamilyMessage]?\n        var skippedOccurrences: [FamilyOccurrenceException]? = nil
     }
 
     private func loadFromDisk() {
@@ -240,7 +254,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             let snapshot = try JSONDecoder().decode(Snapshot.self, from: data)
             family = snapshot.family
             members = snapshot.members
-            items = snapshot.items
+            items = snapshot.items\n            skippedOccurrences = snapshot.skippedOccurrences ?? []
             shoppingItems = snapshot.shoppingItems
             notifications = snapshot.notifications
             messages = snapshot.messages ?? []
@@ -265,7 +279,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             return false
         }
         let snapshot = Snapshot(family: family, members: members, items: items,
-                                shoppingItems: shoppingItems, notifications: notifications, messages: messages)
+                                shoppingItems: shoppingItems, notifications: notifications, messages: messages,\n                                skippedOccurrences: skippedOccurrences)
         do {
             let data = try JSONEncoder().encode(snapshot)
             try data.write(to: fileURL, options: .atomic)

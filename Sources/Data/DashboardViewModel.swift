@@ -40,11 +40,11 @@ final class DashboardViewModel: ObservableObject {
     func load() async {
         isLoading = true
         family = store.family
-        upcomingItems = Self.project(store.items, from: .now)
+        upcomingItems = Self.project(store.items, from: .now, skipping: store.skippedOccurrences)
         isLoading = false
     }
 
-    static func project(_ source: [FamilyItem], from date: Date) -> [FamilyItem] {
+    static func project(_ source: [FamilyItem], from date: Date, skipping exceptions: [FamilyOccurrenceException] = []) -> [FamilyItem] {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .current
 
@@ -105,7 +105,26 @@ final class DashboardViewModel: ObservableObject {
                 }
             }
 
-            guard let occurrence = next else { return nil }
+            guard var occurrence = next else { return nil }
+            for _ in 0..<400 {
+                guard exceptions.contains(where: { $0.seriesID == item.id && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrence) }) else { break }
+                let searchDate = calendar.date(byAdding: .day, value: 1, to: occurrence) ?? occurrence.addingTimeInterval(86_400)
+                let candidate: Date?
+                switch frequency {
+                case .weekly:
+                    let days = max(0, calendar.dateComponents([.day], from: item.startsAt, to: searchDate).day ?? 0)
+                    candidate = calendar.date(byAdding: .day, value: max(0, (days + 6) / 7) * 7, to: item.startsAt)
+                case .monthly:
+                    let parts = calendar.dateComponents([.year, .month], from: searchDate)
+                    candidate = dateInMonth(year: parts.year ?? 2000, month: parts.month ?? 1)
+                case .yearly:
+                    candidate = dateInMonth(year: calendar.component(.year, from: searchDate), month: anchor.month ?? 1)
+                case .none: candidate = nil
+                }
+                guard let candidate else { return nil }
+                occurrence = candidate
+            }
+            if exceptions.contains(where: { $0.seriesID == item.id && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrence) }) { return nil }
             var projected = item
             projected.startsAt = occurrence
             return projected

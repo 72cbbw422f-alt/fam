@@ -201,12 +201,26 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
 
     func saveOccurrenceOverride(seriesID: UUID, occurrenceDate: Date, item: FamilyItem) {
         guard items.contains(where: { $0.id == seriesID }) else { return }
-        let previous = occurrenceOverrides
-        occurrenceOverrides.removeAll {
-            $0.seriesID == seriesID && Calendar.current.isDate($0.occurrenceDate, inSameDayAs: occurrenceDate)
+        let previousOverrides = occurrenceOverrides
+        let previousSkippedOccurrences = skippedOccurrences
+        let calendar = Calendar.current
+
+        // Editing a skipped occurrence explicitly restores it. A skip and an
+        // override for the same original date must never coexist.
+        skippedOccurrences.removeAll {
+            $0.seriesID == seriesID && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrenceDate)
         }
-        occurrenceOverrides.append(FamilyOccurrenceOverride(seriesID: seriesID, occurrenceDate: occurrenceDate, item: item))
-        if !saveToDisk() { occurrenceOverrides = previous }
+        occurrenceOverrides.removeAll {
+            $0.seriesID == seriesID && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrenceDate)
+        }
+        occurrenceOverrides.append(FamilyOccurrenceOverride(
+            seriesID: seriesID, occurrenceDate: occurrenceDate, item: item
+        ))
+
+        if !saveToDisk() {
+            occurrenceOverrides = previousOverrides
+            skippedOccurrences = previousSkippedOccurrences
+        }
     }
 
     func skipOccurrence(of item: FamilyItem) {

@@ -77,6 +77,31 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertNil(reloaded.items.first?.memberID)
     }
 
+    func testSkippingOneMonthlyOccurrencePersistsWithoutDeletingSeries() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.current
+        let anchorDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 1, day: 31, hour: 9)))
+        store.saveCalendarItem(
+            id: nil, title: "Månadsmöte", details: nil, startsAt: anchorDate,
+            kind: .event, memberIDs: [], isForEveryone: true, responsibleMemberID: nil,
+            recurring: false, reminderOffsets: [], location: nil, recurrenceFrequency: .monthly
+        )
+        let series = try XCTUnwrap(store.items.first)
+        let firstOccurrence = try XCTUnwrap(DashboardViewModel.project([series], from: calendar.startOfDay(for: anchorDate)).first)
+
+        store.skipOccurrence(of: firstOccurrence)
+
+        XCTAssertEqual(store.items.count, 1, "The recurring series must remain stored")
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.items.count, 1)
+        XCTAssertEqual(reloaded.skippedOccurrences.count, 1)
+        let next = try XCTUnwrap(DashboardViewModel.project(reloaded.items, from: calendar.startOfDay(for: anchorDate), skipping: reloaded.skippedOccurrences).first)
+        XCTAssertTrue(calendar.isDate(next.startsAt, inDate: try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 2, day: 28, hour: 9)))))
+    }
+
     func testCalendarItemCanBeCreatedUpdatedAndDeleted() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

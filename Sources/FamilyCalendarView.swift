@@ -284,7 +284,10 @@ struct FamilyCalendarView: View {
                 Text(item.title).font(.subheadline.weight(.semibold)).foregroundStyle(FamiljenTheme.ink)
                 HStack(spacing: 6) {
                     Text(item.kind.displayName)
-                    if item.isRecurringYearly { Image(systemName: "repeat").accessibilityLabel("Återkommer varje år") }
+                    if item.recurrenceFrequency != .none || item.isRecurringYearly {
+                        Image(systemName: "repeat")
+                            .accessibilityLabel("Återkommer: \(item.recurrenceFrequency.title)")
+                    }
                     Text("·")
                     Text(item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
                 }
@@ -409,9 +412,11 @@ private struct FamilyItemEditor: View {
                     .padding(.vertical, 4)
                     DatePicker("Datum och tid", selection: $startsAt, displayedComponents: [.date, .hourAndMinute])
                     Picker("Upprepning", selection: $recurrenceFrequency) { ForEach(FamilyRecurrenceFrequency.allCases) { frequency in Text(frequency.title).tag(frequency) } }
-                    Text(kind == .birthday
-                         ? "Födelsedagen visas automatiskt på nästa kommande datum varje år."
-                         : "Aktiviteten visas automatiskt igen varje år på samma datum.")
+                    Text(recurrenceFrequency == .none
+                         ? "Aktiviteten visas bara en gång."
+                         : kind == .birthday
+                            ? "Födelsedagen visas automatiskt på nästa kommande datum varje år."
+                            : "Aktiviteten upprepas: \(recurrenceFrequency.title.lowercased()).")
                         .font(.caption).foregroundStyle(.secondary)
                     TextField("Plats eller adress (valfritt)", text: $location)
                         .textContentType(.fullStreetAddress)

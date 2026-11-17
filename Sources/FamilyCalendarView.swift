@@ -24,6 +24,17 @@ struct FamilyCalendarView: View {
         return peopleFiltered.filter { $0.kind == selectedKind }
     }
 
+    @ViewBuilder
+    private var modelErrorSection: some View {
+        if let message = model.errorMessage {
+            Section {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundColor(.red)
+            }
+        }
+    }
+
     private func calendarItemRow(_ item: FamilyItem) -> some View {
         Button {
             openCalendarItem(item)
@@ -228,9 +239,7 @@ struct FamilyCalendarView: View {
 
             appleCalendarSection
 
-            if let error = model.errorMessage {
-                Section { Text(error).font(.footnote).foregroundStyle(.red) }
-            }
+            modelErrorSection
         }
         .scrollContentBackground(.hidden)
         .background(FamiljenTheme.paper)

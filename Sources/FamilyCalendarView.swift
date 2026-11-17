@@ -98,29 +98,38 @@ struct FamilyCalendarView: View {
         }
     }
 
+    private var emptyStateView: some View {
+        VStack(spacing: 14) {
+            Image(systemName: selectedKind == .healthVisit ? "heart.text.square" : "calendar")
+                .font(.system(size: 34, weight: .regular))
+                .foregroundStyle(FamiljenTheme.navy)
+            Text(emptyTitle)
+                .font(.headline)
+                .foregroundStyle(FamiljenTheme.navy)
+            Text(emptyDescription)
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+            Button {
+                editingItem = nil
+                showingEditor = true
+            } label: {
+                Label("Lägg till", systemImage: "plus")
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(FamiljenTheme.navy)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 34)
+        .listRowBackground(Color.clear)
+    }
+
     var body: some View {
         List {
             calendarFilterSection
 
             if visibleItems.isEmpty && !model.isLoading {
-                ContentUnavailableView {
-                    Label(emptyTitle, systemImage: selectedKind == .healthVisit ? "heart.text.square" : "calendar")
-                } description: {
-                    Text(emptyDescription)
-                        .multilineTextAlignment(.center)
-                } actions: {
-                    Button {
-                        editingItem = nil
-                        showingEditor = true
-                    } label: {
-                        Label("Lägg till", systemImage: "plus")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(FamiljenTheme.navy)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 34)
-                .listRowBackground(Color.clear)
+                emptyStateView
             } else {
                 ForEach(visibleItems) { item in
                     Button {

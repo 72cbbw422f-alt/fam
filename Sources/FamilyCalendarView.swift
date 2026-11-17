@@ -24,6 +24,34 @@ struct FamilyCalendarView: View {
         return peopleFiltered.filter { $0.kind == selectedKind }
     }
 
+    private func calendarItemRow(_ item: FamilyItem) -> some View {
+        Button {
+            openCalendarItem(item)
+        } label: {
+            calendarRow(item)
+        }
+        .buttonStyle(.plain)
+        .swipeActions {
+            Button(role: .destructive) {
+                pendingDeletion = item
+                showDeleteConfirmation = true
+            } label: {
+                Label("Ta bort", systemImage: "trash")
+            }
+        }
+    }
+
+    private func openCalendarItem(_ item: FamilyItem) {
+        if requiresEditScope(for: item) {
+            pendingEdit = item
+            showEditScopeConfirmation = true
+            return
+        }
+        editingSingleOccurrence = false
+        editingItem = item
+        showingEditor = true
+    }
+
     private func requiresEditScope(for item: FamilyItem) -> Bool {
         let hasRecurrenceFrequency = item.recurrenceFrequency != .none
         return hasRecurrenceFrequency || item.isRecurringYearly
@@ -194,25 +222,7 @@ struct FamilyCalendarView: View {
                 emptyStateView
             } else {
                 ForEach(visibleItems) { item in
-                    Button {
-                        if requiresEditScope(for: item) {
-                            pendingEdit = item
-                            showEditScopeConfirmation = true
-                        } else {
-                            editingSingleOccurrence = false
-                            editingItem = item
-                            showingEditor = true
-                        }
-                    } label: { calendarRow(item) }
-                    .buttonStyle(.plain)
-                    .swipeActions {
-                        Button(role: .destructive) {
-                            pendingDeletion = item
-                            showDeleteConfirmation = true
-                        } label: {
-                            Label("Ta bort", systemImage: "trash")
-                        }
-                    }
+                    calendarItemRow(item)
                 }
             }
 

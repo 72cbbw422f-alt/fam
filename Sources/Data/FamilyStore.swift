@@ -59,7 +59,7 @@ final class FamilyStore: ObservableObject {
         repository.saveCalendarItem(id: id, title: title, details: details, startsAt: startsAt,
                                     kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
                                     responsibleMemberID: responsibleMemberID, recurring: recurring,
-                                    reminderOffsets: reminderOffsets, location: location)
+                                    reminderOffsets: reminderOffsets, location: location, recurrenceFrequency: recurrenceFrequency)
         refresh()
     }
     func deleteItem(_ item: FamilyItem) { repository.deleteItem(item); refresh() }

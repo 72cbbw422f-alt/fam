@@ -188,8 +188,8 @@ struct FamilyCalendarView: View {
             FamilyItemEditor(item: editingItem, members: model.members) { title, details, location, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurring, reminderOffsets in
                 await model.save(id: editingItem?.id, title: title, details: details, startsAt: date,
                                  kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
-                                 responsibleMemberID: responsibleMemberID, isRecurringYearly: recurring == .yearly,
-                                 reminderOffsets: reminderOffsets, location: location, recurrenceFrequency: recurring)
+                                 responsibleMemberID: responsibleMemberID, isRecurringYearly: recurring,
+                                 reminderOffsets: reminderOffsets, location: location)
             }
         }
         .refreshable { await model.load() }
@@ -283,7 +283,7 @@ struct FamilyCalendarView: View {
                 Text(item.title).font(.subheadline.weight(.semibold)).foregroundStyle(FamiljenTheme.ink)
                 HStack(spacing: 6) {
                     Text(item.kind.displayName)
-                    if item.recurrenceFrequency != .none { Image(systemName: "repeat").accessibilityLabel("Återkommande aktivitet") }
+                    if item.isRecurringYearly { Image(systemName: "repeat").accessibilityLabel("Återkommer varje år") }
                     Text("·")
                     Text(item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
                 }
@@ -320,7 +320,7 @@ private struct FamilyItemEditor: View {
     @Environment(\.dismiss) private var dismiss
     let item: FamilyItem?
     let members: [FamilyMember]
-    let onSave: (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool
+    let onSave: (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, Bool, [Int]) async -> Bool
 
     @State private var title: String
     @State private var details: String
@@ -330,7 +330,7 @@ private struct FamilyItemEditor: View {
     @State private var selectedMemberIDs: Set<UUID>
     @State private var isForEveryone: Bool
     @State private var responsibleSelection: String
-    @State private var recurrenceFrequency: FamilyRecurrenceFrequency
+    @State private var isRecurringYearly: Bool
     @State private var selectedReminderOffsets: Set<Int>
     @State private var isSaving = false
     @State private var errorMessage: String?
@@ -338,7 +338,7 @@ private struct FamilyItemEditor: View {
     @State private var isReadingImage = false
     @State private var importMessage: String?
 
-    init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool) {
+    init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, Bool, [Int]) async -> Bool) {
         self.item = item
         self.members = members
         self.onSave = onSave
@@ -350,7 +350,7 @@ private struct FamilyItemEditor: View {
         _selectedMemberIDs = State(initialValue: Set(item?.memberIDs ?? []))
         _isForEveryone = State(initialValue: item?.isForEveryone ?? false)
         _responsibleSelection = State(initialValue: item?.responsibleMemberID?.uuidString ?? "")
-        _recurrenceFrequency = State(initialValue: item?.recurrenceFrequency ?? (item?.isRecurringYearly == true ? .yearly : .none))
+        _isRecurringYearly = State(initialValue: item?.isRecurringYearly ?? false)
         _selectedReminderOffsets = State(initialValue: Set(item?.reminderOffsets ?? [24 * 60 * 60, 60 * 60]))
     }
 
@@ -407,7 +407,7 @@ private struct FamilyItemEditor: View {
                     }
                     .padding(.vertical, 4)
                     DatePicker("Datum och tid", selection: $startsAt, displayedComponents: [.date, .hourAndMinute])
-                    Picker("Upprepning", selection: $recurrenceFrequency) { ForEach(FamilyRecurrenceFrequency.allCases) { frequency in Text(frequency.title).tag(frequency) } }
+                    Toggle("Upprepa varje år", isOn: $isRecurringYearly)
                     Text(kind == .birthday
                          ? "Födelsedagen visas automatiskt på nästa kommande datum varje år."
                          : "Aktiviteten visas automatiskt igen varje år på samma datum.")
@@ -482,7 +482,7 @@ private struct FamilyItemEditor: View {
                 Task { await readAppointmentImage(photo) }
             }
             .onChange(of: kind) { _, newKind in
-                if newKind == .birthday { recurrenceFrequency = .yearly }
+                if newKind == .birthday { isRecurringYearly = true }
             }
             .navigationTitle(item == nil ? "Ny aktivitet" : "Redigera aktivitet")
             .navigationBarTitleDisplayMode(.inline)
@@ -565,7 +565,7 @@ private struct FamilyItemEditor: View {
         let saved = await onSave(title, cleanDetails.isEmpty ? nil : cleanDetails,
                                  cleanLocation.isEmpty ? nil : cleanLocation, startsAt,
                                  kind, Array(selectedMemberIDs), isForEveryone, responsibleMemberID,
-                                 recurrenceFrequency, Array(selectedReminderOffsets).sorted(by: >))
+                                 isRecurringYearly, Array(selectedReminderOffsets).sorted(by: >))
         if saved { dismiss() }
         else { errorMessage = "Det gick inte att spara. Kontrollera uppgifterna och försök igen." }
     }

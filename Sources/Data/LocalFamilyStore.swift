@@ -120,13 +120,14 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         saveCalendarItem(id: id, title: title, details: details, startsAt: startsAt,
                          kind: kind, memberIDs: memberID.map { [$0] } ?? [],
                          isForEveryone: false, responsibleMemberID: nil,
-                         recurring: recurring, reminderOffsets: reminderOffsets, location: nil)
+                         recurring: recurring, reminderOffsets: reminderOffsets, location: nil,
+                         recurrenceFrequency: recurring ? .yearly : .none)
     }
 
     func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
                           kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
                           responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int],
-                          location: String? = nil) {
+                          location: String? = nil, recurrenceFrequency: FamilyRecurrenceFrequency = .none) {
         guard let family else { return }
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
@@ -149,7 +150,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             items[index].memberIDs = isForEveryone ? [] : validMemberIDs
             items[index].isForEveryone = isForEveryone
             items[index].responsibleMemberID = validResponsibleID
-            items[index].isRecurringYearly = recurring
+            items[index].recurrenceFrequency = recurrenceFrequency == .none && recurring ? .yearly : recurrenceFrequency
+            items[index].isRecurringYearly = items[index].recurrenceFrequency == .yearly
             items[index].reminderOffsets = reminderOffsets
         } else {
             items.append(FamilyItem(id: UUID(), familyID: family.id, title: clean,
@@ -160,7 +162,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                                     memberIDs: isForEveryone ? [] : validMemberIDs,
                                     isForEveryone: isForEveryone,
                                     responsibleMemberID: validResponsibleID,
-                                    location: location))
+                                    location: location,
+                                    recurrenceFrequency: recurrenceFrequency == .none && recurring ? .yearly : recurrenceFrequency))
         }
         if !saveToDisk() {
             items = previousItems

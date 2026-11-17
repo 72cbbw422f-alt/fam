@@ -50,7 +50,7 @@ final class FamilyCalendarViewModel: ObservableObject {
 
     func save(id: UUID?, title: String, details: String?, startsAt: Date, kind: FamilyItemKind,
               memberIDs: [UUID], isForEveryone: Bool, responsibleMemberID: UUID?,
-              isRecurringYearly: Bool, reminderOffsets: [Int], location: String?, recurrenceFrequency: FamilyRecurrenceFrequency = .none) async -> Bool {
+              isRecurringYearly: Bool, reminderOffsets: [Int], location: String?) async -> Bool {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 160 else {
             errorMessage = "Ange en rubrik på 1–160 tecken."
@@ -62,8 +62,7 @@ final class FamilyCalendarViewModel: ObservableObject {
         store.saveCalendarItem(id: id, title: clean, details: details, startsAt: persistedDate,
                                kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
                                responsibleMemberID: responsibleMemberID, recurring: isRecurringYearly,
-                               reminderOffsets: reminderOffsets, location: location,
-                               recurrenceFrequency: recurrenceFrequency == .none && isRecurringYearly ? .yearly : recurrenceFrequency)
+                               reminderOffsets: reminderOffsets, location: location)
         await load()
         if let persistenceError = store.persistenceError {
             errorMessage = persistenceError

@@ -187,16 +187,15 @@ struct FamilyCalendarView: View {
         AnyView(modelErrorSection)
     }
 
-    private var calendarItemsSection: some View {
-        Group {
-            if visibleItems.isEmpty && !model.isLoading {
-                emptyStateView
-            } else {
-                ForEach(visibleItems) { item in
-                    calendarItemRow(item)
-                }
-            }
+    private var calendarItemsSection: AnyView {
+        if visibleItems.isEmpty && !model.isLoading {
+            return AnyView(emptyStateView)
         }
+
+        let rows = ForEach(visibleItems) { item in
+            calendarItemRow(item)
+        }
+        return AnyView(rows)
     }
 
     var body: some View {

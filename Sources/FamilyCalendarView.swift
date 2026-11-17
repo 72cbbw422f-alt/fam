@@ -172,27 +172,7 @@ struct FamilyCalendarView: View {
     }
 
     private var appleCalendarSection: some View {
-        Section {
-            if model.isAppleCalendarEnabled {
-                appleCalendarStatus
-                appleCalendarEntries
-                Button(action: model.refreshAppleCalendar) {
-                    Label("Uppdatera Apple Kalender", systemImage: "arrow.clockwise")
-                }
-            } else {
-                Button {
-                    Task { await model.enableAppleCalendar() }
-                } label: {
-                    Label("Visa händelser från Apple Kalender", systemImage: "calendar.badge.plus")
-                        .foregroundStyle(FamiljenTheme.navy)
-                }
-            }
-            appleCalendarErrorView
-        } header: {
-            Text("Dina andra kalendrar")
-        } footer: {
-            Text("Händelser från Apple Kalender visas här som importerad information. De ändras inte när du redigerar Familjens egna aktiviteter.")
-        }
+        AppleCalendarSection(model: model)
     }
 
     @ViewBuilder
@@ -336,34 +316,6 @@ struct FamilyCalendarView: View {
         .onDisappear { Task { await model.stopRealtime() } }
     }
 
-    private func appleCalendarRow(_ entry: AppleCalendarEntry) -> some View {
-        HStack(spacing: 12) {
-            VStack(spacing: 2) {
-                Text(entry.startsAt.formatted(.dateTime.day()))
-                    .font(.title3.weight(.semibold))
-                Text(entry.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased())
-                    .font(.caption2.weight(.bold))
-            }
-            .foregroundStyle(FamiljenTheme.navy)
-            .frame(width: 42, height: 48)
-            .background(FamiljenTheme.sand.opacity(0.48), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(entry.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(FamiljenTheme.ink)
-                Text(entry.isAllDay ? "Hela dagen · \(entry.calendarTitle)" :
-                     "\(entry.startsAt.formatted(.dateTime.hour().minute())) · \(entry.calendarTitle)")
-                    .font(.caption)
-                    .foregroundStyle(FamiljenTheme.muted)
-            }
-            Spacer()
-            Image(systemName: "apple.logo")
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(FamiljenTheme.muted)
-        }
-        .padding(.vertical, 7)
-    }
 
     private func filterChip(_ title: String, kind: FamilyItemKind?) -> some View {
         Button { selectedKind = kind } label: {
@@ -438,6 +390,93 @@ struct FamilyCalendarView: View {
         }
         .padding(.vertical, 6).contentShape(Rectangle())
     }
+}
+
+private struct AppleCalendarSection: View {
+    @ObservedObject var model: FamilyCalendarViewModel
+
+        Section {
+            if model.isAppleCalendarEnabled {
+                appleCalendarStatus
+                appleCalendarEntries
+                Button(action: model.refreshAppleCalendar) {
+                    Label("Uppdatera Apple Kalender", systemImage: "arrow.clockwise")
+                }
+            } else {
+                Button {
+                    Task { await model.enableAppleCalendar() }
+                } label: {
+                    Label("Visa händelser från Apple Kalender", systemImage: "calendar.badge.plus")
+                        .foregroundStyle(FamiljenTheme.navy)
+                }
+            }
+            appleCalendarErrorView
+        } header: {
+            Text("Dina andra kalendrar")
+        } footer: {
+            Text("Händelser från Apple Kalender visas här som importerad information. De ändras inte när du redigerar Familjens egna aktiviteter.")
+        }
+    }
+
+    @ViewBuilder
+    private var appleCalendarStatus: some View {
+        Label("Apple Kalender är ansluten", systemImage: "checkmark.circle.fill")
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(FamiljenTheme.champagneDeep)
+    }
+
+    @ViewBuilder
+    private var appleCalendarEntries: some View {
+        if model.appleCalendarEntries.isEmpty {
+            Text("Inga kommande händelser hittades i dina valda kalendrar.")
+                .font(.caption)
+                .foregroundStyle(FamiljenTheme.muted)
+        } else {
+            ForEach(model.appleCalendarEntries) { entry in
+                appleCalendarRow(entry)
+                    .listRowSeparator(.hidden)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var appleCalendarErrorView: some View {
+        if let error = model.appleCalendarError {
+            Text(error)
+                .font(.footnote)
+                .foregroundStyle(.red)
+        }
+    }
+
+    private func appleCalendarRow(_ entry: AppleCalendarEntry) -> some View {
+        HStack(spacing: 12) {
+            VStack(spacing: 2) {
+                Text(entry.startsAt.formatted(.dateTime.day()))
+                    .font(.title3.weight(.semibold))
+                Text(entry.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased())
+                    .font(.caption2.weight(.bold))
+            }
+            .foregroundStyle(FamiljenTheme.navy)
+            .frame(width: 42, height: 48)
+            .background(FamiljenTheme.sand.opacity(0.48), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(FamiljenTheme.ink)
+                Text(entry.isAllDay ? "Hela dagen · \(entry.calendarTitle)" :
+                     "\(entry.startsAt.formatted(.dateTime.hour().minute())) · \(entry.calendarTitle)")
+                    .font(.caption)
+                    .foregroundStyle(FamiljenTheme.muted)
+            }
+            Spacer()
+            Image(systemName: "apple.logo")
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(FamiljenTheme.muted)
+        }
+        .padding(.vertical, 7)
+    }
+
 }
 
 private struct FamilyItemEditor: View {

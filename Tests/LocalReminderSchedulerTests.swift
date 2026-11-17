@@ -23,6 +23,24 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertGreaterThan(candidate.fireDate, now)
     }
 
+    func testMonthlyRecurringItemSchedulesReminderForClampedDate() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 1, day: 31, hour: 8)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 2, day: 1, hour: 7)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Månadsrutin",
+            details: nil, startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3600], recurrenceFrequency: .monthly)
+
+        let candidate = try XCTUnwrap(LocalReminderScheduler.makeCandidates(for: [item], now: now).first)
+        let occurrence = calendar.dateComponents([.year, .month, .day, .hour], from: candidate.item.startsAt)
+        XCTAssertEqual(occurrence.year, 2026)
+        XCTAssertEqual(occurrence.month, 2)
+        XCTAssertEqual(occurrence.day, 28)
+        XCTAssertEqual(occurrence.hour, 8)
+        XCTAssertGreaterThan(candidate.fireDate, now)
+    }
+
     func testPastNonRecurringItemDoesNotCreateReminder() {
         let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Gammal bokning",
             details: nil, startsAt: Date(timeIntervalSince1970: 1_700_000_000),

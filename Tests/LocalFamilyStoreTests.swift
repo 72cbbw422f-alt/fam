@@ -103,6 +103,50 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertTrue(calendar.isDate(next.startsAt, inSameDayAs: expectedNext))
     }
 
+    func testSkippingWeeklyOccurrenceProjectsFollowingWeek() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 16, hour: 9)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Veckomöte",
+                              details: nil, startsAt: anchor, endsAt: nil, kind: .event,
+                              memberID: nil, isRecurringYearly: false, reminderOffsets: [],
+                              recurrenceFrequency: .weekly)
+        let exception = FamilyOccurrenceException(seriesID: item.id, occurrenceDate: anchor)
+        let projected = try XCTUnwrap(DashboardViewModel.project([item], from: anchor, skipping: [exception]).first)
+        XCTAssertTrue(calendar.isDate(projected.startsAt, inSameDayAs: calendar.date(byAdding: .day, value: 7, to: anchor)!))
+    }
+
+    func testSkippingYearlyLeapDayAdvancesToNextValidYear() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2024, month: 2, day: 29, hour: 9)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Årsdag",
+                              details: nil, startsAt: anchor, endsAt: nil, kind: .birthday,
+                              memberID: nil, isRecurringYearly: true, reminderOffsets: [])
+        let exception = FamilyOccurrenceException(seriesID: item.id, occurrenceDate: anchor)
+        let projected = try XCTUnwrap(DashboardViewModel.project([item], from: anchor, skipping: [exception]).first)
+        let parts = calendar.dateComponents([.year, .month, .day], from: projected.startsAt)
+        XCTAssertEqual(parts.year, 2025)
+        XCTAssertEqual(parts.month, 2)
+        XCTAssertEqual(parts.day, 28)
+    }
+
+    func testDeletingRecurringSeriesAlsoDeletesItsExceptions() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        store.saveCalendarItem(id: nil, title: "Möte", details: nil, startsAt: start,
+                               kind: .event, memberIDs: [], isForEveryone: true,
+                               responsibleMemberID: nil, recurring: false, reminderOffsets: [],
+                               location: nil, recurrenceFrequency: .weekly)
+        let series = try XCTUnwrap(store.items.first)
+        store.skipOccurrence(of: series)
+        XCTAssertEqual(store.skippedOccurrences.count, 1)
+        store.deleteItem(series)
+        XCTAssertTrue(store.skippedOccurrences.isEmpty)
+    }
+
     func testCalendarItemCanBeCreatedUpdatedAndDeleted() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

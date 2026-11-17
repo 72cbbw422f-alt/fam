@@ -198,13 +198,17 @@ struct FamilyCalendarView: View {
         return AnyView(rows)
     }
 
-    var body: some View {
+    private var calendarList: some View {
         List {
             calendarFilterRow
             calendarItemsRow
             appleCalendarSection
             modelErrorRow
         }
+    }
+
+    var body: some View {
+        calendarList
         .scrollContentBackground(.hidden)
         .background(FamiljenTheme.paper)
         .navigationTitle(pageTitle)

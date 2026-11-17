@@ -147,6 +147,25 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertTrue(store.skippedOccurrences.isEmpty)
     }
 
+    func testConsecutiveMonthlySkipsAdvanceAcrossShortMonth() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 1, day: 31, hour: 9)))
+        let february = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 2, day: 28, hour: 9)))
+        let march = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 3, day: 31, hour: 9)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Månadsrutin",
+                              details: nil, startsAt: anchor, endsAt: nil, kind: .event,
+                              memberID: nil, isRecurringYearly: false, reminderOffsets: [],
+                              recurrenceFrequency: .monthly)
+        let exceptions = [
+            FamilyOccurrenceException(seriesID: item.id, occurrenceDate: anchor),
+            FamilyOccurrenceException(seriesID: item.id, occurrenceDate: february)
+        ]
+
+        let projected = try XCTUnwrap(DashboardViewModel.project([item], from: anchor, skipping: exceptions).first)
+        XCTAssertTrue(calendar.isDate(projected.startsAt, inSameDayAs: march))
+    }
+
     func testCalendarItemCanBeCreatedUpdatedAndDeleted() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

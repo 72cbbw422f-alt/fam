@@ -97,7 +97,7 @@ final class FamilyCalendarViewModel: ObservableObject {
             memberID: nil, isRecurringYearly: false, reminderOffsets: reminderOffsets,
             memberIDs: isForEveryone ? [] : validIDs, isForEveryone: isForEveryone,
             responsibleMemberID: responsibleMemberID, location: location,
-            recurrenceFrequency: .none
+            recurrenceFrequency: FamilyRecurrenceFrequency.none
         )
         store.saveOccurrenceOverride(seriesID: seriesID, occurrenceDate: occurrenceDate, item: override)
         await load()

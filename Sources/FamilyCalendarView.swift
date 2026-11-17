@@ -171,8 +171,20 @@ struct FamilyCalendarView: View {
         .listRowBackground(Color.clear)
     }
 
-    private var appleCalendarSection: some View {
-        AppleCalendarSection(model: model)
+    private var appleCalendarSection: AnyView {
+        AnyView(AppleCalendarSection(model: model))
+    }
+
+    private var calendarFilterRow: AnyView {
+        AnyView(calendarFilterSection)
+    }
+
+    private var calendarItemsRow: AnyView {
+        AnyView(calendarItemsSection)
+    }
+
+    private var modelErrorRow: AnyView {
+        AnyView(modelErrorSection)
     }
 
     private var calendarItemsSection: some View {
@@ -189,10 +201,10 @@ struct FamilyCalendarView: View {
 
     var body: some View {
         List {
-            calendarFilterSection
-            calendarItemsSection
+            calendarFilterRow
+            calendarItemsRow
             appleCalendarSection
-            modelErrorSection
+            modelErrorRow
         }
         .scrollContentBackground(.hidden)
         .background(FamiljenTheme.paper)

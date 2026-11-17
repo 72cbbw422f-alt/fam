@@ -47,27 +47,67 @@ final class DashboardViewModel: ObservableObject {
     static func project(_ source: [FamilyItem], from date: Date) -> [FamilyItem] {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .current
+
         return source.compactMap { item in
-            guard item.recurrenceFrequency != .none || item.isRecurringYearly else {
+            let frequency = item.recurrenceFrequency == .none && item.isRecurringYearly
+                ? FamilyRecurrenceFrequency.yearly : item.recurrenceFrequency
+            guard frequency != .none else {
                 return item.startsAt >= date ? item : nil
             }
-            let parts = calendar.dateComponents([.month, .day, .hour, .minute], from: item.startsAt)
-            let today = calendar.startOfDay(for: date)
-            var year = calendar.component(.year, from: date)
-            func occurrence(_ year: Int) -> Date? {
-                var c = DateComponents()
-                c.year = year; c.month = parts.month; c.day = parts.day
-                c.hour = parts.hour; c.minute = parts.minute
-                if parts.month == 2 && parts.day == 29 {
-                    let feb = calendar.date(from: DateComponents(year: year, month: 2, day: 1))!
-                    if !calendar.range(of: .day, in: .month, for: feb)!.contains(29) { c.day = 28 }
-                }
-                return calendar.date(from: c)
+
+            let anchor = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second],
+                                                 from: item.startsAt)
+            let hour = anchor.hour ?? 0
+            let minute = anchor.minute ?? 0
+            let second = anchor.second ?? 0
+
+            func dateInMonth(year: Int, month: Int) -> Date? {
+                guard let first = calendar.date(from: DateComponents(year: year, month: month, day: 1)),
+                      let days = calendar.range(of: .day, in: .month, for: first) else { return nil }
+                let day = min(anchor.day ?? 1, days.count)
+                return calendar.date(from: DateComponents(year: year, month: month, day: day,
+                                                          hour: hour, minute: minute, second: second))
             }
-            var next = occurrence(year) ?? item.startsAt
-            if next < today { year += 1; next = occurrence(year) ?? item.startsAt }
+
+            var next: Date?
+            switch frequency {
+            case .none:
+                return item.startsAt >= date ? item : nil
+            case .weekly:
+                let interval = calendar.dateComponents([.day], from: item.startsAt, to: date).day ?? 0
+                let weeks = max(0, (interval + 6) / 7)
+                next = calendar.date(byAdding: .day, value: weeks * 7, to: item.startsAt)
+                while let candidate = next, candidate < date {
+                    next = calendar.date(byAdding: .day, value: 7, to: candidate)
+                }
+            case .monthly:
+                let current = calendar.dateComponents([.year, .month], from: date)
+                let anchorMonth = calendar.dateComponents([.year, .month], from: item.startsAt)
+                let monthDelta = (current.year! - anchorMonth.year!) * 12
+                    + (current.month! - anchorMonth.month!)
+                for offset in max(0, monthDelta)...max(0, monthDelta) + 240 {
+                    let absoluteMonth = (anchorMonth.year! * 12 + anchorMonth.month! - 1) + offset
+                    let year = absoluteMonth / 12
+                    let month = absoluteMonth % 12 + 1
+                    if let candidate = dateInMonth(year: year, month: month), candidate >= date {
+                        next = candidate
+                        break
+                    }
+                }
+            case .yearly:
+                let currentYear = calendar.component(.year, from: date)
+                let anchorYear = anchor.year ?? currentYear
+                for year in max(anchorYear, currentYear)...max(anchorYear, currentYear) + 20 {
+                    if let candidate = dateInMonth(year: year, month: anchor.month ?? 1), candidate >= date {
+                        next = candidate
+                        break
+                    }
+                }
+            }
+
+            guard let occurrence = next else { return nil }
             var projected = item
-            projected.startsAt = next
+            projected.startsAt = occurrence
             return projected
         }.sorted { $0.startsAt < $1.startsAt }
     }

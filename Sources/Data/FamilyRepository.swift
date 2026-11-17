@@ -27,7 +27,7 @@ protocol FamilyRepository: AnyObject {
     func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
                          kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
                          responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int],
-                         location: String?)
+                         location: String?, recurrenceFrequency: FamilyRecurrenceFrequency)
     func deleteItem(_ item: FamilyItem)
     func addShoppingItem(_ title: String)
     func setShoppingItem(_ id: UUID, checked: Bool)
@@ -46,7 +46,7 @@ extension FamilyRepository {
     func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
                           kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
                           responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int],
-                          location: String?) {
+                          location: String?, recurrenceFrequency: FamilyRecurrenceFrequency) {
         saveItem(id: id, title: title, details: details, startsAt: startsAt, kind: kind,
                  memberID: memberIDs.first, recurring: recurring, reminderOffsets: reminderOffsets)
     }

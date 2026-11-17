@@ -11,6 +11,9 @@ struct FamilyCalendarView: View {
     }
     @State private var showingEditor = false
     @State private var editingItem: FamilyItem?
+    @State private var pendingEdit: FamilyItem?
+    @State private var editingSingleOccurrence = false
+    @State private var showEditScopeConfirmation = false
     @State private var pendingDeletion: FamilyItem?
     @State private var showDeleteConfirmation = false
     @AppStorage("familjen.localRemindersEnabled") private var localRemindersEnabled = false
@@ -187,8 +190,14 @@ struct FamilyCalendarView: View {
             } else {
                 ForEach(visibleItems) { item in
                     Button {
-                        editingItem = item
-                        showingEditor = true
+                        if item.recurrenceFrequency != .none || item.isRecurringYearly {
+                            pendingEdit = item
+                            showEditScopeConfirmation = true
+                        } else {
+                            editingSingleOccurrence = false
+                            editingItem = item
+                            showingEditor = true
+                        }
                     } label: { calendarRow(item) }
                     .buttonStyle(.plain)
                     .swipeActions {
@@ -220,6 +229,21 @@ struct FamilyCalendarView: View {
         .overlay {
             if model.isLoading && model.items.isEmpty { ProgressView("Hämtar kalendern …") }
         }
+        .confirmationDialog("Redigera återkommande aktivitet?", isPresented: $showEditScopeConfirmation, presenting: pendingEdit) { item in
+            Button("Bara detta tillfälle") {
+                editingSingleOccurrence = true
+                editingItem = item
+                showingEditor = true
+            }
+            Button("Hela serien") {
+                editingSingleOccurrence = false
+                editingItem = model.items.first(where: { $0.id == item.id }) ?? item
+                showingEditor = true
+            }
+            Button("Avbryt", role: .cancel) { pendingEdit = nil }
+        } message: { _ in
+            Text("Välj om ändringen ska gälla det här datumet eller alla framtida tillfällen i serien.")
+        }
         .confirmationDialog("Ta bort aktivitet?", isPresented: $showDeleteConfirmation, presenting: pendingDeletion) { item in
             if item.recurrenceFrequency != .none || item.isRecurringYearly {
                 Button("Bara detta tillfälle", role: .destructive) {
@@ -240,12 +264,20 @@ struct FamilyCalendarView: View {
                  : "Aktiviteten tas bort från familjens kalender.")
         }
         .sheet(isPresented: $showingEditor, onDismiss: { editingItem = nil }) {
-            FamilyItemEditor(item: editingItem, members: model.members) { title, details, location, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurrenceFrequency, reminderOffsets in
-                await model.save(id: editingItem?.id, title: title, details: details, startsAt: date,
-                                 kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
-                                 responsibleMemberID: responsibleMemberID, isRecurringYearly: recurrenceFrequency == .yearly,
-                                 reminderOffsets: reminderOffsets, location: location,
-                                 recurrenceFrequency: recurrenceFrequency)
+            FamilyItemEditor(item: editingItem, members: model.members, singleOccurrence: editingSingleOccurrence) { title, details, location, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurrenceFrequency, reminderOffsets in
+                if editingSingleOccurrence, let item = editingItem {
+                    return await model.saveOccurrenceOverride(
+                        seriesID: item.id, occurrenceDate: item.startsAt, title: title,
+                        details: details, location: location, startsAt: date, kind: kind,
+                        memberIDs: memberIDs, isForEveryone: isForEveryone,
+                        responsibleMemberID: responsibleMemberID, reminderOffsets: reminderOffsets
+                    )
+                }
+                return await model.save(id: editingItem?.id, title: title, details: details, startsAt: date,
+                                        kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
+                                        responsibleMemberID: responsibleMemberID, isRecurringYearly: recurrenceFrequency == .yearly,
+                                        reminderOffsets: reminderOffsets, location: location,
+                                        recurrenceFrequency: recurrenceFrequency)
             }
         }
         .refreshable { await model.load() }
@@ -397,7 +429,7 @@ private struct FamilyItemEditor: View {
     @State private var isReadingImage = false
     @State private var importMessage: String?
 
-    init(item: FamilyItem?, members: [FamilyMember], onSave: @escaping (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool) {
+    init(item: FamilyItem?, members: [FamilyMember], singleOccurrence: Bool = false, onSave: @escaping (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool) {
         self.item = item
         self.members = members
         self.onSave = onSave
@@ -466,13 +498,18 @@ private struct FamilyItemEditor: View {
                     }
                     .padding(.vertical, 4)
                     DatePicker("Datum och tid", selection: $startsAt, displayedComponents: [.date, .hourAndMinute])
-                    Picker("Upprepning", selection: $recurrenceFrequency) { ForEach(FamilyRecurrenceFrequency.allCases) { frequency in Text(frequency.title).tag(frequency) } }
-                    Text(recurrenceFrequency == .none
-                         ? "Aktiviteten visas bara en gång."
-                         : kind == .birthday
-                            ? "Födelsedagen visas automatiskt på nästa kommande datum varje år."
-                            : "Aktiviteten upprepas: \(recurrenceFrequency.title.lowercased()).")
-                        .font(.caption).foregroundStyle(.secondary)
+                    if !singleOccurrence {
+                        Picker("Upprepning", selection: $recurrenceFrequency) { ForEach(FamilyRecurrenceFrequency.allCases) { frequency in Text(frequency.title).tag(frequency) } }
+                        Text(recurrenceFrequency == .none
+                             ? "Aktiviteten visas bara en gång."
+                             : kind == .birthday
+                                ? "Födelsedagen visas automatiskt på nästa kommande datum varje år."
+                                : "Aktiviteten upprepas: \(recurrenceFrequency.title.lowercased()).")
+                            .font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Text("Ändringen gäller bara det här tillfället. Övriga datum i serien påverkas inte.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                     TextField("Plats eller adress (valfritt)", text: $location)
                         .textContentType(.fullStreetAddress)
                     TextField("Anteckningar (valfritt)", text: $details, axis: .vertical).lineLimit(2...5)

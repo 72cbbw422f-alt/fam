@@ -244,6 +244,6 @@ struct FamilyOccurrenceOverride: Codable, Equatable, Identifiable {
     var item: FamilyItem
 
     var id: String {
-        "(seriesID.uuidString)-(Int(occurrenceDate.timeIntervalSince1970))"
+        "\(seriesID.uuidString)-\(Int(occurrenceDate.timeIntervalSince1970))"
     }
 }

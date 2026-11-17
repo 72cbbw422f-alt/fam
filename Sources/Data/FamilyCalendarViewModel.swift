@@ -74,6 +74,35 @@ final class FamilyCalendarViewModel: ObservableObject {
         return true
     }
 
+    func saveOccurrenceOverride(seriesID: UUID, occurrenceDate: Date, title: String,
+                                 details: String?, location: String?, startsAt: Date,
+                                 kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
+                                 responsibleMemberID: UUID?, reminderOffsets: [Int]) async -> Bool {
+        let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, clean.count <= 160,
+              let series = store.items.first(where: { $0.id == seriesID }) else {
+            errorMessage = "Aktiviteten kunde inte hittas."
+            return false
+        }
+        let validIDs = memberIDs.filter { id in store.members.contains(where: { $0.id == id }) }
+        let override = FamilyItem(
+            id: series.id, familyID: series.familyID, title: clean,
+            details: details, startsAt: startsAt, endsAt: nil, kind: kind,
+            memberID: nil, isRecurringYearly: false, reminderOffsets: reminderOffsets,
+            memberIDs: isForEveryone ? [] : validIDs, isForEveryone: isForEveryone,
+            responsibleMemberID: responsibleMemberID, location: location,
+            recurrenceFrequency: .none
+        )
+        store.saveOccurrenceOverride(seriesID: seriesID, occurrenceDate: occurrenceDate, item: override)
+        await load()
+        if let persistenceError = store.persistenceError {
+            errorMessage = persistenceError
+            return false
+        }
+        errorMessage = nil
+        return true
+    }
+
     static func filteredItems(_ items: [FamilyItem], selectedMemberIDs: Set<UUID>) -> [FamilyItem] {
         guard !selectedMemberIDs.isEmpty else { return items }
         return items.filter { item in

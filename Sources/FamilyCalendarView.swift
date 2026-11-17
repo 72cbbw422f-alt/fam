@@ -211,12 +211,18 @@ struct FamilyCalendarView: View {
         AnyView(calendarList)
     }
 
+    private var styledCalendarRoot: AnyView {
+        AnyView(
+            calendarRoot
+                .scrollContentBackground(.hidden)
+                .background(FamiljenTheme.paper)
+                .navigationTitle(pageTitle)
+                .navigationBarTitleDisplayMode(.inline)
+        )
+    }
+
     var body: some View {
-        calendarRoot
-        .scrollContentBackground(.hidden)
-        .background(FamiljenTheme.paper)
-        .navigationTitle(pageTitle)
-        .navigationBarTitleDisplayMode(.inline)
+        styledCalendarRoot
         .toolbar { calendarToolbar }
         .overlay {
             if model.isLoading && model.items.isEmpty { ProgressView("Hämtar kalendern …") }

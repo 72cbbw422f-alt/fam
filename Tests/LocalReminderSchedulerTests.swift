@@ -48,4 +48,43 @@ final class LocalReminderSchedulerTests: XCTestCase {
             isRecurringYearly: false, reminderOffsets: [0])
         XCTAssertTrue(LocalReminderScheduler.makeCandidates(for: [item], now: .now).isEmpty)
     }
+    func testSkippedRecurringOccurrenceDoesNotScheduleReminder() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 9)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 17, hour: 8)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Veckomöte", details: nil,
+            startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3600], recurrenceFrequency: .weekly)
+        let nextOccurrence = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 23, hour: 9)))
+        let exception = FamilyOccurrenceException(seriesID: item.id, occurrenceDate: nextOccurrence)
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now, skipping: [exception])
+        let candidate = try XCTUnwrap(candidates.first)
+        XCTAssertEqual(calendar.component(.day, from: candidate.item.startsAt), 30)
+    }
+
+    func testMovedOccurrenceOverrideSchedulesReminderAtNewDate() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 9)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 17, hour: 8)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Veckomöte", details: nil,
+            startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3600], recurrenceFrequency: .weekly)
+        let originalOccurrence = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 23, hour: 9)))
+        let movedDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 24, hour: 11)))
+        var overrideItem = item
+        overrideItem.title = "Veckomöte – flyttat"
+        overrideItem.startsAt = movedDate
+        let override = FamilyOccurrenceOverride(seriesID: item.id, occurrenceDate: originalOccurrence, item: overrideItem)
+
+        let candidate = try XCTUnwrap(LocalReminderScheduler.makeCandidates(
+            for: [item], now: now, overrides: [override]
+        ).first)
+        XCTAssertEqual(candidate.item.title, "Veckomöte – flyttat")
+        XCTAssertEqual(candidate.item.startsAt, movedDate)
+        XCTAssertEqual(candidate.fireDate, movedDate.addingTimeInterval(-3600))
+    }
+
 }

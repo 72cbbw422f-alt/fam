@@ -275,13 +275,13 @@ struct FamilyCalendarView: View {
         .refreshable { await model.load() }
         .task {
             await model.load()
-            if localRemindersEnabled { await LocalReminderScheduler.schedule(for: model.sourceItems, skipping: model.skippedOccurrences, overrides: model.occurrenceOverrides) }
+            await refreshLocalReminders()
         }
         .onChange(of: localRemindersEnabled) { _, enabled in
             Task {
                 if enabled {
                     let granted = await LocalReminderScheduler.requestPermission()
-                    if granted { await LocalReminderScheduler.schedule(for: model.sourceItems, skipping: model.skippedOccurrences, overrides: model.occurrenceOverrides) }
+                    if granted { await refreshLocalReminders() }
                     else { localRemindersEnabled = false }
                 } else { await LocalReminderScheduler.clearAll() }
             }
@@ -289,18 +289,27 @@ struct FamilyCalendarView: View {
         .onChange(of: model.members.map(\.id)) { _, memberIDs in
             selectedMemberIDs.formIntersection(Set(memberIDs))
         }
-        .onChange(of: model.sourceItems) { _, items in
-            if localRemindersEnabled { Task { await LocalReminderScheduler.schedule(for: items, skipping: model.skippedOccurrences, overrides: model.occurrenceOverrides) } }
+        .onChange(of: model.sourceItems) { _, _ in
+            Task { await refreshLocalReminders() }
         }
-        .onChange(of: model.skippedOccurrences) { _, exceptions in
-            if localRemindersEnabled { Task { await LocalReminderScheduler.schedule(for: model.sourceItems, skipping: exceptions, overrides: model.occurrenceOverrides) } }
+        .onChange(of: model.skippedOccurrences) { _, _ in
+            Task { await refreshLocalReminders() }
         }
-        .onChange(of: model.occurrenceOverrides) { _, overrides in
-            if localRemindersEnabled { Task { await LocalReminderScheduler.schedule(for: model.sourceItems, skipping: model.skippedOccurrences, overrides: overrides) } }
+        .onChange(of: model.occurrenceOverrides) { _, _ in
+            Task { await refreshLocalReminders() }
         }
         .onDisappear { Task { await model.stopRealtime() } }
     }
 
+
+    private func refreshLocalReminders() async {
+        guard localRemindersEnabled else { return }
+        await LocalReminderScheduler.schedule(
+            for: model.sourceItems,
+            skipping: model.skippedOccurrences,
+            overrides: model.occurrenceOverrides
+        )
+    }
 
     private func filterChip(_ title: String, kind: FamilyItemKind?) -> some View {
         Button { selectedKind = kind } label: {

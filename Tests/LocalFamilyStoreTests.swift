@@ -99,7 +99,8 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.items.count, 1)
         XCTAssertEqual(reloaded.skippedOccurrences.count, 1)
         let next = try XCTUnwrap(DashboardViewModel.project(reloaded.items, from: calendar.startOfDay(for: anchorDate), skipping: reloaded.skippedOccurrences).first)
-        XCTAssertTrue(calendar.isDate(next.startsAt, inDate: try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 2, day: 28, hour: 9)))))
+        let expectedNext = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 2, day: 28, hour: 9)))
+        XCTAssertTrue(calendar.isDate(next.startsAt, inDate: expectedNext))
     }
 
     func testCalendarItemCanBeCreatedUpdatedAndDeleted() throws {

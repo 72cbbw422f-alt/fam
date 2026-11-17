@@ -124,6 +124,60 @@ struct FamilyCalendarView: View {
         .listRowBackground(Color.clear)
     }
 
+    private var appleCalendarSection: some View {
+        Section {
+            if model.isAppleCalendarEnabled {
+                appleCalendarStatus
+                appleCalendarEntries
+                Button(action: model.refreshAppleCalendar) {
+                    Label("Uppdatera Apple Kalender", systemImage: "arrow.clockwise")
+                }
+            } else {
+                Button {
+                    Task { await model.enableAppleCalendar() }
+                } label: {
+                    Label("Visa händelser från Apple Kalender", systemImage: "calendar.badge.plus")
+                        .foregroundStyle(FamiljenTheme.navy)
+                }
+            }
+            appleCalendarErrorView
+        } header: {
+            Text("Dina andra kalendrar")
+        } footer: {
+            Text("Händelser från Apple Kalender visas här som importerad information. De ändras inte när du redigerar Familjens egna aktiviteter.")
+        }
+    }
+
+    @ViewBuilder
+    private var appleCalendarStatus: some View {
+        Label("Apple Kalender är ansluten", systemImage: "checkmark.circle.fill")
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(FamiljenTheme.champagneDeep)
+    }
+
+    @ViewBuilder
+    private var appleCalendarEntries: some View {
+        if model.appleCalendarEntries.isEmpty {
+            Text("Inga kommande händelser hittades i dina valda kalendrar.")
+                .font(.caption)
+                .foregroundStyle(FamiljenTheme.muted)
+        } else {
+            ForEach(model.appleCalendarEntries) { entry in
+                appleCalendarRow(entry)
+                    .listRowSeparator(.hidden)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var appleCalendarErrorView: some View {
+        if let error = model.appleCalendarError {
+            Text(error)
+                .font(.footnote)
+                .foregroundStyle(.red)
+        }
+    }
+
     var body: some View {
         List {
             calendarFilterSection
@@ -148,39 +202,7 @@ struct FamilyCalendarView: View {
                 }
             }
 
-            Section {
-                if model.isAppleCalendarEnabled {
-                    Label("Apple Kalender är ansluten", systemImage: "checkmark.circle.fill")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(FamiljenTheme.champagneDeep)
-                    if model.appleCalendarEntries.isEmpty {
-                        Text("Inga kommande händelser hittades i dina valda kalendrar.")
-                            .font(.caption).foregroundStyle(FamiljenTheme.muted)
-                    } else {
-                        ForEach(model.appleCalendarEntries) { entry in
-                            appleCalendarRow(entry)
-                                .listRowSeparator(.hidden)
-                        }
-                    }
-                    Button { model.refreshAppleCalendar() } label: {
-                        Label("Uppdatera Apple Kalender", systemImage: "arrow.clockwise")
-                    }
-                } else {
-                    Button {
-                        Task { await model.enableAppleCalendar() }
-                    } label: {
-                        Label("Visa händelser från Apple Kalender", systemImage: "calendar.badge.plus")
-                            .foregroundStyle(FamiljenTheme.navy)
-                    }
-                }
-                if let error = model.appleCalendarError {
-                    Text(error).font(.footnote).foregroundStyle(.red)
-                }
-            } header: {
-                Text("Dina andra kalendrar")
-            } footer: {
-                Text("Händelser från Apple Kalender visas här som importerad information. De ändras inte när du redigerar Familjens egna aktiviteter.")
-            }
+            appleCalendarSection
 
             if let error = model.errorMessage {
                 Section { Text(error).font(.footnote).foregroundStyle(.red) }

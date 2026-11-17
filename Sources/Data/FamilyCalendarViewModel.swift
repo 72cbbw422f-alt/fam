@@ -4,6 +4,7 @@ import Foundation
 @MainActor
 final class FamilyCalendarViewModel: ObservableObject {
     @Published private(set) var items: [FamilyItem] = []
+    @Published private(set) var sourceItems: [FamilyItem] = []
     @Published private(set) var skippedOccurrences: [FamilyOccurrenceException] = []
     @Published private(set) var occurrenceOverrides: [FamilyOccurrenceOverride] = []
     @Published private(set) var members: [FamilyMember] = []
@@ -24,7 +25,8 @@ final class FamilyCalendarViewModel: ObservableObject {
         members = store.members
         skippedOccurrences = store.skippedOccurrences
         occurrenceOverrides = store.occurrenceOverrides
-        items = DashboardViewModel.project(store.items, from: .now, skipping: skippedOccurrences, overrides: occurrenceOverrides)
+        sourceItems = store.items
+        items = DashboardViewModel.project(sourceItems, from: .now, skipping: skippedOccurrences, overrides: occurrenceOverrides)
         isLoading = false
     }
 

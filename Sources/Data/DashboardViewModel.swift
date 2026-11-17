@@ -127,20 +127,40 @@ final class DashboardViewModel: ObservableObject {
 
             guard var occurrence = next else { return nil }
             var attempts = 0
-            while exceptions.contains(where: {
-                $0.seriesID == item.id && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrence)
-            }) {
+            var projectedCandidates: [FamilyItem] = []
+            while true {
+                let isSkipped = exceptions.contains {
+                    $0.seriesID == item.id && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrence)
+                }
+                let matchingOverride = overrides.first {
+                    $0.seriesID == item.id && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrence)
+                }
+
+                if let matchingOverride {
+                    if matchingOverride.item.startsAt >= date {
+                        projectedCandidates.append(matchingOverride.item)
+                    }
+                } else if !isSkipped {
+                    var projected = item
+                    projected.startsAt = occurrence
+                    projectedCandidates.append(projected)
+                    break
+                }
+
                 guard attempts < 400, let candidate = nextOccurrence(after: occurrence),
-                      candidate > occurrence else { return nil }
+                      candidate > occurrence else { break }
                 occurrence = candidate
                 attempts += 1
             }
-            let matchingOverride = overrides.first {
-                $0.seriesID == item.id && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrence)
-            }
-            var projected = matchingOverride?.item ?? item
-            projected.startsAt = matchingOverride?.item.startsAt ?? occurrence
-            return projected
+
+            // An override can belong to an older original date but be moved into
+            // the future. Include it when choosing the next effective occurrence.
+            projectedCandidates.append(contentsOf: overrides.compactMap { override in
+                guard override.seriesID == item.id,
+                      override.item.startsAt >= date else { return nil }
+                return override.item
+            })
+            return projectedCandidates.min { $0.startsAt < $1.startsAt }
         }.sorted { $0.startsAt < $1.startsAt }
     }
 }

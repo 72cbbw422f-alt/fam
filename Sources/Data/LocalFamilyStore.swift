@@ -55,6 +55,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         self.family = family
         members = [owner]
         items = []
+        skippedOccurrences = []
         shoppingItems = []
         notifications = []
         messages = []
@@ -142,7 +143,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         })?.id
 
         let previousItems = items
+        let previousSkippedOccurrences = skippedOccurrences
         if let id, let index = items.firstIndex(where: { $0.id == id }) {
+            let previousSeriesStart = items[index].startsAt
+            let previousFrequency = items[index].recurrenceFrequency
             items[index].title = clean
             items[index].details = details
             items[index].location = location
@@ -154,6 +158,9 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             items[index].recurrenceFrequency = recurrenceFrequency == .none && recurring ? .yearly : recurrenceFrequency
             items[index].isRecurringYearly = items[index].recurrenceFrequency == .yearly
             items[index].reminderOffsets = reminderOffsets
+            if previousSeriesStart != startsAt || previousFrequency != items[index].recurrenceFrequency {
+                skippedOccurrences.removeAll { $0.seriesID == id }
+            }
         } else {
             items.append(FamilyItem(id: UUID(), familyID: family.id, title: clean,
                                     details: details, startsAt: startsAt, endsAt: nil,
@@ -169,14 +176,18 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         }
         if !saveToDisk() {
             items = previousItems
+            skippedOccurrences = previousSkippedOccurrences
         }
     }
 
     func deleteItem(_ item: FamilyItem) {
         let previousItems = items
+        let previousSkippedOccurrences = skippedOccurrences
         items.removeAll { $0.id == item.id }
+        skippedOccurrences.removeAll { $0.seriesID == item.id }
         if !saveToDisk() {
             items = previousItems
+            skippedOccurrences = previousSkippedOccurrences
         }
     }
 

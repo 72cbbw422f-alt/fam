@@ -41,7 +41,7 @@ protocol FamilyRepository: AnyObject {
 
 extension FamilyRepository {
     var skippedOccurrences: [FamilyOccurrenceException] { [] }
-    func skipOccurrence(of item: FamilyItem) { deleteItem(item) }
+    func skipOccurrence(of item: FamilyItem) { }
     var persistenceError: String? { nil }
 
     func addMember(name: String) { addMember(name: name, role: .member) }

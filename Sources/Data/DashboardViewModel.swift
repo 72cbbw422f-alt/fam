@@ -105,26 +105,35 @@ final class DashboardViewModel: ObservableObject {
                 }
             }
 
-            guard var occurrence = next else { return nil }
-            for _ in 0..<400 {
-                guard exceptions.contains(where: { $0.seriesID == item.id && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrence) }) else { break }
-                let searchDate = calendar.date(byAdding: .day, value: 1, to: occurrence) ?? occurrence.addingTimeInterval(86_400)
-                let candidate: Date?
+            func nextOccurrence(after occurrence: Date) -> Date? {
                 switch frequency {
+                case .none:
+                    return nil
                 case .weekly:
-                    let days = max(0, calendar.dateComponents([.day], from: item.startsAt, to: searchDate).day ?? 0)
-                    candidate = calendar.date(byAdding: .day, value: max(0, (days + 6) / 7) * 7, to: item.startsAt)
+                    return calendar.date(byAdding: .day, value: 7, to: occurrence)
                 case .monthly:
-                    let parts = calendar.dateComponents([.year, .month], from: searchDate)
-                    candidate = dateInMonth(year: parts.year ?? 2000, month: parts.month ?? 1)
+                    guard let firstOfNextMonth = calendar.date(byAdding: .month, value: 1,
+                                                                 to: calendar.dateInterval(of: .month, for: occurrence)?.start ?? occurrence) else {
+                        return nil
+                    }
+                    let parts = calendar.dateComponents([.year, .month], from: firstOfNextMonth)
+                    return dateInMonth(year: parts.year ?? 2000, month: parts.month ?? 1)
                 case .yearly:
-                    candidate = dateInMonth(year: calendar.component(.year, from: searchDate), month: anchor.month ?? 1)
-                case .none: candidate = nil
+                    let year = calendar.component(.year, from: occurrence) + 1
+                    return dateInMonth(year: year, month: anchor.month ?? 1)
                 }
-                guard let candidate else { return nil }
-                occurrence = candidate
             }
-            if exceptions.contains(where: { $0.seriesID == item.id && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrence) }) { return nil }
+
+            guard var occurrence = next else { return nil }
+            var attempts = 0
+            while exceptions.contains(where: {
+                $0.seriesID == item.id && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrence)
+            }) {
+                guard attempts < 400, let candidate = nextOccurrence(after: occurrence),
+                      candidate > occurrence else { return nil }
+                occurrence = candidate
+                attempts += 1
+            }
             var projected = item
             projected.startsAt = occurrence
             return projected

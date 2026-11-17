@@ -57,7 +57,8 @@ final class FamilyCalendarViewModel: ObservableObject {
             return false
         }
         let persistedDate = preservedRecurringDate(
-            id: id, proposedDate: startsAt, recurring: isRecurringYearly
+            id: id, proposedDate: startsAt, recurring: recurrenceFrequency != .none || isRecurringYearly,
+            recurrenceFrequency: recurrenceFrequency
         )
         store.saveCalendarItem(id: id, title: clean, details: details, startsAt: persistedDate,
                                kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
@@ -86,30 +87,50 @@ final class FamilyCalendarViewModel: ObservableObject {
         errorMessage = store.persistenceError
     }
 
-    // The calendar displays the next upcoming yearly occurrence.
-    // Persist the series' original year when a projected row is edited.
+    // Keep the series anchor stable when the user only changes the time
+    // on a projected occurrence. A deliberately changed calendar day becomes
+    // the new anchor for the series.
     private func preservedRecurringDate(id: UUID?, proposedDate: Date,
-                                       recurring: Bool) -> Date {
+                                        recurring: Bool,
+                                        recurrenceFrequency: FamilyRecurrenceFrequency) -> Date {
         guard recurring, let id,
-              let original = store.items.first(where: { $0.id == id }),
-              original.isRecurringYearly else {
+              let original = store.items.first(where: { $0.id == id }) else {
             return proposedDate
         }
+        let frequency = recurrenceFrequency == .none && original.isRecurringYearly
+            ? FamilyRecurrenceFrequency.yearly : recurrenceFrequency
+        guard frequency != .none else { return proposedDate }
 
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .current
-        let originalParts = calendar.dateComponents([.year, .month, .day], from: original.startsAt)
-        var editedParts = calendar.dateComponents([.month, .day, .hour, .minute, .second],
-                                                   from: proposedDate)
-        guard let anchorYear = originalParts.year else { return proposedDate }
-
-        // A 29 February occurrence is displayed as 28 February in non-leap years.
-        // If the user leaves that projected date unchanged, retain 29 February.
-        if originalParts.month == 2, originalParts.day == 29,
-           editedParts.month == 2, editedParts.day == 28 {
-            editedParts.day = 29
+        guard let projected = DashboardViewModel.project([original], from: .now).first,
+              calendar.isDate(proposedDate, inSameDayAs: projected.startsAt) else {
+            return proposedDate
         }
-        editedParts.year = anchorYear
-        return calendar.date(from: editedParts) ?? original.startsAt
+
+        let originalParts = calendar.dateComponents([.year, .month, .day], from: original.startsAt)
+        let editedParts = calendar.dateComponents([.hour, .minute, .second], from: proposedDate)
+        var components = DateComponents()
+        components.hour = editedParts.hour
+        components.minute = editedParts.minute
+        components.second = editedParts.second
+
+        switch frequency {
+        case .none:
+            return proposedDate
+        case .weekly:
+            components.year = originalParts.year
+            components.month = originalParts.month
+            components.day = originalParts.day
+        case .monthly:
+            components.year = originalParts.year
+            components.month = originalParts.month
+            components.day = originalParts.day
+        case .yearly:
+            components.year = originalParts.year
+            components.month = originalParts.month
+            components.day = originalParts.day
+        }
+        return calendar.date(from: components) ?? original.startsAt
     }
 }

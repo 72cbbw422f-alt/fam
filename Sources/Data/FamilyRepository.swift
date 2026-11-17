@@ -10,6 +10,7 @@ protocol FamilyRepository: AnyObject {
     var members: [FamilyMember] { get }
     var items: [FamilyItem] { get }
     var skippedOccurrences: [FamilyOccurrenceException] { get }
+    var occurrenceOverrides: [FamilyOccurrenceOverride] { get }
     var shoppingItems: [ShoppingItem] { get }
     var notifications: [FamilyNotification] { get }
     var messages: [FamilyMessage] { get }
@@ -30,6 +31,7 @@ protocol FamilyRepository: AnyObject {
                          responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int],
                          location: String?, recurrenceFrequency: FamilyRecurrenceFrequency)
     func deleteItem(_ item: FamilyItem)
+    func saveOccurrenceOverride(seriesID: UUID, occurrenceDate: Date, item: FamilyItem)
     func skipOccurrence(of item: FamilyItem)
     func addShoppingItem(_ title: String)
     func setShoppingItem(_ id: UUID, checked: Bool)
@@ -41,6 +43,8 @@ protocol FamilyRepository: AnyObject {
 
 extension FamilyRepository {
     var skippedOccurrences: [FamilyOccurrenceException] { [] }
+    var occurrenceOverrides: [FamilyOccurrenceOverride] { [] }
+    func saveOccurrenceOverride(seriesID: UUID, occurrenceDate: Date, item: FamilyItem) { }
     func skipOccurrence(of item: FamilyItem) { }
     var persistenceError: String? { nil }
 

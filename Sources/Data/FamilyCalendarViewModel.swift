@@ -20,7 +20,7 @@ final class FamilyCalendarViewModel: ObservableObject {
     func load() async {
         isLoading = true
         members = store.members
-        items = DashboardViewModel.project(store.items, from: .now, skipping: store.skippedOccurrences)
+        items = DashboardViewModel.project(store.items, from: .now, skipping: store.skippedOccurrences, overrides: store.occurrenceOverrides)
         isLoading = false
     }
 

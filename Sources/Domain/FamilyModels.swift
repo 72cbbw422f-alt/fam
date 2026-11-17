@@ -234,3 +234,16 @@ struct FamilyMessage: Identifiable, Codable, Equatable {
         case readAt = "read_at"
     }
 }
+
+
+/// A complete replacement for one generated occurrence. The key uses the
+/// original scheduled date, so moving the occurrence does not lose its identity.
+struct FamilyOccurrenceOverride: Codable, Equatable, Identifiable {
+    let seriesID: UUID
+    let occurrenceDate: Date
+    var item: FamilyItem
+
+    var id: String {
+        "(seriesID.uuidString)-(Int(occurrenceDate.timeIntervalSince1970))"
+    }
+}

@@ -9,6 +9,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     @Published private(set) var members: [FamilyMember] = []
     @Published private(set) var items: [FamilyItem] = []
     @Published private(set) var skippedOccurrences: [FamilyOccurrenceException] = []
+    @Published private(set) var occurrenceOverrides: [FamilyOccurrenceOverride] = []
     @Published private(set) var shoppingItems: [ShoppingItem] = []
     @Published private(set) var notifications: [FamilyNotification] = []
     @Published private(set) var messages: [FamilyMessage] = []
@@ -56,6 +57,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         members = [owner]
         items = []
         skippedOccurrences = []
+        occurrenceOverrides = []
         shoppingItems = []
         notifications = []
         messages = []
@@ -160,6 +162,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             items[index].reminderOffsets = reminderOffsets
             if previousSeriesStart != startsAt || previousFrequency != items[index].recurrenceFrequency {
                 skippedOccurrences.removeAll { $0.seriesID == id }
+                occurrenceOverrides.removeAll { $0.seriesID == id }
             }
         } else {
             items.append(FamilyItem(id: UUID(), familyID: family.id, title: clean,
@@ -177,18 +180,32 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         if !saveToDisk() {
             items = previousItems
             skippedOccurrences = previousSkippedOccurrences
+            occurrenceOverrides = previousOccurrenceOverrides
         }
     }
 
     func deleteItem(_ item: FamilyItem) {
         let previousItems = items
         let previousSkippedOccurrences = skippedOccurrences
+        let previousOccurrenceOverrides = occurrenceOverrides
         items.removeAll { $0.id == item.id }
         skippedOccurrences.removeAll { $0.seriesID == item.id }
+        occurrenceOverrides.removeAll { $0.seriesID == item.id }
         if !saveToDisk() {
             items = previousItems
             skippedOccurrences = previousSkippedOccurrences
+            occurrenceOverrides = previousOccurrenceOverrides
         }
+    }
+
+    func saveOccurrenceOverride(seriesID: UUID, occurrenceDate: Date, item: FamilyItem) {
+        guard items.contains(where: { $0.id == seriesID }) else { return }
+        let previous = occurrenceOverrides
+        occurrenceOverrides.removeAll {
+            $0.seriesID == seriesID && Calendar.current.isDate($0.occurrenceDate, inSameDayAs: occurrenceDate)
+        }
+        occurrenceOverrides.append(FamilyOccurrenceOverride(seriesID: seriesID, occurrenceDate: occurrenceDate, item: item))
+        if !saveToDisk() { occurrenceOverrides = previous }
     }
 
     func skipOccurrence(of item: FamilyItem) {
@@ -259,6 +276,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         var notifications: [FamilyNotification]
         var messages: [FamilyMessage]?
         var skippedOccurrences: [FamilyOccurrenceException]? = nil
+        var occurrenceOverrides: [FamilyOccurrenceOverride]? = nil
     }
 
     private func loadFromDisk() {
@@ -270,6 +288,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             members = snapshot.members
             items = snapshot.items
             skippedOccurrences = snapshot.skippedOccurrences ?? []
+            occurrenceOverrides = snapshot.occurrenceOverrides ?? []
             shoppingItems = snapshot.shoppingItems
             notifications = snapshot.notifications
             messages = snapshot.messages ?? []
@@ -295,7 +314,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         }
         let snapshot = Snapshot(family: family, members: members, items: items,
                                 shoppingItems: shoppingItems, notifications: notifications, messages: messages,
-                                skippedOccurrences: skippedOccurrences)
+                                skippedOccurrences: skippedOccurrences,
+                                occurrenceOverrides: occurrenceOverrides)
         do {
             let data = try JSONEncoder().encode(snapshot)
             try data.write(to: fileURL, options: .atomic)

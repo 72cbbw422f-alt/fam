@@ -40,11 +40,12 @@ final class DashboardViewModel: ObservableObject {
     func load() async {
         isLoading = true
         family = store.family
-        upcomingItems = Self.project(store.items, from: .now, skipping: store.skippedOccurrences)
+        upcomingItems = Self.project(store.items, from: .now, skipping: store.skippedOccurrences, overrides: store.occurrenceOverrides)
         isLoading = false
     }
 
-    static func project(_ source: [FamilyItem], from date: Date, skipping exceptions: [FamilyOccurrenceException] = []) -> [FamilyItem] {
+    static func project(_ source: [FamilyItem], from date: Date, skipping exceptions: [FamilyOccurrenceException] = [],
+                        overrides: [FamilyOccurrenceOverride] = []) -> [FamilyItem] {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .current
 
@@ -134,8 +135,11 @@ final class DashboardViewModel: ObservableObject {
                 occurrence = candidate
                 attempts += 1
             }
-            var projected = item
-            projected.startsAt = occurrence
+            let matchingOverride = overrides.first {
+                $0.seriesID == item.id && calendar.isDate($0.occurrenceDate, inSameDayAs: occurrence)
+            }
+            var projected = matchingOverride?.item ?? item
+            projected.startsAt = matchingOverride?.item.startsAt ?? occurrence
             return projected
         }.sorted { $0.startsAt < $1.startsAt }
     }

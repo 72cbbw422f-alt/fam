@@ -87,4 +87,28 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertEqual(candidate.fireDate, movedDate.addingTimeInterval(-3600))
     }
 
+
+    func testMovedPastOccurrenceStillSchedulesReminderFromOriginalSeries() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 9)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 25, hour: 8)))
+        let originalOccurrence = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 23, hour: 9)))
+        let movedDate = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 26, hour: 11)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Veckomöte", details: nil,
+            startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3600], recurrenceFrequency: .weekly)
+        var movedItem = item
+        movedItem.title = "Veckomöte – flyttat"
+        movedItem.startsAt = movedDate
+        let override = FamilyOccurrenceOverride(seriesID: item.id, occurrenceDate: originalOccurrence, item: movedItem)
+
+        let candidate = try XCTUnwrap(LocalReminderScheduler.makeCandidates(
+            for: [item], now: now, overrides: [override]
+        ).first)
+        XCTAssertEqual(candidate.item.title, "Veckomöte – flyttat")
+        XCTAssertEqual(candidate.item.startsAt, movedDate)
+        XCTAssertEqual(candidate.fireDate, movedDate.addingTimeInterval(-3600))
+    }
+
 }

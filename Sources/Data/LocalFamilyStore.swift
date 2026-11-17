@@ -146,6 +146,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
 
         let previousItems = items
         let previousSkippedOccurrences = skippedOccurrences
+        let previousOccurrenceOverrides = occurrenceOverrides
         if let id, let index = items.firstIndex(where: { $0.id == id }) {
             let previousSeriesStart = items[index].startsAt
             let previousFrequency = items[index].recurrenceFrequency

@@ -81,7 +81,13 @@ final class FamilyCalendarViewModel: ObservableObject {
         }
     }
 
-    func skipOccurrence(_ item: FamilyItem) async {\n        store.skipOccurrence(of: item)\n        await load()\n        errorMessage = store.persistenceError\n    }\n\n    func delete(_ item: FamilyItem) async {
+    func skipOccurrence(_ item: FamilyItem) async {
+        store.skipOccurrence(of: item)
+        await load()
+        errorMessage = store.persistenceError
+    }
+
+    func delete(_ item: FamilyItem) async {
         store.deleteItem(item)
         await load()
         errorMessage = store.persistenceError

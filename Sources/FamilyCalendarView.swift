@@ -10,7 +10,9 @@ struct FamilyCalendarView: View {
         _selectedKind = State(initialValue: initialKind)
     }
     @State private var showingEditor = false
-    @State private var editingItem: FamilyItem?\n    @State private var pendingDeletion: FamilyItem?\n    @State private var showDeleteConfirmation = false
+    @State private var editingItem: FamilyItem?
+    @State private var pendingDeletion: FamilyItem?
+    @State private var showDeleteConfirmation = false
     @AppStorage("familjen.localRemindersEnabled") private var localRemindersEnabled = false
 
     private var visibleItems: [FamilyItem] {

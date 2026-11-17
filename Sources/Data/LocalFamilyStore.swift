@@ -7,7 +7,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
 
     @Published private(set) var family: Family?
     @Published private(set) var members: [FamilyMember] = []
-    @Published private(set) var items: [FamilyItem] = []\n    @Published private(set) var skippedOccurrences: [FamilyOccurrenceException] = []
+    @Published private(set) var items: [FamilyItem] = []
+    @Published private(set) var skippedOccurrences: [FamilyOccurrenceException] = []
     @Published private(set) var shoppingItems: [ShoppingItem] = []
     @Published private(set) var notifications: [FamilyNotification] = []
     @Published private(set) var messages: [FamilyMessage] = []
@@ -163,7 +164,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                                     memberIDs: isForEveryone ? [] : validMemberIDs,
                                     isForEveryone: isForEveryone,
                                     responsibleMemberID: validResponsibleID,
-                                    location: location,\n                                    recurrenceFrequency: recurrenceFrequency == .none && recurring ? .yearly : recurrenceFrequency))
+                                    location: location,
+                                    recurrenceFrequency: recurrenceFrequency == .none && recurring ? .yearly : recurrenceFrequency))
         }
         if !saveToDisk() {
             items = previousItems
@@ -244,7 +246,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         var items: [FamilyItem]
         var shoppingItems: [ShoppingItem]
         var notifications: [FamilyNotification]
-        var messages: [FamilyMessage]?\n        var skippedOccurrences: [FamilyOccurrenceException]? = nil
+        var messages: [FamilyMessage]?
+        var skippedOccurrences: [FamilyOccurrenceException]? = nil
     }
 
     private func loadFromDisk() {
@@ -254,7 +257,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             let snapshot = try JSONDecoder().decode(Snapshot.self, from: data)
             family = snapshot.family
             members = snapshot.members
-            items = snapshot.items\n            skippedOccurrences = snapshot.skippedOccurrences ?? []
+            items = snapshot.items
+            skippedOccurrences = snapshot.skippedOccurrences ?? []
             shoppingItems = snapshot.shoppingItems
             notifications = snapshot.notifications
             messages = snapshot.messages ?? []
@@ -279,7 +283,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             return false
         }
         let snapshot = Snapshot(family: family, members: members, items: items,
-                                shoppingItems: shoppingItems, notifications: notifications, messages: messages,\n                                skippedOccurrences: skippedOccurrences)
+                                shoppingItems: shoppingItems, notifications: notifications, messages: messages,
+                                skippedOccurrences: skippedOccurrences)
         do {
             let data = try JSONEncoder().encode(snapshot)
             try data.write(to: fileURL, options: .atomic)

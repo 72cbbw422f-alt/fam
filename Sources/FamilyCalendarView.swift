@@ -10,7 +10,7 @@ struct FamilyCalendarView: View {
         _selectedKind = State(initialValue: initialKind)
     }
     @State private var showingEditor = false
-    @State private var editingItem: FamilyItem?
+    @State private var editingItem: FamilyItem?\n    @State private var pendingDeletion: FamilyItem?\n    @State private var showDeleteConfirmation = false
     @AppStorage("familjen.localRemindersEnabled") private var localRemindersEnabled = false
 
     private var visibleItems: [FamilyItem] {
@@ -127,7 +127,10 @@ struct FamilyCalendarView: View {
                     } label: { calendarRow(item) }
                     .buttonStyle(.plain)
                     .swipeActions {
-                        Button(role: .destructive) { Task { await model.delete(item) } } label: {
+                        Button(role: .destructive) {
+                            pendingDeletion = item
+                            showDeleteConfirmation = true
+                        } label: {
                             Label("Ta bort", systemImage: "trash")
                         }
                     }
@@ -183,6 +186,25 @@ struct FamilyCalendarView: View {
         }
         .overlay {
             if model.isLoading && model.items.isEmpty { ProgressView("Hämtar kalendern …") }
+        }
+        .confirmationDialog("Ta bort aktivitet?", isPresented: $showDeleteConfirmation, presenting: pendingDeletion) { item in
+            if item.recurrenceFrequency != .none || item.isRecurringYearly {
+                Button("Bara detta tillfälle", role: .destructive) {
+                    Task { await model.skipOccurrence(item) }
+                }
+                Button("Hela serien", role: .destructive) {
+                    Task { await model.delete(item) }
+                }
+            } else {
+                Button("Ta bort aktivitet", role: .destructive) {
+                    Task { await model.delete(item) }
+                }
+            }
+            Button("Avbryt", role: .cancel) { pendingDeletion = nil }
+        } message: { item in
+            Text(item.recurrenceFrequency != .none || item.isRecurringYearly
+                 ? "Du kan ta bort bara det här datumet eller hela den återkommande serien."
+                 : "Aktiviteten tas bort från familjens kalender.")
         }
         .sheet(isPresented: $showingEditor, onDismiss: { editingItem = nil }) {
             FamilyItemEditor(item: editingItem, members: model.members) { title, details, location, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurrenceFrequency, reminderOffsets in

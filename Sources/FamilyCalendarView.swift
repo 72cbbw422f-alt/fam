@@ -207,8 +207,12 @@ struct FamilyCalendarView: View {
         }
     }
 
+    private var calendarRoot: AnyView {
+        AnyView(calendarList)
+    }
+
     var body: some View {
-        calendarList
+        calendarRoot
         .scrollContentBackground(.hidden)
         .background(FamiljenTheme.paper)
         .navigationTitle(pageTitle)

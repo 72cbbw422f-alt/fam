@@ -435,8 +435,8 @@ private struct AppleCalendarSection: View {
                 Text(entry.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(FamiljenTheme.ink)
-                Text(entry.isAllDay ? "Hela dagen · \\(entry.calendarTitle)" :
-                     "\\(entry.startsAt.formatted(.dateTime.hour().minute())) · \\(entry.calendarTitle)")
+                Text(entry.isAllDay ? "Hela dagen · \(entry.calendarTitle)" :
+                     "\(entry.startsAt.formatted(.dateTime.hour().minute())) · \(entry.calendarTitle)")
                     .font(.caption)
                     .foregroundStyle(FamiljenTheme.muted)
             }

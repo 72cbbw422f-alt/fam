@@ -24,6 +24,11 @@ struct FamilyCalendarView: View {
         return peopleFiltered.filter { $0.kind == selectedKind }
     }
 
+    private func requiresEditScope(for item: FamilyItem) -> Bool {
+        let hasRecurrenceFrequency = item.recurrenceFrequency != .none
+        return hasRecurrenceFrequency || item.isRecurringYearly
+    }
+
     private var pageTitle: String {
         switch selectedKind {
         case .healthVisit: return "Hälsa"
@@ -190,7 +195,7 @@ struct FamilyCalendarView: View {
             } else {
                 ForEach(visibleItems) { item in
                     Button {
-                        if item.recurrenceFrequency != .none || item.isRecurringYearly {
+                        if requiresEditScope(for: item) {
                             pendingEdit = item
                             showEditScopeConfirmation = true
                         } else {
@@ -283,7 +288,7 @@ struct FamilyCalendarView: View {
         .refreshable { await model.load() }
         .task {
             await model.load()
-            if localRemindersEnabled { await LocalReminderScheduler.schedule(for: model.items) }
+            if localRemindersEnabled { await LocalReminderScheduler.schedule(for: model.items, skipping: model.skippedOccurrences, overrides: model.occurrenceOverrides) }
         }
         .onChange(of: localRemindersEnabled) { _, enabled in
             Task {
@@ -298,7 +303,7 @@ struct FamilyCalendarView: View {
             selectedMemberIDs.formIntersection(Set(memberIDs))
         }
         .onChange(of: model.items) { _, items in
-            if localRemindersEnabled { Task { await LocalReminderScheduler.schedule(for: items) } }
+            if localRemindersEnabled { Task { await LocalReminderScheduler.schedule(for: items, skipping: model.skippedOccurrences, overrides: model.occurrenceOverrides) } }
         }
         .onDisappear { Task { await model.stopRealtime() } }
     }

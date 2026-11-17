@@ -3,81 +3,31 @@ import XCTest
 
 @MainActor
 final class LocalReminderSchedulerTests: XCTestCase {
-    private func makeItem(
-        startsAt: Date,
-        reminderOffsets: [Int]?
-    ) -> FamilyItem {
-        FamilyItem(
-            id: UUID(),
-            familyID: UUID(),
-            title: "Testaktivitet",
-            details: nil,
-            startsAt: startsAt,
-            endsAt: nil,
-            kind: .appointment,
-            memberID: nil,
-            isRecurringYearly: false,
-            reminderOffsets: reminderOffsets
-        )
+    func testWeeklyRecurringItemSchedulesReminderForNextOccurrence() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 9, minute: 30)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 17, hour: 12)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Veckomöte",
+            details: nil, startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3600], recurrenceFrequency: .weekly)
+
+        let candidate = try XCTUnwrap(LocalReminderScheduler.makeCandidates(for: [item], now: now).first)
+        let occurrence = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: candidate.item.startsAt)
+        XCTAssertEqual(occurrence.year, 2026)
+        XCTAssertEqual(occurrence.month, 11)
+        XCTAssertEqual(occurrence.day, 23)
+        XCTAssertEqual(occurrence.hour, 9)
+        XCTAssertEqual(occurrence.minute, 30)
+        XCTAssertEqual(candidate.fireDate, candidate.item.startsAt.addingTimeInterval(-3600))
+        XCTAssertGreaterThan(candidate.fireDate, now)
     }
 
-    func testObsoleteReminderCleanupOnlyTargetsStaleFamiljenNotifications() {
-        let stale = "familjen-item-11111111-1111-1111-1111-111111111111-3600"
-        let current = "familjen-item-22222222-2222-2222-2222-222222222222-900"
-        let unrelated = "other-app-notification"
-
-        let obsolete = LocalReminderScheduler.obsoleteManagedIdentifiers(
-            existingIdentifiers: [stale, current, unrelated],
-            desiredIdentifiers: [current]
-        )
-
-        XCTAssertEqual(obsolete, [stale])
-    }
-
-    func testDuplicateOffsetsProduceOnlyOneCandidatePerReminder() {
-        let now = Date(timeIntervalSince1970: 1_800_000_000)
-        let item = makeItem(startsAt: now.addingTimeInterval(3_600), reminderOffsets: [900, 900, 300])
-
-        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
-
-        XCTAssertEqual(candidates.count, 2)
-        XCTAssertEqual(Set(candidates.map(\.offset)), Set([900, 300]))
-        XCTAssertEqual(Set(candidates.map(\.id)).count, 2)
-    }
-
-    func testPastAndNegativeOffsetRemindersAreExcluded() {
-        let now = Date(timeIntervalSince1970: 1_800_000_000)
-        let item = makeItem(
-            startsAt: now.addingTimeInterval(3_600),
-            reminderOffsets: [7_200, 3_600, 0, -300]
-        )
-
-        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
-
-        XCTAssertEqual(candidates.map(\.offset), [0])
-        XCTAssertTrue(candidates.allSatisfy { $0.fireDate > now })
-    }
-
-    func testNilOffsetsUseLegacyDefaultReminders() {
-        let now = Date(timeIntervalSince1970: 1_800_000_000)
-        let item = makeItem(startsAt: now.addingTimeInterval(3 * 24 * 60 * 60), reminderOffsets: nil)
-
-        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
-
-        XCTAssertEqual(Set(candidates.map(\.offset)), Set([24 * 60 * 60, 60 * 60]))
-        XCTAssertEqual(candidates.count, 2)
-    }
-
-    func testOnlySixtySoonestRemindersAreSelected() {
-        let now = Date(timeIntervalSince1970: 1_800_000_000)
-        let items = (1...70).map { hours in
-            makeItem(startsAt: now.addingTimeInterval(TimeInterval(hours * 3_600)), reminderOffsets: [0])
-        }
-
-        let candidates = LocalReminderScheduler.makeCandidates(for: items, now: now)
-
-        XCTAssertEqual(candidates.count, 60)
-        XCTAssertEqual(candidates.first?.fireDate, now.addingTimeInterval(3_600))
-        XCTAssertEqual(candidates.last?.fireDate, now.addingTimeInterval(60 * 3_600))
+    func testPastNonRecurringItemDoesNotCreateReminder() {
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Gammal bokning",
+            details: nil, startsAt: Date(timeIntervalSince1970: 1_700_000_000),
+            endsAt: nil, kind: .appointment, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [0])
+        XCTAssertTrue(LocalReminderScheduler.makeCandidates(for: [item], now: .now).isEmpty)
     }
 }

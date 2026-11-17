@@ -7,7 +7,7 @@ struct ReminderCandidate: Identifiable {
     let fireDate: Date
 
     var id: String {
-        "\(item.id.uuidString)-\(offset)"
+        "\(item.id.uuidString)-\(Int(item.startsAt.timeIntervalSince1970))-\(offset)"
     }
 }
 
@@ -31,7 +31,9 @@ enum LocalReminderScheduler {
     static func makeCandidates(for items: [FamilyItem], now: Date) -> [ReminderCandidate] {
         var candidates: [ReminderCandidate] = []
 
-        for item in items {
+        // Project recurring items to their next occurrence before calculating reminders.
+        let upcomingItems = DashboardViewModel.project(items, from: now)
+        for item in upcomingItems {
             let offsets = item.reminderOffsets ?? defaultOffsets
             for offset in Set(offsets) where offset >= 0 {
                 let fireDate = item.startsAt.addingTimeInterval(TimeInterval(-offset))

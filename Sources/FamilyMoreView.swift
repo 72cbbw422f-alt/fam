@@ -58,6 +58,10 @@ struct FamilyMoreView: View {
                         NavigationLink { NotificationsView() } label: {
                             menuRow("bell", title: "Notiser", subtitle: "Aviseringar från Familjen")
                         }
+                        Divider().overlay(FamiljenTheme.sand).padding(.leading, 60)
+                        NavigationLink { CapabilityDiagnosticsView() } label: {
+                            menuRow("checkmark.shield", title: "Behörighetskontroll", subtitle: "Kontrollera iCloud och notiser på enheten")
+                        }
                     }
                     .background(.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 20).stroke(FamiljenTheme.sand.opacity(0.7), lineWidth: 1))

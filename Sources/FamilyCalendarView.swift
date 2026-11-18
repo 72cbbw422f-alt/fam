@@ -977,9 +977,12 @@ private struct FamilyItemEditor: View {
                         Text("Ändringen gäller bara det här tillfället. Övriga datum i serien påverkas inte.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    PlaceSearchField(text: $location)
-                    TextField("Anteckningar (valfritt)", text: $details, axis: .vertical).lineLimit(2...5)
+                    if kind != .birthday {
+                        PlaceSearchField(text: $location)
+                        TextField("Anteckningar (valfritt)", text: $details, axis: .vertical).lineLimit(2...5)
+                    }
                 }
+                if kind != .birthday {
                 Section {
                     Text("Välj när Familjen ska påminna dig inför aktiviteten. Du kan välja flera alternativ.")
                         .font(.caption)
@@ -994,12 +997,15 @@ private struct FamilyItemEditor: View {
                 } header: {
                     Text("Påminnelser")
                 }
-                Section("Vem gäller det?") {
-                    Toggle("Hela familjen", isOn: $isForEveryone)
-                        .tint(FamiljenTheme.navy)
-                        .onChange(of: isForEveryone) { _, enabled in
-                            if enabled { selectedMemberIDs.removeAll() }
-                        }
+                }
+                Section(kind == .birthday ? "Vem fyller år?" : "Vem gäller det?") {
+                    if kind != .birthday {
+                        Toggle("Hela familjen", isOn: $isForEveryone)
+                            .tint(FamiljenTheme.navy)
+                            .onChange(of: isForEveryone) { _, enabled in
+                                if enabled { selectedMemberIDs.removeAll() }
+                            }
+                    }
                     if !isForEveryone {
                         ForEach(members) { member in
                             Button {

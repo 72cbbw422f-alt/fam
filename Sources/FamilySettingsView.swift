@@ -1,6 +1,13 @@
 import SwiftUI
 import UserNotifications
 
+private struct FamilyReminderOption: Identifiable {
+    let title: String
+    let offset: Int
+    let symbol: String
+    var id: Int { offset }
+}
+
 struct FamilySettingsView: View {
     @StateObject private var store = FamilyStore.shared
     @AppStorage("familjen.localRemindersEnabled") private var localRemindersEnabled = false
@@ -8,12 +15,12 @@ struct FamilySettingsView: View {
     @State private var isUpdatingReminders = false
     @State private var reminderStatus: String?
 
-    private let reminderOptions: [(title: String, offset: Int, symbol: String)] = [
-        ("En vecka före", 7 * 24 * 60 * 60, "calendar"),
-        ("En dag före", 24 * 60 * 60, "sun.max"),
-        ("En timme före", 60 * 60, "clock"),
-        ("15 minuter före", 15 * 60, "timer"),
-        ("Vid start", 0, "bell")
+    private let reminderOptions: [FamilyReminderOption] = [
+        FamilyReminderOption(title: "En vecka före", offset: 7 * 24 * 60 * 60, symbol: "calendar"),
+        FamilyReminderOption(title: "En dag före", offset: 24 * 60 * 60, symbol: "sun.max"),
+        FamilyReminderOption(title: "En timme före", offset: 60 * 60, symbol: "clock"),
+        FamilyReminderOption(title: "15 minuter före", offset: 15 * 60, symbol: "timer"),
+        FamilyReminderOption(title: "Vid start", offset: 0, symbol: "bell")
     ]
 
     var body: some View {
@@ -48,7 +55,7 @@ struct FamilySettingsView: View {
                     .font(.caption)
                     .foregroundStyle(FamiljenTheme.muted)
 
-                ForEach(reminderOptions, id: \.offset) { option in
+                ForEach(reminderOptions) { option in
                     Button {
                         toggleDefault(option.offset)
                     } label: {

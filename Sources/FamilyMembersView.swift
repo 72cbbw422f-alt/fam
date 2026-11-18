@@ -94,7 +94,7 @@ struct FamilyMembersView: View {
     }
     private func addChild() {
         let clean = newChildName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard member.role == .owner || (!clean.isEmpty && clean.count <= 80) else { errorMessage = "Namnet får vara högst 80 tecken."; return }
+        guard !clean.isEmpty, clean.count <= 80 else { errorMessage = "Ange ett namn på högst 80 tecken."; return }
         FamilyStore.shared.addChild(name: clean)
         newChildName = ""; infoMessage = "Barnprofilen har lagts till."; loadMembers()
     }

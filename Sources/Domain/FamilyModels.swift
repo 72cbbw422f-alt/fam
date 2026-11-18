@@ -106,7 +106,7 @@ enum FamilyItemKind: String, Codable, Hashable, CaseIterable {
         case .birthday: return "gift.fill"
         case .event: return "sparkles"
         case .healthVisit: return "stethoscope"
-        case .dentist: return "mouth"
+        case .dentist: return "tooth"
         case .medication: return "pills.fill"
         case .school: return "building.2.fill"
         case .activity: return "dumbbell.fill"

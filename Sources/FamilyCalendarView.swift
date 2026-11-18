@@ -891,7 +891,7 @@ private struct FamilyItemEditor: View {
         _selectedMemberIDs = State(initialValue: Set(item?.memberIDs ?? []))
         _isForEveryone = State(initialValue: item?.isForEveryone ?? false)
         _responsibleSelection = State(initialValue: item?.responsibleMemberID?.uuidString ?? "")
-        _recurrenceFrequency = State(initialValue: item?.recurrenceFrequency ?? (item?.isRecurringYearly == true ? .yearly : .none))
+        _recurrenceFrequency = State(initialValue: item?.recurrenceFrequency ?? (item?.isRecurringYearly == true || (item == nil && initialKind == .birthday) ? .yearly : .none))
         let savedDefaults = UserDefaults.standard.array(forKey: "familjen.defaultReminderOffsets") as? [Int]
             ?? [24 * 60 * 60, 60 * 60]
         _selectedReminderOffsets = State(initialValue: Set(item?.reminderOffsets ?? savedDefaults))
@@ -924,6 +924,7 @@ private struct FamilyItemEditor: View {
                             .font(.caption)
                             .foregroundStyle(FamiljenTheme.muted)
                     }
+                    if !(item == nil && initialKind == .birthday) {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 94), spacing: 10)], spacing: 10) {
                         ForEach(FamilyItemKind.calendarKinds, id: \.self) { value in
                             Button {
@@ -954,7 +955,12 @@ private struct FamilyItemEditor: View {
                         }
                     }
                     .padding(.vertical, 4)
-                    DatePicker("Datum och tid", selection: $startsAt, displayedComponents: [.date, .hourAndMinute])
+                    }
+                    if kind == .birthday {
+                        DatePicker("Födelsedatum", selection: $startsAt, displayedComponents: [.date])
+                    } else {
+                        DatePicker("Datum och tid", selection: $startsAt, displayedComponents: [.date, .hourAndMinute])
+                    }
                     if !singleOccurrence {
                         Picker("Upprepning", selection: $recurrenceFrequency) { ForEach(FamilyRecurrenceFrequency.allCases) { frequency in Text(frequency.title).tag(frequency) } }
                         Text(recurrenceFrequency == .none

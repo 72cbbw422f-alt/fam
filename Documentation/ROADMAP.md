@@ -242,3 +242,35 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Visa genvägar till profilhantering och behörighetskontroll.
 - [x] Visa tydligt att lagringen är lokal och att synkronisering mellan telefoner ännu inte är aktiverad.
 - [ ] Utöka inställningarna först när fler verkliga appomfattande val finns att styra; undvik reglage utan faktisk funktion.
+
+
+## Första praktiska iPhone-testet – återkoppling (2026-11-18)
+
+### Bekräftat fungerande på fysisk iPhone
+- [x] Lokala kalenderpåminnelser fungerar.
+- [x] Familjeprofiler kan redigeras och tas bort.
+- [x] Avbockade inköpsvaror försvinner från den aktiva listan.
+- [ ] Inställningarna återstår att testas av användaren.
+
+### Startsida och varumärke
+- [ ] Ta bort eller omarbeta den lilla versala undertiteln vid logotypen (”VÅR GEMENSAMMA PLANERING”); ge rubrikområdet ett renare uttryck.
+- [ ] Ta fram en egen Familjen-appikon som passar den befintliga Scandinavian Premium-identiteten.
+- [ ] Ge inköpslistekortet på startsidan en tydligare visuell avgränsning så det inte flyter ihop med övriga kort.
+
+### Kalender – ny översikt och interaktion
+- [ ] Komplettera datumgrupperad lista med en tydlig kalenderlik översikt (månad/vecka med markeringar på dagar som har aktiviteter).
+- [ ] Tryck på en aktivitet ska öppna en ren informationsvy med datum, tid, plats, anteckningar, berörda personer och ansvarig – inte direkt redigeraren.
+- [ ] Tryck och håll på en aktivitet ska visa en kontextmeny med Redigera och Radera.
+- [ ] Förstärk kategoriernas ikoner och kontrast utan att byta bort den befintliga kategoriidentiteten.
+
+### Födelsedagar – presentlistor
+- [ ] Från en persons födelsedag ska det gå att öppna en personlig presentlista.
+- [ ] Stöd för att lägga till, ändra och ta bort presentidéer samt markera en idé som ordnad.
+- [ ] Presentlistan ska vara kopplad till rätt person och rätt födelsedag, inte blandas ihop med den vanliga inköpslistan.
+
+### Hälsa – tydligare omfattning
+- [ ] Ompröva Hälsa-vyns nytta utifrån första testet; prioritera tydlig överblick över vårdbesök och tandläkartider.
+- [ ] Definiera vad en medicinpost betyder innan medicinfunktion byggs ut. Nuvarande poster är kalenderhändelser, inte doseringsschema, läkemedelslista eller medicinpåminnelser för intag.
+- **Säkerhetsprincip:** bygg inte en läkemedelsfunktion som kan uppfattas som doseringsstöd förrän datamodell, ansvar och påminnelsebeteende är tydligt specificerade.
+
+**Arbetsordning:** invänta användarens test av Inställningar. Därefter görs en samlad designrunda för startsida och kalender, följt av presentlistor. Behåll befintlig färgpalett, typografi och kortstil; förbättra tydlighet och användbarhet snarare än att göra en generell omdesign.

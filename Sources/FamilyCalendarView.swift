@@ -275,6 +275,7 @@ struct FamilyCalendarView: View {
                         }
                     }
                 }
+                .simultaneousGesture(DragGesture(minimumDistance: 12))
                 if selectedCalendarDate != nil {
                     Button("Visa hela listan") { selectedCalendarDate = nil }
                         .font(.system(size: 13, weight: .semibold))

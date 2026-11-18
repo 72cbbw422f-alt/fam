@@ -170,6 +170,20 @@ struct FamilyCalendarView: View {
         return peopleFiltered.filter { $0.kind == selectedKind }
     }
 
+    private var groupedVisibleItems: [(date: Date, items: [FamilyItem])] {
+        let calendar = Calendar.current
+        return Dictionary(grouping: visibleItems) { calendar.startOfDay(for: $0.startsAt) }
+            .map { (date: $0.key, items: $0.value.sorted { $0.startsAt < $1.startsAt }) }
+            .sorted { $0.date < $1.date }
+    }
+
+    private func calendarSectionTitle(for date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return "Idag · " + date.formatted(.dateTime.day().month(.wide)) }
+        if calendar.isDateInTomorrow(date) { return "Imorgon · " + date.formatted(.dateTime.day().month(.wide)) }
+        return date.formatted(.dateTime.weekday(.wide).day().month(.wide)).capitalized
+    }
+
     @ViewBuilder
     private var modelErrorSection: some View {
         if let message = model.errorMessage {
@@ -338,10 +352,23 @@ struct FamilyCalendarView: View {
             return AnyView(emptyStateView)
         }
 
-        let rows = ForEach(visibleItems) { item in
-            calendarItemRow(item)
-        }
-        return AnyView(rows)
+        return AnyView(
+            ForEach(groupedVisibleItems, id: \.date) { group in
+                Section {
+                    ForEach(group.items) { item in
+                        calendarItemRow(item)
+                    }
+                } header: {
+                    HStack {
+                        Text(calendarSectionTitle(for: group.date))
+                        Spacer()
+                        Text("\(group.items.count)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(FamiljenTheme.muted)
+                    }
+                }
+            }
+        )
     }
 
     private var calendarList: some View {
@@ -540,10 +567,17 @@ struct FamilyCalendarView: View {
                         .lineLimit(1)
                 }
             }
-            Spacer()
-            CategoryIcon(kind: item.kind, size: 38)
+            Spacer(minLength: 4)
+            VStack(spacing: 5) {
+                CategoryIcon(kind: item.kind, size: 38)
+                Image(systemName: "pencil")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(FamiljenTheme.champagneDeep)
+            }
         }
-        .padding(.vertical, 6).contentShape(Rectangle())
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
+        .accessibilityHint("Öppna för att redigera aktiviteten")
     }
 }
 

@@ -20,21 +20,37 @@ final class DashboardViewModel: ObservableObject {
     }
     var todayItems: [FamilyItem] { upcomingItems.filter { Calendar.current.isDateInToday($0.startsAt) } }
     var tomorrowItems: [FamilyItem] { upcomingItems.filter { Calendar.current.isDateInTomorrow($0.startsAt) } }
+    // Startsidan visar idag och imorgon i närtidsöversikten. De separata
+    // listorna börjar därför först dagen efter, så samma aktivitet inte upprepas.
+    private var startOfDayAfterTomorrow: Date {
+        let calendar = Calendar.current
+        let tomorrow = calendar.date(byAdding: .day, value: 2, to: calendar.startOfDay(for: .now))
+        return tomorrow ?? .now
+    }
+
     // Bokade tider och vårdbesök hålls separerade från familjens kalenderhändelser.
     var upcomingAppointments: [FamilyItem] {
-        upcomingItems.filter { [.appointment, .healthVisit, .dentist, .medication].contains($0.kind) }
-            .prefix(3).map { $0 }
+        upcomingItems.filter {
+            $0.startsAt >= startOfDayAfterTomorrow
+                && [.appointment, .healthVisit, .dentist, .medication].contains($0.kind)
+        }
+        .prefix(3).map { $0 }
     }
 
     var upcomingEvents: [FamilyItem] {
-        upcomingItems.filter { [.event, .school, .activity, .trip, .celebration, .family, .work].contains($0.kind) }
-            .prefix(4).map { $0 }
+        upcomingItems.filter {
+            $0.startsAt >= startOfDayAfterTomorrow
+                && [.event, .school, .activity, .trip, .celebration, .family, .work].contains($0.kind)
+        }
+        .prefix(4).map { $0 }
     }
 
     var upcomingBirthdays: [FamilyItem] {
         let limit = Calendar.current.date(byAdding: .day, value: 14, to: .now) ?? .now
-        return upcomingItems.filter { $0.kind == .birthday && $0.startsAt <= limit }
-            .prefix(1).map { $0 }
+        return upcomingItems.filter {
+            $0.kind == .birthday && $0.startsAt >= startOfDayAfterTomorrow && $0.startsAt <= limit
+        }
+        .prefix(1).map { $0 }
     }
 
     func load() async {

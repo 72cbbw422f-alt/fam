@@ -277,7 +277,21 @@ struct FamilyCalendarView: View {
     }
 
     private func personFilterChip(for member: FamilyMember) -> some View {
-        personFilterChip(member.displayName, id: member.id)
+        Button {
+            if selectedMemberIDs.contains(member.id) { selectedMemberIDs.remove(member.id) }
+            else { selectedMemberIDs.insert(member.id) }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: member.resolvedSymbolName)
+                    .font(.system(size: 12, weight: .semibold))
+                Text(member.displayName).font(.caption.weight(.semibold))
+            }
+            .padding(.horizontal, 13).padding(.vertical, 8)
+            .foregroundStyle(selectedMemberIDs.contains(member.id) ? .white : FamiljenTheme.ink)
+            .background(selectedMemberIDs.contains(member.id) ? FamiljenTheme.navy : .white, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selectedMemberIDs.contains(member.id) ? .isSelected : [])
     }
 
     private var addCalendarItemButton: some View {

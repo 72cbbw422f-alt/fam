@@ -25,8 +25,11 @@ jobs:
           xcode-select -p
           xcodebuild -version
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install build tools
+        run: brew install xcodegen librsvg
+
+      - name: Render app icon
+        run: rsvg-convert -w 1024 -h 1024 Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.svg -o Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
 
       - name: Generate Xcode project
         run: xcodegen generate
@@ -67,8 +70,11 @@ jobs:
           xcode-select -p
           xcodebuild -version
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install build tools
+        run: brew install xcodegen librsvg
+
+      - name: Render app icon
+        run: rsvg-convert -w 1024 -h 1024 Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.svg -o Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
 
       - name: Generate Xcode project
         run: xcodegen generate

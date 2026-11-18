@@ -32,8 +32,8 @@ struct FamilyBirthdaysView: View {
                     NavigationLink {
                         FamilyCalendarView(initialKind: .birthday)
                     } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 17, weight: .semibold))
+                        Label("Ny födelsedag", systemImage: "plus")
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(FamiljenTheme.navy)
                     }
                     .accessibilityLabel("Lägg till födelsedag")

@@ -318,6 +318,14 @@ struct DashboardView: View {
                                 .font(.system(size: 13))
                                 .foregroundStyle(FamiljenTheme.muted)
                                 .lineLimit(1)
+
+                                if let responsibleID = item.responsibleMemberID,
+                                   let responsible = members.first(where: { $0.id == responsibleID }) {
+                                    Text("Ansvarig: \(responsible.displayName)")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(FamiljenTheme.champagneDeep)
+                                        .lineLimit(1)
+                                }
                             }
                             Spacer(minLength: 4)
                             Image(systemName: "chevron.right")

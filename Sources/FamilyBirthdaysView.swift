@@ -67,27 +67,39 @@ struct FamilyBirthdaysView: View {
         VStack(alignment: .leading, spacing: 10) {
             heading("Näst på tur", subtitle: "Nästa födelsedag i familjen")
             if let item = nextBirthday {
-                HStack(spacing: 13) {
-                    CategoryIcon(kind: .birthday, size: 48)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.title)
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(FamiljenTheme.ink)
-                        Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "sv_SE"))).capitalized)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(FamiljenTheme.navy)
-                        if let member = birthdayMember(for: item) {
-                            Text(member.displayName)
-                                .font(.system(size: 13))
-                                .foregroundStyle(FamiljenTheme.muted)
-                        }
+                NavigationLink {
+                    if let member = birthdayMember(for: item) {
+                        BirthdayGiftListView(member: member, birthday: item)
+                    } else {
+                        FamilyCalendarView(initialKind: .birthday)
                     }
-                    Spacer(minLength: 0)
+                } label: {
+                    HStack(spacing: 13) {
+                        CategoryIcon(kind: .birthday, size: 48)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(item.title)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(FamiljenTheme.ink)
+                            Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "sv_SE"))).capitalized)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(FamiljenTheme.navy)
+                            if let member = birthdayMember(for: item) {
+                                Text(member.displayName + " · Presentidéer")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(FamiljenTheme.muted)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(FamiljenTheme.muted)
+                    }
+                    .padding(15)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(FamiljenTheme.sand.opacity(0.65), lineWidth: 1))
                 }
-                .padding(15)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 18).stroke(FamiljenTheme.sand.opacity(0.65), lineWidth: 1))
+                .buttonStyle(.plain)
             } else {
                 emptyCard
             }
@@ -100,30 +112,45 @@ struct FamilyBirthdaysView: View {
             if !birthdayItems.isEmpty {
                 VStack(spacing: 0) {
                     ForEach(Array(birthdayItems)) { item in
-                        HStack(spacing: 12) {
-                            CategoryIcon(kind: .birthday, size: 40)
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(item.title)
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundStyle(FamiljenTheme.ink)
-                                Text(item.startsAt.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "sv_SE"))))
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(FamiljenTheme.navy)
-                                if let member = birthdayMember(for: item) {
-                                    Text("Gäller: " + member.displayName)
-                                        .font(.system(size: 13))
-                                        .foregroundStyle(FamiljenTheme.muted)
-                                } else if item.isForEveryone {
-                                    Text("Gäller hela familjen")
-                                        .font(.system(size: 13))
+                        NavigationLink {
+                            if let member = birthdayMember(for: item) {
+                                BirthdayGiftListView(member: member, birthday: item)
+                            } else {
+                                FamilyCalendarView(initialKind: .birthday)
+                            }
+                        } label: {
+                            HStack(spacing: 12) {
+                                CategoryIcon(kind: .birthday, size: 40)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(item.title)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundStyle(FamiljenTheme.ink)
+                                    Text(item.startsAt.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "sv_SE"))))
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundStyle(FamiljenTheme.navy)
+                                    if let member = birthdayMember(for: item) {
+                                        Text("Gäller: " + member.displayName)
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(FamiljenTheme.muted)
+                                    } else if item.isForEveryone {
+                                        Text("Gäller hela familjen")
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(FamiljenTheme.muted)
+                                    }
+                                }
+                                Spacer(minLength: 0)
+                                VStack(alignment: .trailing, spacing: 5) {
+                                    Text(item.startsAt.formatted(.dateTime.weekday(.abbreviated).locale(Locale(identifier: "sv_SE"))).capitalized)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(FamiljenTheme.champagneDeep)
+                                    Image(systemName: "gift")
+                                        .font(.system(size: 13, weight: .medium))
                                         .foregroundStyle(FamiljenTheme.muted)
                                 }
                             }
-                            Spacer(minLength: 0)
-                            Text(item.startsAt.formatted(.dateTime.weekday(.abbreviated).locale(Locale(identifier: "sv_SE"))).capitalized)
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(FamiljenTheme.champagneDeep)
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
                         .padding(.vertical, 12)
                         if item.id != birthdayItems.last?.id {
                             Divider().overlay(FamiljenTheme.sand).padding(.leading, 54)

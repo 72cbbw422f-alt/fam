@@ -175,6 +175,7 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 ## Dashboard: närmaste dagarna (2026-11-18)
 - [x] Lägg till en tydlig översikt över dagens och morgondagens aktiviteter på startsidan.
 - [x] Visa kategorispecifik ikon, tid och berörda familjemedlemmar för varje aktivitet.
+- [x] Visa ansvarig vuxen separat från den eller de personer aktiviteten gäller.
 - [x] Öppna aktivitetsdetaljer direkt från översikten.
 - [x] Visa lugna, tydliga tomlägen när dagen saknar planerade aktiviteter.
 - **Design:** återanvänd befintliga färger, kort, kategoriikoner och typografi; ingen ny visuell identitet.

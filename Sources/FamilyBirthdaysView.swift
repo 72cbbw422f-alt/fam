@@ -196,7 +196,7 @@ struct FamilyBirthdaysView: View {
     }
 
     private var informationNote: some View {
-        Label("Födelsedagar visas utifrån registrerade kalenderhändelser. Ålder visas inte eftersom födelseår inte hanteras separat i familjeprofilerna.", systemImage: "info.circle")
+        Label("Ålder visas när födelseåret finns med i den registrerade födelsedagen.", systemImage: "info.circle")
             .font(.system(size: 12))
             .foregroundStyle(FamiljenTheme.muted)
             .fixedSize(horizontal: false, vertical: true)

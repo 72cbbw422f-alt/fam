@@ -27,10 +27,15 @@ struct CategoryIcon: View {
                 .fill(LinearGradient(colors: [tint.opacity(0.76), tint], startPoint: .topLeading, endPoint: .bottomTrailing))
             RoundedRectangle(cornerRadius: size * 0.29, style: .continuous)
                 .stroke(.white.opacity(0.52), lineWidth: 1.2)
-            Image(systemName: kind.symbol)
-                .font(.system(size: size * 0.48, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color(red: 0.99, green: 0.96, blue: 0.89))
-                .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 0.5)
+            if kind == .dentist {
+                Text("🦷")
+                    .font(.system(size: size * 0.48))
+            } else {
+                Image(systemName: kind.symbol)
+                    .font(.system(size: size * 0.48, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color(red: 0.99, green: 0.96, blue: 0.89))
+                    .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 0.5)
+            }
         }
         .frame(width: size, height: size)
         .shadow(color: tint.opacity(0.22), radius: size * 0.10, x: 0, y: size * 0.06)

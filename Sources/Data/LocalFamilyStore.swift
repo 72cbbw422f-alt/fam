@@ -11,6 +11,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     @Published private(set) var skippedOccurrences: [FamilyOccurrenceException] = []
     @Published private(set) var occurrenceOverrides: [FamilyOccurrenceOverride] = []
     @Published private(set) var shoppingItems: [ShoppingItem] = []
+    @Published private(set) var giftIdeas: [GiftIdea] = []
     @Published private(set) var notifications: [FamilyNotification] = []
     @Published private(set) var messages: [FamilyMessage] = []
     @Published private(set) var persistenceError: String?
@@ -59,6 +60,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         skippedOccurrences = []
         occurrenceOverrides = []
         shoppingItems = []
+        giftIdeas = []
         notifications = []
         messages = []
         saveToDisk()
@@ -263,6 +265,38 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func deleteShoppingItem(_ id: UUID) {
         shoppingItems.removeAll { $0.id == id }
         saveToDisk()
+    }
+
+    func addGiftIdea(memberID: UUID, birthdayItemID: UUID, title: String, note: String?) {
+        let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard members.contains(where: { $0.id == memberID }),
+              items.contains(where: { $0.id == birthdayItemID && $0.kind == .birthday }),
+              !clean.isEmpty, clean.count <= 160 else { return }
+        let cleanNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        giftIdeas.append(GiftIdea(memberID: memberID, birthdayItemID: birthdayItemID,
+                                  title: clean, note: cleanNote?.isEmpty == true ? nil : cleanNote))
+        saveToDisk()
+    }
+
+    func updateGiftIdea(_ idea: GiftIdea) {
+        guard let index = giftIdeas.firstIndex(where: { $0.id == idea.id }),
+              members.contains(where: { $0.id == idea.memberID }),
+              items.contains(where: { $0.id == idea.birthdayItemID && $0.kind == .birthday }) else { return }
+        let clean = idea.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, clean.count <= 160 else { return }
+        let previous = giftIdeas[index]
+        var updated = idea
+        updated.title = clean
+        let cleanNote = idea.note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        updated.note = cleanNote?.isEmpty == true ? nil : cleanNote
+        giftIdeas[index] = updated
+        if !saveToDisk() { giftIdeas[index] = previous }
+    }
+
+    func deleteGiftIdea(_ id: UUID) {
+        let previous = giftIdeas
+        giftIdeas.removeAll { $0.id == id }
+        if !saveToDisk() { giftIdeas = previous }
     }
 
     func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) {

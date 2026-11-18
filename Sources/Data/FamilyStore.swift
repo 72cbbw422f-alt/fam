@@ -10,6 +10,8 @@ final class FamilyStore: ObservableObject {
     @Published private(set) var family: Family?
     @Published private(set) var members: [FamilyMember] = []
     @Published private(set) var items: [FamilyItem] = []
+    @Published private(set) var skippedOccurrences: [FamilyOccurrenceException] = []
+    @Published private(set) var occurrenceOverrides: [FamilyOccurrenceOverride] = []
     @Published private(set) var shoppingItems: [ShoppingItem] = []
     @Published private(set) var notifications: [FamilyNotification] = []
     @Published private(set) var messages: [FamilyMessage] = []
@@ -31,6 +33,8 @@ final class FamilyStore: ObservableObject {
         family = repository.family
         members = repository.members
         items = repository.items
+        skippedOccurrences = repository.skippedOccurrences
+        occurrenceOverrides = repository.occurrenceOverrides
         shoppingItems = repository.shoppingItems
         notifications = repository.notifications
         messages = repository.messages

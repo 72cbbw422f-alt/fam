@@ -147,6 +147,7 @@ struct FamilyCalendarView: View {
     @StateObject private var model = FamilyCalendarViewModel()
     @State private var selectedKind: FamilyItemKind?
     @State private var selectedMemberIDs: Set<UUID> = []
+    @State private var selectedDetailItem: FamilyItem?
 
     init(initialKind: FamilyItemKind? = nil) {
         _selectedKind = State(initialValue: initialKind)
@@ -197,11 +198,24 @@ struct FamilyCalendarView: View {
 
     private func calendarItemRow(_ item: FamilyItem) -> some View {
         Button {
-            openCalendarItem(item)
+            selectedDetailItem = item
         } label: {
             calendarRow(item)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button {
+                openCalendarItem(item)
+            } label: {
+                Label("Redigera", systemImage: "pencil")
+            }
+            Button(role: .destructive) {
+                pendingDeletion = item
+                showDeleteConfirmation = true
+            } label: {
+                Label("Radera", systemImage: "trash")
+            }
+        }
         .swipeActions {
             Button(role: .destructive) {
                 pendingDeletion = item
@@ -210,6 +224,7 @@ struct FamilyCalendarView: View {
                 Label("Ta bort", systemImage: "trash")
             }
         }
+        .accessibilityHint("Tryck för information. Håll ned för att redigera eller radera.")
     }
 
     private func openCalendarItem(_ item: FamilyItem) {
@@ -449,6 +464,9 @@ struct FamilyCalendarView: View {
             Text(item.recurrenceFrequency != .none || item.isRecurringYearly
                  ? "Du kan ta bort bara det här datumet eller hela den återkommande serien."
                  : "Aktiviteten tas bort från familjens kalender.")
+        }
+        .sheet(item: $selectedDetailItem) { item in
+            FamilyCalendarItemDetailView(item: item, members: model.members)
         }
         .sheet(isPresented: $showingEditor, onDismiss: { editingItem = nil }) {
             FamilyItemEditor(item: editingItem, members: model.members, singleOccurrence: editingSingleOccurrence) { title, details, location, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurrenceFrequency, reminderOffsets in
@@ -944,5 +962,93 @@ private struct FamilyItemEditor: View {
                                  recurrenceFrequency, Array(selectedReminderOffsets).sorted(by: >))
         if saved { dismiss() }
         else { errorMessage = "Det gick inte att spara. Kontrollera uppgifterna och försök igen." }
+    }
+}
+
+
+private struct FamilyCalendarItemDetailView: View {
+    let item: FamilyItem
+    let members: [FamilyMember]
+    @Environment(\.dismiss) private var dismiss
+
+    private var peopleText: String {
+        if item.isForEveryone { return "Hela familjen" }
+        let names = members.filter { item.memberIDs.contains($0.id) }.map(\.displayName)
+        return names.isEmpty ? "Inte tilldelad" : names.joined(separator: " · ")
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    HStack(spacing: 14) {
+                        CategoryIcon(kind: item.kind, size: 54)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(item.title)
+                                .font(.system(size: 23, weight: .semibold, design: .serif))
+                                .foregroundStyle(FamiljenTheme.ink)
+                            Text(item.kind.displayName)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(FamiljenTheme.muted)
+                        }
+                    }
+                    detailRow("Datum", value: item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.long).year()).capitalized, symbol: "calendar")
+                    detailRow("Tid", value: item.startsAt.formatted(.dateTime.hour().minute()), symbol: "clock")
+                    if let location = item.location, !location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        detailRow("Plats", value: location, symbol: "mappin.and.ellipse")
+                    }
+                    detailRow("Gäller", value: peopleText, symbol: "person.2")
+                    if let responsibleID = item.responsibleMemberID,
+                       let responsible = members.first(where: { $0.id == responsibleID }) {
+                        detailRow("Ansvarig", value: responsible.displayName, symbol: "person.crop.circle.badge.checkmark")
+                    }
+                    if !item.details.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        VStack(alignment: .leading, spacing: 7) {
+                            Label("Anteckningar", systemImage: "note.text")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(FamiljenTheme.muted)
+                            Text(item.details)
+                                .font(.system(size: 16))
+                                .foregroundStyle(FamiljenTheme.ink)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(15)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                    }
+                }
+                .padding(20)
+            }
+            .background(FamiljenTheme.paper.ignoresSafeArea())
+            .navigationTitle("Aktivitet")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Stäng") { dismiss() }
+                        .foregroundStyle(FamiljenTheme.navy)
+                }
+            }
+        }
+        .tint(FamiljenTheme.navy)
+    }
+
+    private func detailRow(_ title: String, value: String, symbol: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(FamiljenTheme.champagneDeep)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title.uppercased())
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(0.7)
+                    .foregroundStyle(FamiljenTheme.muted)
+                Text(value)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(FamiljenTheme.ink)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(15)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16))
     }
 }

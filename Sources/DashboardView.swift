@@ -168,10 +168,10 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Er familj")
-                        .font(.system(size: 19, weight: .semibold, design: .serif))
+                        .font(.system(size: 21, weight: .semibold, design: .serif))
                         .foregroundStyle(FamiljenTheme.ink)
                     Text("Tillsammans i vardagen")
-                        .font(.system(size: 12))
+                        .font(.system(size: 14))
                         .foregroundStyle(FamiljenTheme.muted)
                 }
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -180,15 +180,15 @@ struct DashboardView: View {
                             VStack(spacing: 5) {
                                 Circle()
                                     .fill(avatarColor(for: member))
-                                    .frame(width: 43, height: 43)
+                                    .frame(width: 48, height: 48)
                                     .overlay {
                                         Text(initials(member.displayName))
-                                            .font(.system(size: 15, weight: .semibold, design: .serif))
+                                            .font(.system(size: 17, weight: .semibold, design: .serif))
                                             .foregroundStyle(FamiljenTheme.navy)
                                     }
                                     .overlay(Circle().stroke(.white, lineWidth: 2))
                                 Text(member.displayName.components(separatedBy: " ").first ?? member.displayName)
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(FamiljenTheme.ink)
                                     .lineLimit(1)
                             }
@@ -278,11 +278,11 @@ struct DashboardView: View {
                                     .foregroundStyle(item.isChecked ? FamiljenTheme.champagneDeep : FamiljenTheme.muted.opacity(0.7))
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(item.title)
-                                        .font(.system(size: 12, weight: .semibold))
+                                        .font(.system(size: 14, weight: .semibold))
                                         .foregroundStyle(item.isChecked ? FamiljenTheme.muted : FamiljenTheme.ink)
                                         .strikethrough(item.isChecked)
                                     Text(item.createdAt.formatted(.relative(presentation: .named)))
-                                        .font(.system(size: 12))
+                                        .font(.system(size: 13))
                                         .foregroundStyle(FamiljenTheme.muted)
                                 }
                                 Spacer()

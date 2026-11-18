@@ -233,3 +233,12 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Inköpslistan visar varunamnen korrekt och bekräftar när en vara bockas av och tas bort.
 - [ ] Kör full CI och verifiera både simulatorbygge och unsigned iPhone-IPA på den samlade ändringen.
 - [ ] Slutlig visuell och funktionell genomgång på fysisk iPhone.
+
+
+## Inställningar (2026-11-18)
+- [x] Samlad inställningssida under Mer.
+- [x] Aktivera/inaktivera lokala kalenderpåminnelser med faktisk behörighetsbegäran och schemaläggning.
+- [x] Välj och spara standardpåminnelser för nya kalenderaktiviteter.
+- [x] Visa genvägar till profilhantering och behörighetskontroll.
+- [x] Visa tydligt att lagringen är lokal och att synkronisering mellan telefoner ännu inte är aktiverad.
+- [ ] Utöka inställningarna först när fler verkliga appomfattande val finns att styra; undvik reglage utan faktisk funktion.

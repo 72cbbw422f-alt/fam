@@ -163,6 +163,10 @@ struct FamilyCalendarView: View {
     private var visibleItems: [FamilyItem] {
         let peopleFiltered = FamilyCalendarViewModel.filteredItems(model.items, selectedMemberIDs: selectedMemberIDs)
         guard let selectedKind else { return peopleFiltered }
+        if selectedKind == .healthVisit {
+            let healthKinds: Set<FamilyItemKind> = [.healthVisit, .dentist, .medication]
+            return peopleFiltered.filter { healthKinds.contains($0.kind) }
+        }
         return peopleFiltered.filter { $0.kind == selectedKind }
     }
 
@@ -230,7 +234,7 @@ struct FamilyCalendarView: View {
                 HStack(spacing: 8) {
                     filterChip("Alla", kind: nil)
                     ForEach(FamilyItemKind.calendarKinds, id: \.self) { kind in
-                        filterChip(kind.displayName, kind: kind)
+                        filterChip(kind == .healthVisit ? "Hälsa" : kind.displayName, kind: kind)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -279,7 +283,7 @@ struct FamilyCalendarView: View {
     private var emptyDescription: String {
         switch selectedKind {
         case .healthVisit:
-            return "Lägg till vårdbesök, vaccinationer och andra hälsorelaterade händelser för familjen."
+            return "Här samlas vårdbesök, tandläkarbesök och medicinposter för familjen."
         case .birthday:
             return "Lägg till födelsedagar så samlas familjens viktiga dagar här."
         default:

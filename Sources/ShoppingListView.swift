@@ -45,8 +45,9 @@ struct ShoppingListView: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel(item.isChecked ? "Markera som ej handlad" : "Markera som handlad")
 
-                            Text(item.title)
+                            .font(.system(size: 16, weight: .medium))
                                 .foregroundStyle(item.isChecked ? FamiljenTheme.muted : FamiljenTheme.ink)
+                                .lineLimit(2)
                                 .strikethrough(item.isChecked)
 
                             Spacer()
@@ -61,13 +62,14 @@ struct ShoppingListView: View {
                     }
                 } header: {
                     Text("Att handla")
+                        .font(.system(size: 14, weight: .semibold))
                 }
             }
 
             if let error = model.errorMessage {
                 Section {
                     Text(error)
-                        .font(.footnote)
+                        .font(.system(size: 14))
                         .foregroundStyle(.red)
                 }
             }

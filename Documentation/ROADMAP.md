@@ -195,3 +195,10 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Börja listorna "Kommande tider" och "Kommande händelser" först dagen efter imorgon.
 - [x] Undvik att födelsedagskortet upprepar en födelsedag som redan syns i närtidsöversikten.
 - **Design:** behåll separata listor för vårdbesök/bokade tider och övriga händelser, med befintliga kategorier och ikoner.
+
+
+## Hälsa: samlat kalenderfilter (2026-11-18)
+- [x] Låt kalenderläget **Hälsa** visa vårdbesök, tandläkarbesök och medicinposter tillsammans.
+- [x] Behåll separata filter för respektive kategori när användaren vill avgränsa listan.
+- [x] Förtydliga tomläget så det beskriver hela hälsovyn.
+- **Design:** återanvänd kalenderns befintliga filterchips, kategoriikoner och färger.

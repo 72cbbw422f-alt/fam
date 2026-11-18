@@ -274,3 +274,16 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - **Säkerhetsprincip:** bygg inte en läkemedelsfunktion som kan uppfattas som doseringsstöd förrän datamodell, ansvar och påminnelsebeteende är tydligt specificerade.
 
 **Arbetsordning:** invänta användarens test av Inställningar. Därefter görs en samlad designrunda för startsida och kalender, följt av presentlistor. Behåll befintlig färgpalett, typografi och kortstil; förbättra tydlighet och användbarhet snarare än att göra en generell omdesign.
+
+
+## November 2026 polish pass
+- [x] Birthday tab opens a birthday-focused editor with a clear person prompt, date-only picker and yearly recurrence preselected
+- [x] Show Swedish ISO week numbers in the month calendar
+- [x] Use a tooth symbol for dentist appointments
+- [x] Replace the static dashboard hero gradient with offline, date-aware seasonal illustrations
+- [x] Add an Advent candle scene that lights one additional candle each Advent week
+- [x] Add a Lucia procession scene on 13 December and a Christmas scene from 24 December through 6 January
+- [ ] Physically verify calendar scrolling and day selection on iPhone; current gesture adjustment still needs device validation
+- [ ] Review seasonal hero artwork and spacing on physical iPhone
+- [ ] Verify birthday creation, annual recurrence, member assignment and gift-list navigation on device
+- [ ] Run a fresh simulator test suite and unsigned iPhone build after this polish pass

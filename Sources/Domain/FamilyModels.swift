@@ -15,6 +15,21 @@ struct FamilyMember: Identifiable, Codable, Equatable {
     var displayName: String
     var role: MemberRole
     var linkedUserID: UUID?
+    var symbolName: String?
+
+    init(id: UUID, familyID: UUID, displayName: String, role: MemberRole,
+         linkedUserID: UUID?, symbolName: String? = nil) {
+        self.id = id
+        self.familyID = familyID
+        self.displayName = displayName
+        self.role = role
+        self.linkedUserID = linkedUserID
+        self.symbolName = symbolName
+    }
+
+    var resolvedSymbolName: String {
+        symbolName ?? (role == .child ? "face.smiling" : "person.crop.circle")
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -22,6 +37,27 @@ struct FamilyMember: Identifiable, Codable, Equatable {
         case displayName = "display_name"
         case role
         case linkedUserID = "user_id"
+        case symbolName = "symbol_name"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        familyID = try container.decode(UUID.self, forKey: .familyID)
+        displayName = try container.decode(String.self, forKey: .displayName)
+        role = try container.decode(MemberRole.self, forKey: .role)
+        linkedUserID = try container.decodeIfPresent(UUID.self, forKey: .linkedUserID)
+        symbolName = try container.decodeIfPresent(String.self, forKey: .symbolName)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(familyID, forKey: .familyID)
+        try container.encode(displayName, forKey: .displayName)
+        try container.encode(role, forKey: .role)
+        try container.encodeIfPresent(linkedUserID, forKey: .linkedUserID)
+        try container.encodeIfPresent(symbolName, forKey: .symbolName)
     }
 }
 

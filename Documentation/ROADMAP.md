@@ -172,6 +172,13 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - Förändringen ska vara subtil och praktisk, inte en ny ikonstil.
 
 
+## Dashboard: närmaste dagarna (2026-11-18)
+- [x] Lägg till en tydlig översikt över dagens och morgondagens aktiviteter på startsidan.
+- [x] Visa kategorispecifik ikon, tid och berörda familjemedlemmar för varje aktivitet.
+- [x] Öppna aktivitetsdetaljer direkt från översikten.
+- [x] Visa lugna, tydliga tomlägen när dagen saknar planerade aktiviteter.
+- **Design:** återanvänd befintliga färger, kort, kategoriikoner och typografi; ingen ny visuell identitet.
+
 ## Egna översikter: Hälsa och födelsedagar (2026-11-18)
 - [x] Skapa en dedikerad Hälsa-vy med översikt, kommande vårdbesök, tandläkare, medicinposter och historik.
 - [x] Visa berörd familjemedlem och ansvarig separat i hälsovyn.

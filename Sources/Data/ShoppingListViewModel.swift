@@ -36,7 +36,6 @@ final class ShoppingListViewModel: ObservableObject {
     }
     func setChecked(_ item: ShoppingItem, checked: Bool) async {
         if checked {
-            store.setShoppingItem(item.id, checked: true)
             store.deleteShoppingItem(item.id)
         } else {
             store.setShoppingItem(item.id, checked: false)

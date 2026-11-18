@@ -210,16 +210,26 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 
 ### Inköpslista
 - [x] Ta bort en vara från den aktiva listan direkt när den bockas av.
-- [ ] Lägg till tydlig återkoppling när en vara är avklarad.
+- [x] Lägg till tydlig återkoppling när en vara är avklarad och visa varans namn i listan.
 - [ ] När familjedelning/synk finns: skapa notis till den andra familjemedlemmen när en ny vara läggs till. I local-first-betan är listan enhetslokal, så en annan telefon kan ännu inte se ändringen eller få en notis.
 
 ### Kalender
-- [ ] Förbättra överblicken med tydligare datumgruppering och en snabbare sammanfattning av kommande aktiviteter.
+- [x] Förbättra överblicken med tydlig datumgruppering, antal aktiviteter per dag och särskilda rubriker för idag och imorgon.
 - [x] Behåll redigering av befintliga händelser: tryck på en aktivitet i kalenderlistan för att öppna redigeraren; återkommande händelser frågar om ändringen gäller ett tillfälle eller hela serien.
-- [ ] Gör redigeringsmöjligheten tydligare i gränssnittet, så att det framgår att aktiviteter går att öppna och ändra.
+- [x] Gör redigeringsmöjligheten tydligare med pennsymbol och tillgänglighetstext på kalenderposterna.
 
 ### Familjeprofiler
-- [ ] Låt användaren välja profilbild/ikon per familjemedlem och visa samma val konsekvent på startsidan, i kalenderfilter och i profilhanteringen.
+- [x] Låt användaren välja profilikon per familjemedlem och visa valet på startsidan, i kalenderfilter och i profilhanteringen; äldre profiler får en standardikon.
 
 **Teknisk ordning:** Förbättra först kalenderns läsbarhet och redigeringsflöde. Därefter byggs profilernas ikonval med bakåtkompatibel lokal lagring. Notiser för nya inköpsvaror mellan två telefoner väntar på gemensam datalagring och notifieringslösning; skapa inte skenbar delning i local-first-betan.
 
+
+
+## Genomförd förbättringsrunda (2026-11-18)
+- [x] Kalendern grupperar aktiviteter per datum och visar antal per dag.
+- [x] Kalenderposter visar en diskret pennsymbol och tillgänglighetstext för redigering.
+- [x] Familjeprofiler kan välja mellan ett urval av SF Symbols; valet lagras bakåtkompatibelt.
+- [x] Profilikonen används på startsidan, i kalenderns personfilter och i profilhanteringen.
+- [x] Inköpslistan visar varunamnen korrekt och bekräftar när en vara bockas av och tas bort.
+- [ ] Kör full CI och verifiera både simulatorbygge och unsigned iPhone-IPA på den samlade ändringen.
+- [ ] Slutlig visuell och funktionell genomgång på fysisk iPhone.

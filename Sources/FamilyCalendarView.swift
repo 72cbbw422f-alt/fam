@@ -1120,12 +1120,13 @@ private struct FamilyCalendarItemDetailView: View {
                        let responsible = members.first(where: { $0.id == responsibleID }) {
                         detailRow("Ansvarig", value: responsible.displayName, symbol: "person.crop.circle.badge.checkmark")
                     }
-                    if !item.details.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    if let details = item.details,
+                       !details.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         VStack(alignment: .leading, spacing: 7) {
                             Label("Anteckningar", systemImage: "note.text")
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(FamiljenTheme.muted)
-                            Text(item.details)
+                            Text(details)
                                 .font(.system(size: 16))
                                 .foregroundStyle(FamiljenTheme.ink)
                                 .frame(maxWidth: .infinity, alignment: .leading)

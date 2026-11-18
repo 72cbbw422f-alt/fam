@@ -17,11 +17,11 @@ struct SeasonalFamilyHero: View {
 
         let firstAdvent = firstSundayOnOrAfterNovember27(year: year, calendar: calendar)
         let firstAdventDay = calendar.component(.day, from: firstAdvent)
-        let isAdventPeriod = month == 11 && day >= firstAdventDay || month == 12 && day <= 12
+        let isAdventPeriod = (month == 11 && day >= firstAdventDay) || (month == 12 && day <= 12) || (month == 12 && day >= 14 && day <= 23)
 
         if isAdventPeriod { return .advent }
         if month == 12 && day == 13 { return .lucia }
-        if month == 12 && day >= 14 || month == 1 && day <= 6 { return .christmas }
+        if month == 12 && day >= 24 || month == 1 && day <= 6 { return .christmas }
 
         switch month {
         case 12, 1, 2: return .winter
@@ -29,6 +29,13 @@ struct SeasonalFamilyHero: View {
         case 6, 7, 8: return .summer
         default: return .autumn
         }
+    }
+
+    private var adventLitCount: Int {
+        let calendar = Calendar(identifier: .gregorian)
+        let first = firstSundayOnOrAfterNovember27(year: calendar.component(.year, from: .now), calendar: calendar)
+        let days = calendar.dateComponents([.day], from: first, to: .now).day ?? 0
+        return min(4, max(1, days / 7 + 1))
     }
 
     private var sceneTitle: String {
@@ -125,7 +132,7 @@ struct SeasonalFamilyHero: View {
     private var seasonalArtwork: some View {
         switch scene {
         case .advent:
-            AdventCandlesArtwork()
+            AdventCandlesArtwork(litCount: adventLitCount)
         case .lucia:
             LuciaArtwork()
         case .christmas:
@@ -154,14 +161,16 @@ struct SeasonalFamilyHero: View {
 }
 
 private struct AdventCandlesArtwork: View {
+    let litCount: Int
+
     var body: some View {
         ZStack {
             Ellipse().fill(Color.black.opacity(0.16)).frame(width: 166, height: 20).offset(y: 47)
             HStack(alignment: .bottom, spacing: 10) {
-                candle(height: 66, lit: true)
-                candle(height: 78, lit: false)
-                candle(height: 70, lit: false)
-                candle(height: 60, lit: false)
+                candle(height: 66, lit: litCount >= 1)
+                candle(height: 78, lit: litCount >= 2)
+                candle(height: 70, lit: litCount >= 3)
+                candle(height: 60, lit: litCount >= 4)
             }
             .offset(y: 15)
             HStack(spacing: 12) {

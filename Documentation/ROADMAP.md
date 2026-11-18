@@ -287,3 +287,12 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [ ] Review seasonal hero artwork and spacing on physical iPhone
 - [ ] Verify birthday creation, annual recurrence, member assignment and gift-list navigation on device
 - [ ] Run a fresh simulator test suite and unsigned iPhone build after this polish pass
+
+
+### Follow-up validation — 18 November 2026
+- [x] Birthday-specific form simplification: person-only selection, annual recurrence default, date-only input, no location/notes/activity reminders
+- [x] Simulator unit tests and unsigned iPhone build passed for commit f0876e834ed3d27770f1fbfc715321583f253a18 (workflow 44373601049)
+- [x] Correct Advent scene date boundaries so years where Advent begins in December do not show the candles prematurely
+- [ ] Re-run simulator tests and unsigned iPhone build after Advent date correction
+- [ ] Physical-device scroll verification remains outstanding; successful compilation does not prove gesture behavior
+- [ ] Review seasonal illustrations and birthday workflow on device before distributing the next IPA

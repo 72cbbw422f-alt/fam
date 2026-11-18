@@ -43,6 +43,10 @@ struct FamilyMoreView: View {
                             menuRow("person.2", title: "Familjemedlemmar", subtitle: "\(store.members.count) profiler")
                         }
                         Divider().overlay(FamiljenTheme.sand).padding(.leading, 60)
+                        NavigationLink { FamilySettingsView() } label: {
+                            menuRow("slider.horizontal.3", title: "Inställningar", subtitle: "Påminnelser, standardval och enhet")
+                        }
+                        Divider().overlay(FamiljenTheme.sand).padding(.leading, 60)
                         NavigationLink { FamilyMessagesView() } label: {
                             menuRow("bubble.left.and.bubble.right", title: "Meddelanden", subtitle: "Familjechatt och privata samtal")
                         }

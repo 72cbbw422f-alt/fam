@@ -5,6 +5,7 @@ struct DashboardView: View {
     @StateObject private var notificationsModel = NotificationsViewModel()
     @StateObject private var store = FamilyStore.shared
     @State private var members: [FamilyMember] = []
+    @State private var selectedDashboardItem: FamilyItem?
 
     var body: some View {
         NavigationStack {
@@ -26,6 +27,9 @@ struct DashboardView: View {
             }
             .background(FamiljenTheme.paper.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .sheet(item: $selectedDashboardItem) { item in
+                DashboardItemDetailView(item: item, members: members)
+            }
             .refreshable {
                 await model.load()
                 members = FamilyStore.shared.members
@@ -204,6 +208,8 @@ struct DashboardView: View {
                         .foregroundStyle(FamiljenTheme.muted)
                 }
                 if let item = model.upcomingItems.first {
+                    Button { selectedDashboardItem = item } label: {
+                    VStack(alignment: .leading, spacing: 7) {
                     Text(item.startsAt.formatted(.dateTime.hour().minute()))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.champagneDeep)
@@ -212,8 +218,13 @@ struct DashboardView: View {
                         .foregroundStyle(FamiljenTheme.ink)
                         .lineLimit(2)
                     Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)))
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(FamiljenTheme.muted)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 } else {
                     Text("Inget inplanerat")
                         .font(.system(size: 12, weight: .semibold))
@@ -350,7 +361,8 @@ struct DashboardView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(model.upcomingAppointments)) { item in
-                        appointmentRow(item)
+                        Button { selectedDashboardItem = item } label: { appointmentRow(item) }
+                            .buttonStyle(.plain)
                         if item.id != model.upcomingAppointments.last?.id {
                             Divider().overlay(FamiljenTheme.sand).padding(.leading, 58)
                         }
@@ -376,7 +388,10 @@ struct DashboardView: View {
                 emptyCard("Resor, skola och familjeaktiviteter visas här.", symbol: "sparkles")
             } else {
                 VStack(spacing: 0) {
-                    ForEach(model.upcomingEvents) { appointmentRow($0) }
+                    ForEach(model.upcomingEvents) { item in
+                        Button { selectedDashboardItem = item } label: { appointmentRow(item) }
+                            .buttonStyle(.plain)
+                    }
                 }
                 .padding(.horizontal, 14)
                 .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -421,28 +436,28 @@ struct DashboardView: View {
             .background(FamiljenTheme.sand.opacity(0.48), in: RoundedRectangle(cornerRadius: 11))
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(FamiljenTheme.ink)
                     .lineLimit(1)
-                Text(item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
-                    .font(.system(size: 12))
+                Text(item.kind.displayName + " · " + item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(FamiljenTheme.muted)
                 if item.isForEveryone {
                     Text("Hela familjen")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.champagneDeep)
                 } else {
                     let names = members.filter { item.memberIDs.contains($0.id) }.map(\.displayName)
                     if !names.isEmpty {
                         Text(names.joined(separator: " · "))
-                            .font(.system(size: 11))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(FamiljenTheme.muted)
                     }
                 }
                 if let responsibleID = item.responsibleMemberID,
                    let responsible = members.first(where: { $0.id == responsibleID }) {
                     Text("Ansvarig: \(responsible.displayName)")
-                        .font(.system(size: 11))
+                        .font(.system(size: 12))
                         .foregroundStyle(FamiljenTheme.muted)
                 }
             }
@@ -477,4 +492,108 @@ struct DashboardView: View {
         member.role == .child ? FamiljenTheme.champagne.opacity(0.38) : FamiljenTheme.sand
     }
 
+}
+
+
+private struct DashboardItemDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    let item: FamilyItem
+    let members: [FamilyMember]
+
+    private var participantNames: [String] {
+        members.filter { item.memberIDs.contains($0.id) }.map(\.displayName)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack(spacing: 14) {
+                        CategoryIcon(kind: item.kind, size: 58)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(item.kind.displayName.uppercased())
+                                .font(.caption.weight(.bold))
+                                .tracking(1.1)
+                                .foregroundStyle(FamiljenTheme.champagneDeep)
+                            Text(item.title)
+                                .font(.system(size: 25, weight: .semibold, design: .serif))
+                                .foregroundStyle(FamiljenTheme.ink)
+                        }
+                    }
+                    detailRow("Datum och tid", value: item.startsAt.formatted(date: .long, time: .shortened), symbol: "calendar")
+                    detailRow("Gäller", value: item.isForEveryone ? "Hela familjen" : (participantNames.isEmpty ? "Inte tilldelad" : participantNames.joined(separator: ", ")), symbol: "person.2")
+                    if let id = item.responsibleMemberID,
+                       let responsible = members.first(where: { $0.id == id }) {
+                        detailRow("Ansvarig", value: responsible.displayName, symbol: "person.badge.key")
+                    }
+                    if let location = item.location, !location.isEmpty {
+                        VStack(alignment: .leading, spacing: 9) {
+                            Label("Plats", systemImage: "mappin.and.ellipse")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(FamiljenTheme.muted)
+                            Text(location)
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(FamiljenTheme.ink)
+                            Button {
+                                let query = location.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? location
+                                if let url = URL(string: "https://maps.apple.com/?q=\(query)") {
+                                    UIApplication.shared.open(url)
+                                }
+                            } label: {
+                                Label("Öppna i Apple Kartor", systemImage: "map")
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                            .tint(FamiljenTheme.navy)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                    }
+                    if let details = item.details, !details.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Anteckningar")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(FamiljenTheme.muted)
+                            Text(details)
+                                .font(.body)
+                                .foregroundStyle(FamiljenTheme.ink)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(16)
+                        .background(.white, in: RoundedRectangle(cornerRadius: 16))
+                    }
+                }
+                .padding(20)
+            }
+            .background(FamiljenTheme.paper.ignoresSafeArea())
+            .navigationTitle("Aktivitetsdetaljer")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Klart") { dismiss() }
+                }
+            }
+        }
+        .tint(FamiljenTheme.navy)
+    }
+
+    private func detailRow(_ title: String, value: String, symbol: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(FamiljenTheme.champagneDeep)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(FamiljenTheme.muted)
+                Text(value)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(FamiljenTheme.ink)
+            }
+            Spacer()
+        }
+        .padding(15)
+        .background(.white, in: RoundedRectangle(cornerRadius: 15))
+    }
 }

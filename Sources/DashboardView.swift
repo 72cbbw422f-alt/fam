@@ -97,14 +97,6 @@ struct DashboardView: View {
                     .background(.white, in: Circle())
             }
             .accessibilityLabel("Meddelanden")
-            NavigationLink { FamilyCalendarView() } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(FamiljenTheme.navy)
-                    .frame(width: 42, height: 42)
-                    .background(.white, in: Circle())
-            }
-            .accessibilityLabel("Lägg till aktivitet")
         }
     }
 

@@ -200,6 +200,24 @@ struct FamilyCalendarView: View {
         ["M", "T", "O", "T", "F", "L", "S"]
     }
 
+    private var monthWeekRows: [[Date?]] {
+        var iso = Calendar(identifier: .iso8601)
+        iso.locale = Locale(identifier: "sv_SE")
+        guard let first = monthDays.first else { return [] }
+        let leading = iso.component(.weekday, from: first) - 1
+        let cells: [Date?] = Array(repeating: nil, count: leading) + monthDays.map { Optional($0) }
+        let paddedCount = ((cells.count + 6) / 7) * 7
+        let padded = cells + Array(repeating: nil, count: paddedCount - cells.count)
+        return stride(from: 0, to: padded.count, by: 7).map {
+            Array(padded[$0..<($0 + 7)])
+        }
+    }
+
+    private func weekNumber(for row: [Date?]) -> String {
+        guard let date = row.compactMap({ $0 }).first else { return "" }
+        return "v. " + String(Calendar(identifier: .iso8601).component(.weekOfYear, from: date))
+    }
+
     private var monthCalendarSection: some View {
         Section {
             VStack(spacing: 12) {
@@ -227,18 +245,34 @@ struct FamilyCalendarView: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(FamiljenTheme.navy)
 
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 7), spacing: 8) {
-                    ForEach(Array(monthWeekdayLabels.enumerated()), id: \.offset) { _, label in
-                        Text(label)
-                            .font(.system(size: 11, weight: .bold))
+                VStack(spacing: 8) {
+                    HStack(spacing: 3) {
+                        Text("V")
+                            .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(FamiljenTheme.muted)
-                            .frame(maxWidth: .infinity)
+                            .frame(width: 27)
+                        ForEach(Array(monthWeekdayLabels.enumerated()), id: \.offset) { _, label in
+                            Text(label)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(FamiljenTheme.muted)
+                                .frame(maxWidth: .infinity)
+                        }
                     }
-                    ForEach(0..<monthLeadingEmptyDays, id: \.self) { _ in
-                        Color.clear.frame(height: 38)
-                    }
-                    ForEach(monthDays, id: \.self) { day in
-                        monthDayButton(day)
+                    ForEach(Array(monthWeekRows.enumerated()), id: \.offset) { _, week in
+                        HStack(spacing: 3) {
+                            Text(weekNumber(for: week))
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundStyle(FamiljenTheme.muted)
+                                .frame(width: 27)
+                            ForEach(Array(week.enumerated()), id: \.offset) { _, day in
+                                if let day {
+                                    monthDayButton(day)
+                                        .frame(maxWidth: .infinity)
+                                } else {
+                                    Color.clear.frame(maxWidth: .infinity).frame(height: 38)
+                                }
+                            }
+                        }
                     }
                 }
                 if selectedCalendarDate != nil {
@@ -525,6 +559,7 @@ struct FamilyCalendarView: View {
             appleCalendarSection
             modelErrorRow
         }
+        .listStyle(.plain)
     }
 
     private var calendarRoot: AnyView {

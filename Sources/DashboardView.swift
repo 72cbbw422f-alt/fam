@@ -217,6 +217,19 @@ struct DashboardView: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.ink)
                         .lineLimit(2)
+                    if item.isForEveryone {
+                        Text("Gäller hela familjen")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(FamiljenTheme.champagneDeep)
+                    } else {
+                        let names = members.filter { item.memberIDs.contains($0.id) }.map(\.displayName)
+                        if !names.isEmpty {
+                            Text("Gäller: " + names.joined(separator: " · "))
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(FamiljenTheme.muted)
+                                .lineLimit(1)
+                        }
+                    }
                     Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)))
                         .font(.system(size: 14))
                         .foregroundStyle(FamiljenTheme.muted)

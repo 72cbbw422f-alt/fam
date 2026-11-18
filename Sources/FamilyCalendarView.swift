@@ -904,6 +904,7 @@ private struct FamilyItemEditor: View {
     var body: some View {
         NavigationStack {
             Form {
+                if !(item == nil && initialKind == .birthday) {
                 Section("Fyll i från bild") {
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         Label("Välj skärmdump eller bild", systemImage: "text.viewfinder")
@@ -920,6 +921,7 @@ private struct FamilyItemEditor: View {
                     }
                     Text("Bilden läses på den här iPhone-enheten. Kontrollera alltid uppgifterna innan du sparar.")
                         .font(.caption).foregroundStyle(.secondary)
+                }
                 }
                 Section(kind == .birthday ? "Födelsedag" : "Aktivitet") {
                     TextField(kind == .birthday ? "Vems födelsedag?" : "Rubrik", text: $title)
@@ -1003,7 +1005,10 @@ private struct FamilyItemEditor: View {
                     if !isForEveryone {
                         ForEach(members) { member in
                             Button {
-                                if selectedMemberIDs.contains(member.id) {
+                                if kind == .birthday {
+                                    selectedMemberIDs = [member.id]
+                                    title = member.displayName
+                                } else if selectedMemberIDs.contains(member.id) {
                                     selectedMemberIDs.remove(member.id)
                                 } else {
                                     selectedMemberIDs.insert(member.id)

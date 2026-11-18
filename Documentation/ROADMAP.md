@@ -139,3 +139,26 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Rensa inaktuella levererade Familjen-påminnelser när en händelse ändras/raderas och när påminnelser stängs av (FAM-019; CI inväntas).
 - [x] Säkerställ att andra appars notiser inte påverkas av Familjens rensning (regressionstest tillagt; CI inväntas).
 - [x] Rensa borttagna familjemedlemmar ur aktiva personfilter så kalendern inte fastnar i ett föråldrat filterläge (FAM-020; CI inväntas).
+
+
+## Designriktning: praktisk förädling av befintligt gränssnitt (2026-11-18)
+
+**Beslut:** Behåll Familjens nuvarande visuella identitet och övergripande design. Referensutkastet används som inspiration för tydlighet, informationshierarki och innehållstäthet – inte som en ny färg- eller designspecifikation.
+
+### Ska bevaras
+- Nuvarande färgpalett: paper/varm ljus bas, navy, champagne/sand och befintliga dämpade accentfärger.
+- Befintlig typografisk karaktär, former, kort, ikoner och Scandinavian Premium / Modern iOS-uttryck.
+- Befintlig navigeringsstruktur och familjens funktionella grund.
+- Ingen generell omdesign eller byte av färger för att efterlikna referensbilden.
+
+### Ska förbättras
+- Öka läsbarheten med större och tydligare text där informationen är svår att uppfatta.
+- Förbättra hierarkin mellan rubrik, aktivitet, datum/tid, plats, berörda familjemedlemmar och ansvarig.
+- Visa tydligt vem en bokning gäller, exempelvis **Gäller: Alva**, separat från **Ansvarig: Niklas**.
+- Ge startsidan en mer komplett och användbar familjeöversikt med relevanta kort och genvägar.
+- Bygg ut flikarna så att Kalender, Hälsa, Födelsedagar och Inköpslista känns som genomarbetade, ändamålsenliga sidor – inte bara filter eller tomma skal.
+- Prioritera verklig nytta, snabb överblick och få tryck framför dekorativa element eller informationstäthet för sin egen skull.
+
+**Designprincip:** Gör den befintliga Familjen tydligare, rikare och mer praktisk. Referensutkastets styrka är hur snabbt man förstår innehållet; den styrkan ska översättas till Familjens befintliga formspråk utan att kopiera dess visuella identitet eller exempeldata.
+
+**Arbetsordning:** Förfina dashboarden först, därefter utveckla respektive flik stegvis. Varje större UI-ändring ska granskas mot befintlig design och testas på iPhone innan nästa område byggs ut.

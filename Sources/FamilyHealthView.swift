@@ -168,7 +168,7 @@ struct FamilyHealthView: View {
                     Text(item.kind.displayName)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(FamiljenTheme.muted)
-                    Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.long).hour().minute().locale(Locale(identifier: "sv_SE"))).capitalized)
+                    Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.wide).hour().minute().locale(Locale(identifier: "sv_SE"))).capitalized)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.navy)
                 }

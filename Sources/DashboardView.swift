@@ -109,53 +109,7 @@ struct DashboardView: View {
     }
 
     private var familyHero: some View {
-        ZStack(alignment: .bottomLeading) {
-            LinearGradient(
-                colors: [Color(red: 0.23, green: 0.34, blue: 0.42),
-                         Color(red: 0.43, green: 0.48, blue: 0.48),
-                         Color(red: 0.77, green: 0.65, blue: 0.49)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            GeometryReader { proxy in
-                Circle()
-                    .fill(Color.white.opacity(0.14))
-                    .frame(width: 145, height: 145)
-                    .blur(radius: 2)
-                    .offset(x: proxy.size.width - 125, y: -48)
-                Circle()
-                    .fill(FamiljenTheme.champagne.opacity(0.22))
-                    .frame(width: 190, height: 190)
-                    .blur(radius: 12)
-                    .offset(x: proxy.size.width - 150, y: 55)
-            }
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(alignment: .firstTextBaseline, spacing: 7) {
-                    Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "sv_SE"))).capitalized)
-                    Text("·")
-                        .foregroundStyle(.white.opacity(0.75))
-                    Text("v. \(Calendar(identifier: .iso8601).component(.weekOfYear, from: .now))")
-                }
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white.opacity(0.88))
-                Text(model.family?.name ?? "Välkommen hem")
-                    .font(.system(size: 29, weight: .semibold, design: .serif))
-                    .foregroundStyle(.white)
-                HStack(spacing: 6) {
-                    Image(systemName: "sun.max")
-                    Text("En plats för allt som hör er till")
-                }
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white.opacity(0.92))
-            }
-            .padding(19)
-        }
-        .frame(height: 174)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(.white.opacity(0.35), lineWidth: 1)
-        }
-        .shadow(color: FamiljenTheme.navy.opacity(0.10), radius: 13, x: 0, y: 7)
+        SeasonalFamilyHero(familyName: model.family?.name ?? "Välkommen hem")
     }
 
     private var familyAndNextEvent: some View {

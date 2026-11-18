@@ -823,4 +823,55 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertFalse(reloaded.items.first?.isRecurringYearly ?? true)
     }
 
+
+    func testBirthdayGiftIdeasPersistAndSupportUpdateAndDelete() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        store.saveItem(id: nil, title: "Födelsedag", details: nil,
+                       startsAt: Date(timeIntervalSince1970: 1_800_000_000),
+                       kind: .birthday, memberID: member.id, recurring: true,
+                       reminderOffsets: [])
+        let birthday = try XCTUnwrap(store.items.first)
+
+        store.addGiftIdea(memberID: member.id, birthdayItemID: birthday.id,
+                          title: "  Hörlurar  ", note: "  Svarta  ")
+        var idea = try XCTUnwrap(store.giftIdeas.first)
+        XCTAssertEqual(idea.title, "Hörlurar")
+        XCTAssertEqual(idea.note, "Svarta")
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.giftIdeas, store.giftIdeas)
+
+        idea.isOrdered = true
+        idea.note = "Önskar sig trådlösa"
+        store.updateGiftIdea(idea)
+        let updatedStore = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(updatedStore.giftIdeas.first?.isOrdered, true)
+        XCTAssertEqual(updatedStore.giftIdeas.first?.note, "Önskar sig trådlösa")
+
+        store.deleteGiftIdea(idea.id)
+        let deletedStore = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(deletedStore.giftIdeas.isEmpty)
+    }
+
+    func testGiftIdeasRejectBlankTitlesAndNonBirthdayItems() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        store.saveItem(id: nil, title: "Möte", details: nil,
+                       startsAt: Date(timeIntervalSince1970: 1_800_000_000),
+                       kind: .event, memberID: member.id, recurring: false,
+                       reminderOffsets: [])
+        let event = try XCTUnwrap(store.items.first)
+
+        store.addGiftIdea(memberID: member.id, birthdayItemID: event.id,
+                          title: "Present", note: nil)
+        store.addGiftIdea(memberID: member.id, birthdayItemID: event.id,
+                          title: "   ", note: nil)
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+    }
+
 }

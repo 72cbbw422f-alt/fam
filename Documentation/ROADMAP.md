@@ -162,3 +162,11 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 **Designprincip:** Gör den befintliga Familjen tydligare, rikare och mer praktisk. Referensutkastets styrka är hur snabbt man förstår innehållet; den styrkan ska översättas till Familjens befintliga formspråk utan att kopiera dess visuella identitet eller exempeldata.
 
 **Arbetsordning:** Förfina dashboarden först, därefter utveckla respektive flik stegvis. Varje större UI-ändring ska granskas mot befintlig design och testas på iPhone innan nästa område byggs ut.
+
+
+### Ikoner och aktivitetskategorier – förtydligande (2026-11-18)
+- Behåll befintliga kategorispecifika ikoner; de är en viktig del av snabb igenkänning och ska inte ersättas med generiska symboler.
+- Förbättra läsbarheten genom något större symboler, tydligare kontrast och en mer distinkt kontur.
+- Behåll nuvarande färgsättning, tonade bakgrunder, rundade former och visuella identitet.
+- Samma kategori ska ha konsekvent ikon och färg i dashboard, kalender, redigerare och övriga relevanta vyer.
+- Förändringen ska vara subtil och praktisk, inte en ny ikonstil.

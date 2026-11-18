@@ -70,15 +70,9 @@ struct DashboardView: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundStyle(FamiljenTheme.champagne)
             }
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Familjen")
-                    .font(.system(size: 21, weight: .semibold, design: .serif))
-                    .foregroundStyle(FamiljenTheme.ink)
-                Text("VÅR GEMENSAMMA PLANERING")
-                    .font(.system(size: 12, weight: .bold))
-                    .tracking(1.35)
-                    .foregroundStyle(FamiljenTheme.muted)
-            }
+            Text("Familjen")
+                .font(.system(size: 23, weight: .semibold, design: .serif))
+                .foregroundStyle(FamiljenTheme.ink)
             Spacer()
             NavigationLink { NotificationsView() } label: {
                 Image(systemName: "bell")
@@ -430,24 +424,45 @@ struct DashboardView: View {
             }
 
             NavigationLink { ShoppingListView() } label: {
-                HStack(spacing: 12) {
-                    CategoryIcon(kind: .shopping, size: 38)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Inköpslista")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(FamiljenTheme.ink)
-                        Text("Öppna familjens gemensamma lista")
-                            .font(.system(size: 12))
-                            .foregroundStyle(FamiljenTheme.muted)
+                HStack(spacing: 13) {
+                    ZStack {
+                        Circle()
+                            .fill(FamiljenTheme.champagne.opacity(0.18))
+                            .frame(width: 46, height: 46)
+                        Image(systemName: "basket")
+                            .font(.system(size: 21, weight: .medium))
+                            .foregroundStyle(FamiljenTheme.champagne)
                     }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(FamiljenTheme.muted)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Inköpslista")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+                        Text(store.shoppingItems.filter { !$0.isChecked }.isEmpty
+                             ? "Listan är redo för nästa inköp"
+                             : "\(store.shoppingItems.filter { !$0.isChecked }.count) varor kvar att handla")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.78))
+                    }
+                    Spacer(minLength: 4)
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(FamiljenTheme.champagne)
                 }
-                .padding(13)
-                .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(FamiljenTheme.sand.opacity(0.65), lineWidth: 1))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 15)
+                .background {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(LinearGradient(
+                            colors: [FamiljenTheme.navy, FamiljenTheme.navy.opacity(0.88)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(FamiljenTheme.champagne.opacity(0.28), lineWidth: 1)
+                }
+                .shadow(color: FamiljenTheme.navy.opacity(0.13), radius: 10, x: 0, y: 5)
             }
             .buttonStyle(.plain)
         }

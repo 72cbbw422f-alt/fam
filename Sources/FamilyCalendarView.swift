@@ -1110,7 +1110,7 @@ private struct FamilyCalendarItemDetailView: View {
                                 .foregroundStyle(FamiljenTheme.muted)
                         }
                     }
-                    detailRow("Datum", value: item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.long).year()).capitalized, symbol: "calendar")
+                    detailRow("Datum", value: item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.wide).year()).capitalized, symbol: "calendar")
                     detailRow("Tid", value: item.startsAt.formatted(.dateTime.hour().minute()), symbol: "clock")
                     if let location = item.location, !location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         detailRow("Plats", value: location, symbol: "mappin.and.ellipse")

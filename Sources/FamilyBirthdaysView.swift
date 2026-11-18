@@ -73,7 +73,7 @@ struct FamilyBirthdaysView: View {
                         Text(item.title)
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(FamiljenTheme.ink)
-                        Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.long).locale(Locale(identifier: "sv_SE"))).capitalized)
+                        Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "sv_SE"))).capitalized)
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(FamiljenTheme.navy)
                         if let member = birthdayMember(for: item) {
@@ -99,14 +99,14 @@ struct FamilyBirthdaysView: View {
             heading("Alla födelsedagar", subtitle: "Sorterade efter nästa datum")
             if !birthdayItems.isEmpty {
                 VStack(spacing: 0) {
-                    ForEach(birthdayItems) { item in
+                    ForEach(Array(birthdayItems)) { item in
                         HStack(spacing: 12) {
                             CategoryIcon(kind: .birthday, size: 40)
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(item.title)
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundStyle(FamiljenTheme.ink)
-                                Text(item.startsAt.formatted(.dateTime.day().month(.long).locale(Locale(identifier: "sv_SE"))))
+                                Text(item.startsAt.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "sv_SE"))))
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(FamiljenTheme.navy)
                                 if let member = birthdayMember(for: item) {

@@ -218,15 +218,17 @@ struct FamilyCalendarView: View {
                 .background(FamiljenTheme.paper)
                 .navigationTitle(pageTitle)
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbar { calendarToolbar }
+                .overlay {
+                    if model.isLoading && model.items.isEmpty {
+                        ProgressView("Hämtar kalendern …")
+                    }
+                }
         )
     }
 
     var body: some View {
         styledCalendarRoot
-        .toolbar { calendarToolbar }
-        .overlay {
-            if model.isLoading && model.items.isEmpty { ProgressView("Hämtar kalendern …") }
-        }
         .confirmationDialog("Redigera återkommande aktivitet?", isPresented: $showEditScopeConfirmation, presenting: pendingEdit) { item in
             Button("Bara detta tillfälle") {
                 editingSingleOccurrence = true

@@ -21,6 +21,7 @@ private final class CalendarPlaceSearchModel: NSObject, ObservableObject, MKLoca
             completer.cancel()
             return
         }
+        suggestions = []
         completer.queryFragment = cleaned
     }
 
@@ -55,6 +56,7 @@ private final class CalendarPlaceSearchModel: NSObject, ObservableObject, MKLoca
     func clearSuggestions() {
         suggestions = []
         completer.cancel()
+        completer.queryFragment = ""
     }
 }
 
@@ -93,11 +95,11 @@ private struct PlaceSearchField: View {
                 VStack(spacing: 0) {
                     ForEach(Array(searchModel.suggestions.enumerated()), id: \.offset) { _, suggestion in
                         Button {
+                            searchModel.clearSuggestions()
+                            isResolving = true
                             Task {
-                                isResolving = true
                                 let resolved = await searchModel.resolve(suggestion)
                                 text = resolved
-                                searchModel.clearSuggestions()
                                 isResolving = false
                             }
                         } label: {
@@ -122,6 +124,7 @@ private struct PlaceSearchField: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .disabled(isResolving)
                         if suggestion.title != searchModel.suggestions.last?.title {
                             Divider().overlay(FamiljenTheme.sand)
                         }

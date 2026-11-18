@@ -15,6 +15,7 @@ struct DashboardView: View {
                     persistenceWarning
                     familyHero
                     familyAndNextEvent
+                    nearTermOverview
                     upcomingAppointments
                     upcomingSection
                     recentShoppingItems
@@ -252,6 +253,90 @@ struct DashboardView: View {
             .background(.white, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 17).stroke(FamiljenTheme.sand.opacity(0.65), lineWidth: 1))
         }
+    }
+
+    private var nearTermOverview: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            sectionTitle("Närmaste dagarna", subtitle: "En snabb blick på familjens planering")
+
+            VStack(spacing: 0) {
+                dayOverviewRow(title: "Idag", items: model.todayItems)
+                Divider().overlay(FamiljenTheme.sand).padding(.leading, 14)
+                dayOverviewRow(title: "Imorgon", items: model.tomorrowItems)
+            }
+            .padding(.horizontal, 14)
+            .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(FamiljenTheme.sand.opacity(0.65), lineWidth: 1)
+            }
+            .shadow(color: FamiljenTheme.navy.opacity(0.03), radius: 9, x: 0, y: 3)
+        }
+    }
+
+    private func dayOverviewRow(title: String, items: [FamilyItem]) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title)
+                    .font(.system(size: 17, weight: .semibold, design: .serif))
+                    .foregroundStyle(FamiljenTheme.ink)
+                Spacer()
+                Text(items.isEmpty ? "Inget planerat" : "\(items.count) \(items.count == 1 ? "aktivitet" : "aktiviteter")")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(FamiljenTheme.muted)
+            }
+
+            if items.isEmpty {
+                Text(title == "Idag" ? "Dagen är fri från inlagda aktiviteter." : "Inga aktiviteter inlagda ännu.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(FamiljenTheme.muted)
+                    .padding(.bottom, 2)
+            } else {
+                ForEach(Array(items.prefix(3))) { item in
+                    Button {
+                        selectedDashboardItem = item
+                    } label: {
+                        HStack(spacing: 10) {
+                            CategoryIcon(kind: item.kind, size: 34)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.title)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(FamiljenTheme.ink)
+                                    .lineLimit(2)
+                                HStack(spacing: 5) {
+                                    Text(item.startsAt.formatted(.dateTime.hour().minute()))
+                                    if item.isForEveryone {
+                                        Text("· Hela familjen")
+                                    } else {
+                                        let names = members.filter { item.memberIDs.contains($0.id) }
+                                            .map(\.displayName)
+                                        if !names.isEmpty {
+                                            Text("· " + names.joined(separator: ", "))
+                                        }
+                                    }
+                                }
+                                .font(.system(size: 13))
+                                .foregroundStyle(FamiljenTheme.muted)
+                                .lineLimit(1)
+                            }
+                            Spacer(minLength: 4)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(FamiljenTheme.muted.opacity(0.7))
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                if items.count > 3 {
+                    Text("+ \(items.count - 3) till")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(FamiljenTheme.navy)
+                        .padding(.leading, 44)
+                }
+            }
+        }
+        .padding(.vertical, 13)
     }
 
     private var recentShoppingItems: some View {

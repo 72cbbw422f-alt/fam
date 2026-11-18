@@ -21,6 +21,7 @@ protocol FamilyRepository: AnyObject {
     func addChild(name: String)
     func addMember(name: String, role: MemberRole)
     func renameMember(id: UUID, name: String)
+    func updateMemberSymbol(id: UUID, symbolName: String?)
     func deleteMember(id: UUID)
     func renameChild(id: UUID, name: String)
     func deleteChild(id: UUID)

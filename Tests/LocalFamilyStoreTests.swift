@@ -29,6 +29,29 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: snapshotURL.path))
     }
 
+    func testFamilyMemberProfileIconIsBackwardCompatibleAndPersists() throws {
+        let familyID = UUID()
+        let memberID = UUID()
+        let legacyJSON = """
+        {
+          "id": "\(memberID.uuidString)",
+          "family_id": "\(familyID.uuidString)",
+          "display_name": "Villemo",
+          "role": "member"
+        }
+        """
+        let legacy = try JSONDecoder().decode(FamilyMember.self, from: Data(legacyJSON.utf8))
+        XCTAssertNil(legacy.symbolName)
+        XCTAssertEqual(legacy.resolvedSymbolName, "person.crop.circle")
+
+        var updated = legacy
+        updated.symbolName = "heart.fill"
+        let encoded = try JSONEncoder().encode(updated)
+        let decoded = try JSONDecoder().decode(FamilyMember.self, from: encoded)
+        XCTAssertEqual(decoded.symbolName, "heart.fill")
+        XCTAssertEqual(decoded.resolvedSymbolName, "heart.fill")
+    }
+
     func testFamilyProfilesAndShoppingItemsSurviveReload() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

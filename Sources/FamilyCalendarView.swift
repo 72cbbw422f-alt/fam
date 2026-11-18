@@ -148,6 +148,8 @@ struct FamilyCalendarView: View {
     @State private var selectedKind: FamilyItemKind?
     @State private var selectedMemberIDs: Set<UUID> = []
     @State private var selectedDetailItem: FamilyItem?
+    @State private var displayedMonth = Date()
+    @State private var selectedCalendarDate: Date?
 
     init(initialKind: FamilyItemKind? = nil) {
         _selectedKind = State(initialValue: initialKind)
@@ -173,9 +175,124 @@ struct FamilyCalendarView: View {
 
     private var groupedVisibleItems: [(date: Date, items: [FamilyItem])] {
         let calendar = Calendar.current
-        return Dictionary(grouping: visibleItems) { calendar.startOfDay(for: $0.startsAt) }
+        let itemsForList = selectedCalendarDate.map { date in
+            visibleItems.filter { calendar.isDate($0.startsAt, inSameDayAs: date) }
+        } ?? visibleItems
+        return Dictionary(grouping: itemsForList) { calendar.startOfDay(for: $0.startsAt) }
             .map { (date: $0.key, items: $0.value.sorted { $0.startsAt < $1.startsAt }) }
             .sorted { $0.date < $1.date }
+    }
+
+    private var monthDays: [Date] {
+        let calendar = Calendar.current
+        guard let interval = calendar.dateInterval(of: .month, for: displayedMonth),
+              let dayRange = calendar.range(of: .day, in: .month, for: displayedMonth) else { return [] }
+        return dayRange.compactMap { calendar.date(byAdding: .day, value: $0 - 1, to: interval.start) }
+    }
+
+    private var monthLeadingEmptyDays: Int {
+        let calendar = Calendar.current
+        guard let first = monthDays.first else { return 0 }
+        return (calendar.component(.weekday, from: first) - calendar.firstWeekday + 7) % 7
+    }
+
+    private var monthWeekdayLabels: [String] {
+        ["M", "T", "O", "T", "F", "L", "S"]
+    }
+
+    private var monthCalendarSection: some View {
+        Section {
+            VStack(spacing: 12) {
+                HStack {
+                    Button {
+                        changeDisplayedMonth(by: -1)
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .frame(width: 34, height: 34)
+                    }
+                    .accessibilityLabel("Föregående månad")
+                    Spacer()
+                    Text(displayedMonth.formatted(.dateTime.month(.wide).year()).capitalized)
+                        .font(.system(size: 17, weight: .semibold, design: .serif))
+                        .foregroundStyle(FamiljenTheme.ink)
+                    Spacer()
+                    Button {
+                        changeDisplayedMonth(by: 1)
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .frame(width: 34, height: 34)
+                    }
+                    .accessibilityLabel("Nästa månad")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(FamiljenTheme.navy)
+
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 7), spacing: 8) {
+                    ForEach(Array(monthWeekdayLabels.enumerated()), id: \.offset) { _, label in
+                        Text(label)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(FamiljenTheme.muted)
+                            .frame(maxWidth: .infinity)
+                    }
+                    ForEach(0..<monthLeadingEmptyDays, id: \.self) { _ in
+                        Color.clear.frame(height: 38)
+                    }
+                    ForEach(monthDays, id: \.self) { day in
+                        monthDayButton(day)
+                    }
+                }
+                if selectedCalendarDate != nil {
+                    Button("Visa hela listan") { selectedCalendarDate = nil }
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(FamiljenTheme.navy)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            }
+            .padding(14)
+            .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(FamiljenTheme.sand.opacity(0.7), lineWidth: 1))
+            .padding(.vertical, 5)
+        }
+        .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+        .listRowBackground(Color.clear)
+    }
+
+    private func monthDayButton(_ day: Date) -> some View {
+        let calendar = Calendar.current
+        let hasItems = visibleItems.contains { calendar.isDate($0.startsAt, inSameDayAs: day) }
+        let isSelected = selectedCalendarDate.map { calendar.isDate($0, inSameDayAs: day) } ?? false
+        let isToday = calendar.isDateInToday(day)
+        return Button {
+            selectedCalendarDate = isSelected ? nil : day
+        } label: {
+            VStack(spacing: 3) {
+                Text(day.formatted(.dateTime.day()))
+                    .font(.system(size: 14, weight: isSelected || isToday ? .bold : .medium))
+                    .foregroundStyle(isSelected ? .white : FamiljenTheme.ink)
+                Circle()
+                    .fill(hasItems ? (isSelected ? FamiljenTheme.champagne : FamiljenTheme.champagneDeep) : .clear)
+                    .frame(width: 4, height: 4)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+            .background {
+                if isSelected {
+                    Circle().fill(FamiljenTheme.navy)
+                } else if isToday {
+                    Circle().stroke(FamiljenTheme.champagneDeep, lineWidth: 1.3)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+        .accessibilityHint(hasItems ? "Har aktiviteter. Tryck för att visa dagens aktiviteter." : "Tryck för att filtrera på dagen.")
+    }
+
+    private func changeDisplayedMonth(by offset: Int) {
+        guard let next = Calendar.current.date(byAdding: .month, value: offset, to: displayedMonth) else { return }
+        displayedMonth = next
+        selectedCalendarDate = nil
     }
 
     private func calendarSectionTitle(for date: Date) -> String {
@@ -403,6 +520,7 @@ struct FamilyCalendarView: View {
     private var calendarList: some View {
         List {
             calendarFilterRow
+            monthCalendarSection
             calendarItemsRow
             appleCalendarSection
             modelErrorRow

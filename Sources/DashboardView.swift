@@ -183,8 +183,8 @@ struct DashboardView: View {
                                     .fill(avatarColor(for: member))
                                     .frame(width: 48, height: 48)
                                     .overlay {
-                                        Text(initials(member.displayName))
-                                            .font(.system(size: 17, weight: .semibold, design: .serif))
+                                        Image(systemName: member.resolvedSymbolName)
+                                            .font(.system(size: 20, weight: .medium))
                                             .foregroundStyle(FamiljenTheme.navy)
                                     }
                                     .overlay(Circle().stroke(.white, lineWidth: 2))

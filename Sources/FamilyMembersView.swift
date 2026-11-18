@@ -33,10 +33,12 @@ struct FamilyMembersView: View {
                         if member.role == .child { Image(systemName: "ellipsis").foregroundStyle(FamiljenTheme.muted) }
                     }
                     .contentShape(Rectangle())
-                    .onTapGesture { if member.role != .owner { editingChild = member; showingEditor = true } }
+                    .onTapGesture { editingChild = member; showingEditor = true }
                     .contextMenu {
+                        Button { editingChild = member; showingEditor = true } label: {
+                            Label("Redigera profil", systemImage: "pencil")
+                        }
                         if member.role != .owner {
-                            Button { editingChild = member; showingEditor = true } label: { Label("Redigera namn", systemImage: "pencil") }
                             Button(role: .destructive) { childToDelete = member; showingDeleteConfirmation = true } label: {
                                 Label(member.role == .child ? "Ta bort barnprofil" : "Ta bort vuxenprofil", systemImage: "trash")
                             }
@@ -92,7 +94,7 @@ struct FamilyMembersView: View {
     }
     private func addChild() {
         let clean = newChildName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !clean.isEmpty, clean.count <= 80 else { errorMessage = "Namnet får vara högst 80 tecken."; return }
+        guard member.role == .owner || (!clean.isEmpty && clean.count <= 80) else { errorMessage = "Namnet får vara högst 80 tecken."; return }
         FamilyStore.shared.addChild(name: clean)
         newChildName = ""; infoMessage = "Barnprofilen har lagts till."; loadMembers()
     }
@@ -124,7 +126,7 @@ private struct MemberProfileEditor: View {
         NavigationStack {
             Form {
                 Section(member.role == .child ? "Barnprofil" : "Vuxenprofil") {
-                    TextField("Namn", text: $name).textInputAutocapitalization(.words)
+                    TextField("Namn", text: $name).textInputAutocapitalization(.words).disabled(member.role == .owner)
                 }
                 Section("Profilikon") {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 54))], spacing: 12) {
@@ -155,7 +157,7 @@ private struct MemberProfileEditor: View {
             .navigationTitle("Redigera profil").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Avbryt") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button("Spara") { Task { await save() } }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving) }
+                ToolbarItem(placement: .confirmationAction) { Button("Spara") { Task { await save() } }.disabled((member.role != .owner && name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) || isSaving) }
             }
         }
     }

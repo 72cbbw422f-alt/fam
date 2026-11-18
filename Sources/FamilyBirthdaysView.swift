@@ -16,6 +16,7 @@ struct FamilyBirthdaysView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
                     introduction
+                    addBirthdayAction
                     nextUpSection
                     allBirthdaysSection
                     informationNote
@@ -27,18 +28,6 @@ struct FamilyBirthdaysView: View {
             .background(FamiljenTheme.paper.ignoresSafeArea())
             .navigationTitle("Födelsedagar")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        FamilyCalendarView(initialKind: .birthday)
-                    } label: {
-                        Label("Ny födelsedag", systemImage: "plus")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(FamiljenTheme.navy)
-                    }
-                    .accessibilityLabel("Lägg till födelsedag")
-                }
-            }
             .refreshable { store.refresh() }
         }
         .tint(FamiljenTheme.navy)
@@ -61,6 +50,21 @@ struct FamilyBirthdaysView: View {
         .padding(16)
         .background(.white, in: RoundedRectangle(cornerRadius: 19, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 19).stroke(FamiljenTheme.sand.opacity(0.7), lineWidth: 1))
+    }
+
+    private var addBirthdayAction: some View {
+        NavigationLink {
+            FamilyCalendarView(initialKind: .birthday)
+        } label: {
+            Label("Lägg till födelsedag", systemImage: "plus")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 15)
+                .padding(.vertical, 11)
+                .background(FamiljenTheme.navy, in: Capsule())
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityLabel("Lägg till födelsedag")
     }
 
     private var nextUpSection: some View {
@@ -129,7 +133,7 @@ struct FamilyBirthdaysView: View {
                                         .font(.system(size: 14, weight: .medium))
                                         .foregroundStyle(FamiljenTheme.navy)
                                     if let member = birthdayMember(for: item) {
-                                        Text("Gäller: " + member.displayName)
+                                        Text(ageDescription(for: item).map { "\(member.displayName) · fyller \($0) år" } ?? ("Gäller: " + member.displayName))
                                             .font(.system(size: 13))
                                             .foregroundStyle(FamiljenTheme.muted)
                                     } else if item.isForEveryone {
@@ -196,6 +200,16 @@ struct FamilyBirthdaysView: View {
             .font(.system(size: 12))
             .foregroundStyle(FamiljenTheme.muted)
             .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func ageDescription(for projectedItem: FamilyItem) -> Int? {
+        guard let original = store.items.first(where: { $0.id == projectedItem.id }),
+              original.kind == .birthday else { return nil }
+        let calendar = Calendar(identifier: .gregorian)
+        let birthYear = calendar.component(.year, from: original.startsAt)
+        let currentYear = calendar.component(.year, from: projectedItem.startsAt)
+        guard birthYear < currentYear else { return nil }
+        return currentYear - birthYear
     }
 
     private func birthdayMember(for item: FamilyItem) -> FamilyMember? {

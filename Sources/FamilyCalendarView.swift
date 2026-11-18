@@ -318,11 +318,8 @@ struct FamilyCalendarView: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 10)
-                .onChanged { _ in }
-        )
+        .buttonStyle(.borderless)
+        .contentShape(Circle())
         .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide)))
         .accessibilityHint(hasItems ? "Har aktiviteter. Tryck för att visa dagens aktiviteter." : "Tryck för att filtrera på dagen.")
     }

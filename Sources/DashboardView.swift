@@ -204,21 +204,21 @@ struct DashboardView: View {
                     Image(systemName: "calendar")
                         .foregroundStyle(FamiljenTheme.champagneDeep)
                     Text("Nästa händelse")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(FamiljenTheme.muted)
                 }
                 if let item = model.upcomingItems.first {
                     Button { selectedDashboardItem = item } label: {
                     VStack(alignment: .leading, spacing: 7) {
                     Text(item.startsAt.formatted(.dateTime.hour().minute()))
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.champagneDeep)
                     Text(item.title)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.ink)
                         .lineLimit(2)
                     Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)))
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                         .foregroundStyle(FamiljenTheme.muted)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -414,10 +414,10 @@ struct DashboardView: View {
     private func sectionTitle(_ title: String, subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title)
-                .font(.system(size: 17, weight: .semibold, design: .serif))
+                .font(.system(size: 20, weight: .semibold, design: .serif))
                 .foregroundStyle(FamiljenTheme.ink)
             Text(subtitle)
-                .font(.system(size: 12))
+                .font(.system(size: 14))
                 .foregroundStyle(FamiljenTheme.muted)
         }
     }
@@ -436,28 +436,28 @@ struct DashboardView: View {
             .background(FamiljenTheme.sand.opacity(0.48), in: RoundedRectangle(cornerRadius: 11))
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(FamiljenTheme.ink)
                     .lineLimit(1)
                 Text(item.kind.displayName + " · " + item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(FamiljenTheme.muted)
                 if item.isForEveryone {
-                    Text("Hela familjen")
-                        .font(.system(size: 12, weight: .semibold))
+                    Text("Gäller hela familjen")
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.champagneDeep)
                 } else {
                     let names = members.filter { item.memberIDs.contains($0.id) }.map(\.displayName)
                     if !names.isEmpty {
-                        Text(names.joined(separator: " · "))
-                            .font(.system(size: 12, weight: .medium))
+                        Text("Gäller: " + names.joined(separator: " · "))
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(FamiljenTheme.muted)
                     }
                 }
                 if let responsibleID = item.responsibleMemberID,
                    let responsible = members.first(where: { $0.id == responsibleID }) {
                     Text("Ansvarig: \(responsible.displayName)")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(FamiljenTheme.muted)
                 }
             }

@@ -4,7 +4,7 @@ import UserNotifications
 struct FamilySettingsView: View {
     @StateObject private var store = FamilyStore.shared
     @AppStorage("familjen.localRemindersEnabled") private var localRemindersEnabled = false
-    @AppStorage("familjen.defaultReminderOffsets") private var defaultReminderOffsets = [24 * 60 * 60, 60 * 60]
+    @State private var defaultReminderOffsets = [24 * 60 * 60, 60 * 60]
     @State private var isUpdatingReminders = false
     @State private var reminderStatus: String?
 
@@ -69,6 +69,7 @@ struct FamilySettingsView: View {
 
                 Button("Återställ rekommenderade val") {
                     defaultReminderOffsets = [24 * 60 * 60, 60 * 60]
+                    UserDefaults.standard.set(defaultReminderOffsets, forKey: "familjen.defaultReminderOffsets")
                 }
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(FamiljenTheme.navy)
@@ -107,6 +108,8 @@ struct FamilySettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .tint(FamiljenTheme.navy)
         .task {
+            defaultReminderOffsets = UserDefaults.standard.array(forKey: "familjen.defaultReminderOffsets") as? [Int]
+                ?? [24 * 60 * 60, 60 * 60]
             if localRemindersEnabled {
                 await LocalReminderScheduler.schedule(
                     for: store.items,
@@ -124,6 +127,7 @@ struct FamilySettingsView: View {
             defaultReminderOffsets.append(offset)
         }
         defaultReminderOffsets.sort(by: >)
+        UserDefaults.standard.set(defaultReminderOffsets, forKey: "familjen.defaultReminderOffsets")
     }
 
     @MainActor

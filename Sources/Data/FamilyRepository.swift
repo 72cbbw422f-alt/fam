@@ -48,6 +48,7 @@ extension FamilyRepository {
     func saveOccurrenceOverride(seriesID: UUID, occurrenceDate: Date, item: FamilyItem) { }
     func skipOccurrence(of item: FamilyItem) { }
     var persistenceError: String? { nil }
+    func updateMemberSymbol(id: UUID, symbolName: String?) { }
 
     func addMember(name: String) { addMember(name: name, role: .member) }
 

@@ -188,3 +188,10 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Behåll befintlig färgpalett, kategoriikoner och navigationens formspråk.
 - [ ] Verifiera båda vyerna med aktuell CI-körning och på fysisk iPhone.
 - **Begränsning:** ålder visas inte eftersom familjeprofilen inte har ett separat födelseårsfält. Hälsovyn visar kalenderanteckningar, inte journaldata.
+
+
+## Dashboard: undvik upprepade aktiviteter (2026-11-18)
+- [x] Låt översikten "Idag" och "Imorgon" vara den primära platsen för aktiviteter under de närmaste två dagarna.
+- [x] Börja listorna "Kommande tider" och "Kommande händelser" först dagen efter imorgon.
+- [x] Undvik att födelsedagskortet upprepar en födelsedag som redan syns i närtidsöversikten.
+- **Design:** behåll separata listor för vårdbesök/bokade tider och övriga händelser, med befintliga kategorier och ikoner.

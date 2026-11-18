@@ -170,3 +170,13 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - Behåll nuvarande färgsättning, tonade bakgrunder, rundade former och visuella identitet.
 - Samma kategori ska ha konsekvent ikon och färg i dashboard, kalender, redigerare och övriga relevanta vyer.
 - Förändringen ska vara subtil och praktisk, inte en ny ikonstil.
+
+
+## Egna översikter: Hälsa och födelsedagar (2026-11-18)
+- [x] Skapa en dedikerad Hälsa-vy med översikt, kommande vårdbesök, tandläkare, medicinposter och historik.
+- [x] Visa berörd familjemedlem och ansvarig separat i hälsovyn.
+- [x] Skapa en dedikerad Födelsedagar-vy med nästa födelsedag och en kronologisk lista.
+- [x] Återanvänd befintliga kalenderposter och årlig projektion; skapa inte ett parallellt födelsedagsregister.
+- [x] Behåll befintlig färgpalett, kategoriikoner och navigationens formspråk.
+- [ ] Verifiera båda vyerna med aktuell CI-körning och på fysisk iPhone.
+- **Begränsning:** ålder visas inte eftersom familjeprofilen inte har ett separat födelseårsfält. Hälsovyn visar kalenderanteckningar, inte journaldata.

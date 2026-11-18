@@ -94,8 +94,16 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         guard let index = members.firstIndex(where: { $0.id == id && $0.role != .owner }) else { return }
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 80 else { return }
+        let previous = members[index]
         members[index].displayName = clean
-        saveToDisk()
+        if !saveToDisk() { members[index] = previous }
+    }
+
+    func updateMemberSymbol(id: UUID, symbolName: String?) {
+        guard let index = members.firstIndex(where: { $0.id == id }) else { return }
+        let previous = members[index]
+        members[index].symbolName = symbolName
+        if !saveToDisk() { members[index] = previous }
     }
 
     func deleteMember(id: UUID) {

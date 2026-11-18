@@ -17,7 +17,7 @@ struct FamilyMembersView: View {
             Section {
                 ForEach(members) { member in
                     HStack(spacing: 12) {
-                        Image(systemName: member.role == .child ? "face.smiling" : "person.crop.circle")
+                        Image(systemName: member.resolvedSymbolName)
                             .font(.title2).foregroundStyle(FamiljenTheme.navy).frame(width: 38, height: 38)
                             .background(FamiljenTheme.sand.opacity(0.55), in: Circle())
                         VStack(alignment: .leading, spacing: 3) {
@@ -67,10 +67,11 @@ struct FamilyMembersView: View {
         .refreshable { loadMembers() }
         .sheet(isPresented: $showingEditor, onDismiss: { editingChild = nil }) {
             if let editingChild {
-                MemberProfileEditor(member: editingChild) { newName in
+                MemberProfileEditor(member: editingChild) { newName, symbolName in
                     FamilyStore.shared.renameMember(id: editingChild.id, name: newName)
+                    FamilyStore.shared.updateMemberSymbol(id: editingChild.id, symbolName: symbolName)
                     loadMembers()
-                    return true
+                    return FamilyStore.shared.persistenceError == nil
                 }
             }
         }
@@ -107,17 +108,48 @@ struct FamilyMembersView: View {
 private struct MemberProfileEditor: View {
     @Environment(\.dismiss) private var dismiss
     let member: FamilyMember
-    let onSave: (String) async -> Bool
+    let onSave: (String, String?) async -> Bool
     @State private var name: String
+    @State private var symbolSelection: String
     @State private var isSaving = false
     @State private var errorMessage: String?
-    init(member: FamilyMember, onSave: @escaping (String) async -> Bool) {
-        self.member = member; self.onSave = onSave; _name = State(initialValue: member.displayName)
+    private let symbols = ["person.crop.circle", "face.smiling", "person.fill", "person.2.fill", "figure", "figure.child", "pawprint.fill", "heart.fill", "star.fill", "sun.max.fill", "moon.fill", "leaf.fill", "flower.fill", "bolt.fill", "book.fill", "music.note", "basketball.fill", "gamecontroller.fill"]
+    init(member: FamilyMember, onSave: @escaping (String, String?) async -> Bool) {
+        self.member = member
+        self.onSave = onSave
+        _name = State(initialValue: member.displayName)
+        _symbolSelection = State(initialValue: member.symbolName ?? "default")
     }
     var body: some View {
         NavigationStack {
             Form {
-                Section(member.role == .child ? "Barnprofil" : "Vuxenprofil") { TextField("Namn", text: $name).textInputAutocapitalization(.words) }
+                Section(member.role == .child ? "Barnprofil" : "Vuxenprofil") {
+                    TextField("Namn", text: $name).textInputAutocapitalization(.words)
+                }
+                Section("Profilikon") {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 54))], spacing: 12) {
+                        ForEach(["default"] + symbols, id: \.self) { symbol in
+                            Button {
+                                symbolSelection = symbol
+                            } label: {
+                                VStack(spacing: 5) {
+                                    Image(systemName: symbol == "default" ? (member.role == .child ? "face.smiling" : "person.crop.circle") : symbol)
+                                        .font(.title2)
+                                        .foregroundStyle(symbolSelection == symbol ? .white : FamiljenTheme.navy)
+                                        .frame(width: 46, height: 46)
+                                        .background(symbolSelection == symbol ? FamiljenTheme.navy : FamiljenTheme.sand.opacity(0.55), in: Circle())
+                                    if symbol == "default" {
+                                        Text("Standard").font(.caption2)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(symbol == "default" ? "Standardikon" : "Välj profilikon")
+                            .accessibilityAddTraits(symbolSelection == symbol ? .isSelected : [])
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
                 if let errorMessage { Section { Text(errorMessage).font(.footnote).foregroundStyle(.red) } }
             }
             .navigationTitle("Redigera profil").navigationBarTitleDisplayMode(.inline)
@@ -131,6 +163,10 @@ private struct MemberProfileEditor: View {
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard clean.count <= 80 else { errorMessage = "Namnet får vara högst 80 tecken."; return }
         isSaving = true; defer { isSaving = false }
-        if await onSave(clean) { dismiss() } else { errorMessage = "Det gick inte att spara ändringen." }
+        if await onSave(clean, symbolSelection == "default" ? nil : symbolSelection) {
+            dismiss()
+        } else {
+            errorMessage = "Det gick inte att spara ändringen."
+        }
     }
 }

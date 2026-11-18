@@ -587,7 +587,7 @@ struct FamilyCalendarView: View {
             FamilyCalendarItemDetailView(item: item, members: model.members)
         }
         .sheet(isPresented: $showingEditor, onDismiss: { editingItem = nil }) {
-            FamilyItemEditor(item: editingItem, members: model.members, singleOccurrence: editingSingleOccurrence) { title, details, location, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurrenceFrequency, reminderOffsets in
+            FamilyItemEditor(item: editingItem, members: model.members, singleOccurrence: editingSingleOccurrence, initialKind: selectedKind) { title, details, location, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurrenceFrequency, reminderOffsets in
                 if editingSingleOccurrence, let item = editingItem {
                     return await model.saveOccurrenceOverride(
                         seriesID: item.id, occurrenceDate: item.startsAt, title: title,
@@ -823,6 +823,7 @@ private struct FamilyItemEditor: View {
     let item: FamilyItem?
     let members: [FamilyMember]
     var singleOccurrence: Bool = false
+    var initialKind: FamilyItemKind? = nil
     let onSave: (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool
 
     @State private var title: String
@@ -841,16 +842,17 @@ private struct FamilyItemEditor: View {
     @State private var isReadingImage = false
     @State private var importMessage: String?
 
-    init(item: FamilyItem?, members: [FamilyMember], singleOccurrence: Bool = false, onSave: @escaping (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool) {
+    init(item: FamilyItem?, members: [FamilyMember], singleOccurrence: Bool = false, initialKind: FamilyItemKind? = nil, onSave: @escaping (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool) {
         self.item = item
         self.members = members
         self.singleOccurrence = singleOccurrence
+        self.initialKind = initialKind
         self.onSave = onSave
         _title = State(initialValue: item?.title ?? "")
         _details = State(initialValue: item?.details ?? "")
         _location = State(initialValue: item?.location ?? "")
         _startsAt = State(initialValue: item?.startsAt ?? .now)
-        _kind = State(initialValue: item?.kind ?? .appointment)
+        _kind = State(initialValue: item?.kind ?? initialKind ?? .appointment)
         _selectedMemberIDs = State(initialValue: Set(item?.memberIDs ?? []))
         _isForEveryone = State(initialValue: item?.isForEveryone ?? false)
         _responsibleSelection = State(initialValue: item?.responsibleMemberID?.uuidString ?? "")
@@ -880,8 +882,13 @@ private struct FamilyItemEditor: View {
                     Text("Bilden läses på den här iPhone-enheten. Kontrollera alltid uppgifterna innan du sparar.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                Section("Aktivitet") {
-                    TextField("Rubrik", text: $title)
+                Section(kind == .birthday ? "Födelsedag" : "Aktivitet") {
+                    TextField(kind == .birthday ? "Vems födelsedag?" : "Rubrik", text: $title)
+                    if kind == .birthday {
+                        Text("Välj personen och födelsedatumet. Familjen visar sedan födelsedagen automatiskt varje år.")
+                            .font(.caption)
+                            .foregroundStyle(FamiljenTheme.muted)
+                    }
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 94), spacing: 10)], spacing: 10) {
                         ForEach(FamilyItemKind.calendarKinds, id: \.self) { value in
                             Button {
@@ -974,7 +981,7 @@ private struct FamilyItemEditor: View {
                             .accessibilityAddTraits(selectedMemberIDs.contains(member.id) ? .isSelected : [])
                         }
                     }
-                    Text("Du kan välja flera personer. Lämna alla om händelsen ännu inte har tilldelats någon.")
+                    Text(kind == .birthday ? "Välj personen som fyller år." : "Du kan välja flera personer. Lämna alla om händelsen ännu inte har tilldelats någon.")
                         .font(.caption).foregroundStyle(FamiljenTheme.muted)
                 }
                 Section("Ansvarig") {
@@ -996,7 +1003,7 @@ private struct FamilyItemEditor: View {
             .onChange(of: kind) { _, newKind in
                 if newKind == .birthday { recurrenceFrequency = .yearly }
             }
-            .navigationTitle(item == nil ? "Ny aktivitet" : "Redigera aktivitet")
+            .navigationTitle(item == nil ? (kind == .birthday ? "Ny födelsedag" : "Ny aktivitet") : (kind == .birthday ? "Redigera födelsedag" : "Redigera aktivitet"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Avbryt") { dismiss() } }

@@ -63,7 +63,7 @@ private struct FamilyTabShell: View {
                 case .health:
                     FamilyHealthView()
                 case .birthdays:
-                    FamilyCalendarView(initialKind: .birthday)
+                    FamilyBirthdaysView()
                 case .shopping:
                     ShoppingListView()
                 case .more:

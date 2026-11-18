@@ -719,7 +719,9 @@ private struct FamilyItemEditor: View {
         _isForEveryone = State(initialValue: item?.isForEveryone ?? false)
         _responsibleSelection = State(initialValue: item?.responsibleMemberID?.uuidString ?? "")
         _recurrenceFrequency = State(initialValue: item?.recurrenceFrequency ?? (item?.isRecurringYearly == true ? .yearly : .none))
-        _selectedReminderOffsets = State(initialValue: Set(item?.reminderOffsets ?? [24 * 60 * 60, 60 * 60]))
+        let savedDefaults = UserDefaults.standard.array(forKey: "familjen.defaultReminderOffsets") as? [Int]
+            ?? [24 * 60 * 60, 60 * 60]
+        _selectedReminderOffsets = State(initialValue: Set(item?.reminderOffsets ?? savedDefaults))
     }
 
     var body: some View {

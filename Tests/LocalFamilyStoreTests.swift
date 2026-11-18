@@ -874,4 +874,42 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertTrue(store.giftIdeas.isEmpty)
     }
 
+
+    func testChristmasGiftListPersistsAndSupportsUpdateAndDelete() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let owner = try XCTUnwrap(store.members.first)
+        store.addChristmasGift(recipient: "Cleo", title: "  Hörlurar  ",
+                               note: "  Rosa  ", responsibleMemberID: owner.id)
+        var gift = try XCTUnwrap(store.christmasGifts.first)
+        XCTAssertEqual(gift.title, "Hörlurar")
+        XCTAssertEqual(gift.note, "Rosa")
+        XCTAssertEqual(gift.responsibleMemberID, owner.id)
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.christmasGifts, store.christmasGifts)
+
+        gift.status = .purchased
+        gift.note = "Svarta"
+        store.updateChristmasGift(gift)
+        let updated = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(updated.christmasGifts.first?.status, .purchased)
+        XCTAssertEqual(updated.christmasGifts.first?.note, "Svarta")
+
+        store.deleteChristmasGift(gift.id)
+        let deleted = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(deleted.christmasGifts.isEmpty)
+    }
+
+    func testChristmasGiftListRejectsBlankRecipientAndTitle() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let owner = try XCTUnwrap(store.members.first)
+        store.addChristmasGift(recipient: "Cleo", title: "   ", note: nil, responsibleMemberID: owner.id)
+        store.addChristmasGift(recipient: "   ", title: "Bok", note: nil, responsibleMemberID: owner.id)
+        XCTAssertTrue(store.christmasGifts.isEmpty)
+    }
+
 }

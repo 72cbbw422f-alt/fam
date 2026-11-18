@@ -470,7 +470,7 @@ struct FamilyCalendarView: View {
 
     private func filterChip(_ title: String, kind: FamilyItemKind?) -> some View {
         Button { selectedKind = kind } label: {
-            Text(title).font(.caption.weight(.semibold))
+            Text(title).font(.system(size: 13, weight: .semibold))
                 .padding(.horizontal, 13).padding(.vertical, 8)
                 .foregroundStyle(selectedKind == kind ? .white : FamiljenTheme.ink)
                 .background(selectedKind == kind ? FamiljenTheme.navy : .white, in: Capsule())
@@ -500,11 +500,11 @@ struct FamilyCalendarView: View {
         HStack(spacing: 13) {
             VStack(spacing: 2) {
                 Text(item.startsAt.formatted(.dateTime.day())).font(.title2.weight(.semibold))
-                Text(item.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased()).font(.caption2.weight(.bold))
+                Text(item.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased()).font(.system(size: 11, weight: .bold))
             }
             .foregroundStyle(FamiljenTheme.navy).frame(width: 42)
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.title).font(.subheadline.weight(.semibold)).foregroundStyle(FamiljenTheme.ink)
+                Text(item.title).font(.system(size: 16, weight: .semibold)).foregroundStyle(FamiljenTheme.ink)
                 HStack(spacing: 6) {
                     Text(item.kind.displayName)
                     if item.recurrenceFrequency != .none || item.isRecurringYearly {
@@ -514,25 +514,25 @@ struct FamilyCalendarView: View {
                     Text("·")
                     Text(item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
                 }
-                .font(.caption).foregroundStyle(FamiljenTheme.muted)
+                .font(.system(size: 14, weight: .medium)).foregroundStyle(FamiljenTheme.muted)
                 if item.isForEveryone {
                     Label("Hela familjen", systemImage: "person.3.fill")
-                        .font(.caption2).foregroundStyle(FamiljenTheme.champagneDeep)
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(FamiljenTheme.champagneDeep)
                 } else {
                     let names = model.members.filter { item.memberIDs.contains($0.id) }.map(\.displayName)
                     if !names.isEmpty {
-                        Text(names.joined(separator: " · "))
-                            .font(.caption2).foregroundStyle(FamiljenTheme.muted)
+                        Text("Gäller: " + names.joined(separator: " · "))
+                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(FamiljenTheme.muted)
                     }
                 }
                 if let responsibleID = item.responsibleMemberID,
                    let responsible = model.members.first(where: { $0.id == responsibleID }) {
                     Text("Ansvarig: \(responsible.displayName)")
-                        .font(.caption2).foregroundStyle(FamiljenTheme.muted)
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(FamiljenTheme.muted)
                 }
                 if let location = item.location, !location.isEmpty {
                     Label(location, systemImage: "mappin.and.ellipse")
-                        .font(.caption2).foregroundStyle(FamiljenTheme.muted)
+                        .font(.system(size: 12, weight: .medium)).foregroundStyle(FamiljenTheme.muted)
                         .lineLimit(1)
                 }
             }

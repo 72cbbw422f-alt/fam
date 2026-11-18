@@ -15,13 +15,17 @@ struct SeasonalFamilyHero: View {
         let day = calendar.component(.day, from: .now)
         let year = calendar.component(.year, from: .now)
 
-        let firstAdvent = firstSundayOnOrAfterNovember27(year: year, calendar: calendar)
-        let firstAdventDay = calendar.component(.day, from: firstAdvent)
-        let isAdventPeriod = (month == 11 && day >= firstAdventDay) || (month == 12 && day <= 12) || (month == 12 && day >= 14 && day <= 23)
+        let firstAdvent = calendar.startOfDay(for: firstSundayOnOrAfterNovember27(year: year, calendar: calendar))
+        let today = calendar.startOfDay(for: .now)
+        var christmasEveComponents = DateComponents()
+        christmasEveComponents.year = year
+        christmasEveComponents.month = 12
+        christmasEveComponents.day = 24
+        let christmasEve = calendar.date(from: christmasEveComponents) ?? firstAdvent
 
-        if isAdventPeriod { return .advent }
         if month == 12 && day == 13 { return .lucia }
-        if month == 12 && day >= 24 || month == 1 && day <= 6 { return .christmas }
+        if today >= firstAdvent && today < christmasEve { return .advent }
+        if (month == 12 && day >= 24) || (month == 1 && day <= 6) { return .christmas }
 
         switch month {
         case 12, 1, 2: return .winter

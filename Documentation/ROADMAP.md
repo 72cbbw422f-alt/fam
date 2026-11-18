@@ -202,3 +202,24 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Behåll separata filter för respektive kategori när användaren vill avgränsa listan.
 - [x] Förtydliga tomläget så det beskriver hela hälsovyn.
 - **Design:** återanvänd kalenderns befintliga filterchips, kategoriikoner och färger.
+
+## Nästa förbättringar efter första familjetestet (2026-11-18)
+
+### Startsida
+- [x] Visa två profiler i familjeraden på startsidan för den första användningen med Niklas och Villemo.
+
+### Inköpslista
+- [x] Ta bort en vara från den aktiva listan direkt när den bockas av.
+- [ ] Lägg till tydlig återkoppling när en vara är avklarad.
+- [ ] När familjedelning/synk finns: skapa notis till den andra familjemedlemmen när en ny vara läggs till. I local-first-betan är listan enhetslokal, så en annan telefon kan ännu inte se ändringen eller få en notis.
+
+### Kalender
+- [ ] Förbättra överblicken med tydligare datumgruppering och en snabbare sammanfattning av kommande aktiviteter.
+- [x] Behåll redigering av befintliga händelser: tryck på en aktivitet i kalenderlistan för att öppna redigeraren; återkommande händelser frågar om ändringen gäller ett tillfälle eller hela serien.
+- [ ] Gör redigeringsmöjligheten tydligare i gränssnittet, så att det framgår att aktiviteter går att öppna och ändra.
+
+### Familjeprofiler
+- [ ] Låt användaren välja profilbild/ikon per familjemedlem och visa samma val konsekvent på startsidan, i kalenderfilter och i profilhanteringen.
+
+**Teknisk ordning:** Förbättra först kalenderns läsbarhet och redigeringsflöde. Därefter byggs profilernas ikonval med bakåtkompatibel lokal lagring. Notiser för nya inköpsvaror mellan två telefoner väntar på gemensam datalagring och notifieringslösning; skapa inte skenbar delning i local-first-betan.
+

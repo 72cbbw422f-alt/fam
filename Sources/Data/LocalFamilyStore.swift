@@ -334,6 +334,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         var messages: [FamilyMessage]?
         var skippedOccurrences: [FamilyOccurrenceException]? = nil
         var occurrenceOverrides: [FamilyOccurrenceOverride]? = nil
+        var giftIdeas: [GiftIdea]? = nil
     }
 
     private func loadFromDisk() {
@@ -346,6 +347,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             items = snapshot.items
             skippedOccurrences = snapshot.skippedOccurrences ?? []
             occurrenceOverrides = snapshot.occurrenceOverrides ?? []
+            giftIdeas = snapshot.giftIdeas ?? []
             shoppingItems = snapshot.shoppingItems
             notifications = snapshot.notifications
             messages = snapshot.messages ?? []
@@ -372,7 +374,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let snapshot = Snapshot(family: family, members: members, items: items,
                                 shoppingItems: shoppingItems, notifications: notifications, messages: messages,
                                 skippedOccurrences: skippedOccurrences,
-                                occurrenceOverrides: occurrenceOverrides)
+                                occurrenceOverrides: occurrenceOverrides,
+                                giftIdeas: giftIdeas)
         do {
             let data = try JSONEncoder().encode(snapshot)
             try data.write(to: fileURL, options: .atomic)

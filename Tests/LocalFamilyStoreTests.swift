@@ -58,6 +58,8 @@ final class LocalFamilyStoreTests: XCTestCase {
 
         store.createFamily(name: "Familjen", ownerName: "Niklas")
         store.addChild(name: "Barnprofil")
+        let child = try XCTUnwrap(store.members.first(where: { $0.role == .child }))
+        store.updateMemberSymbol(id: child.id, symbolName: "heart.fill")
         store.addShoppingItem("Mjölk")
         guard let family = store.family else {
             return XCTFail("Family should be created")
@@ -70,6 +72,7 @@ final class LocalFamilyStoreTests: XCTestCase {
         let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
         XCTAssertEqual(reloaded.family, family)
         XCTAssertEqual(reloaded.members, store.members)
+        XCTAssertEqual(reloaded.members.first(where: { $0.id == child.id })?.symbolName, "heart.fill")
         XCTAssertEqual(reloaded.shoppingItems, store.shoppingItems)
     }
 

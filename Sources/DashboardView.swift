@@ -177,7 +177,7 @@ struct DashboardView: View {
                 }
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        ForEach(members) { member in
+                        ForEach(members.prefix(2)) { member in
                             VStack(spacing: 5) {
                                 Circle()
                                     .fill(avatarColor(for: member))

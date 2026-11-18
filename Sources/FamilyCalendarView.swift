@@ -1,5 +1,144 @@
 import SwiftUI
 import PhotosUI
+import MapKit
+
+
+@MainActor
+private final class CalendarPlaceSearchModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
+    @Published var suggestions: [MKLocalSearchCompletion] = []
+    private let completer = MKLocalSearchCompleter()
+
+    override init() {
+        super.init()
+        completer.delegate = self
+        completer.resultTypes = [.address, .pointOfInterest]
+    }
+
+    func updateQuery(_ query: String) {
+        let cleaned = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard cleaned.count >= 2 else {
+            suggestions = []
+            completer.cancel()
+            return
+        }
+        completer.queryFragment = cleaned
+    }
+
+    func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
+        suggestions = Array(completer.results.prefix(5))
+    }
+
+    func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
+        suggestions = []
+    }
+
+    func resolve(_ suggestion: MKLocalSearchCompletion) async -> String {
+        let request = MKLocalSearch.Request(completion: suggestion)
+        do {
+            let response = try await MKLocalSearch(request: request).start()
+            guard let place = response.mapItems.first else {
+                return [suggestion.title, suggestion.subtitle]
+                    .filter { !$0.isEmpty }
+                    .joined(separator: ", ")
+            }
+            let name = place.name ?? suggestion.title
+            let address = place.placemark.title ?? suggestion.subtitle
+            if address.localizedCaseInsensitiveContains(name) { return address }
+            return [name, address].filter { !$0.isEmpty }.joined(separator: ", ")
+        } catch {
+            return [suggestion.title, suggestion.subtitle]
+                .filter { !$0.isEmpty }
+                .joined(separator: ", ")
+        }
+    }
+
+    func clearSuggestions() {
+        suggestions = []
+        completer.cancel()
+    }
+}
+
+private struct PlaceSearchField: View {
+    @Binding var text: String
+    @StateObject private var searchModel = CalendarPlaceSearchModel()
+    @State private var isResolving = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 9) {
+                Image(systemName: "mappin.and.ellipse")
+                    .foregroundStyle(FamiljenTheme.champagneDeep)
+                TextField("Sök plats eller adress", text: $text)
+                    .textContentType(.fullStreetAddress)
+                    .autocorrectionDisabled()
+                    .onChange(of: text) { _, value in
+                        searchModel.updateQuery(value)
+                    }
+                if isResolving {
+                    ProgressView()
+                } else if !text.isEmpty {
+                    Button {
+                        text = ""
+                        searchModel.clearSuggestions()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(FamiljenTheme.muted)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Rensa plats")
+                }
+            }
+
+            if !searchModel.suggestions.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(Array(searchModel.suggestions.enumerated()), id: \.offset) { _, suggestion in
+                        Button {
+                            Task {
+                                isResolving = true
+                                let resolved = await searchModel.resolve(suggestion)
+                                text = resolved
+                                searchModel.clearSuggestions()
+                                isResolving = false
+                            }
+                        } label: {
+                            HStack(alignment: .top, spacing: 10) {
+                                Image(systemName: "mappin")
+                                    .foregroundStyle(FamiljenTheme.champagneDeep)
+                                    .frame(width: 18)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(suggestion.title)
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(FamiljenTheme.ink)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    if !suggestion.subtitle.isEmpty {
+                                        Text(suggestion.subtitle)
+                                            .font(.caption)
+                                            .foregroundStyle(FamiljenTheme.muted)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 10)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if suggestion.title != searchModel.suggestions.last?.title {
+                            Divider().overlay(FamiljenTheme.sand)
+                        }
+                    }
+                }
+                .padding(.horizontal, 10)
+                .background(.white, in: RoundedRectangle(cornerRadius: 13))
+                .overlay(RoundedRectangle(cornerRadius: 13).stroke(FamiljenTheme.sand, lineWidth: 1))
+            } else {
+                Text("Börja skriva så får du platsförslag från Apple Kartor.")
+                    .font(.caption)
+                    .foregroundStyle(FamiljenTheme.muted)
+            }
+        }
+        .padding(.vertical, 3)
+    }
+}
 
 struct FamilyCalendarView: View {
     @StateObject private var model = FamilyCalendarViewModel()
@@ -593,8 +732,7 @@ private struct FamilyItemEditor: View {
                         Text("Ändringen gäller bara det här tillfället. Övriga datum i serien påverkas inte.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    TextField("Plats eller adress (valfritt)", text: $location)
-                        .textContentType(.fullStreetAddress)
+                    PlaceSearchField(text: $location)
                     TextField("Anteckningar (valfritt)", text: $details, axis: .vertical).lineLimit(2...5)
                 }
                 Section {

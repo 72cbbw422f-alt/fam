@@ -1,5 +1,4 @@
 import SwiftUI
-import CloudKit
 import UserNotifications
 
 struct CapabilityDiagnosticsView: View {
@@ -102,25 +101,12 @@ struct CapabilityDiagnosticsView: View {
         iCloudStatus = .checking
         notificationStatus = .checking
 
-        do {
-            let status = try await CKContainer.default().accountStatus()
-            switch status {
-            case .available:
-                iCloudStatus = .success("iCloud-konto tillgängligt")
-            case .noAccount:
-                iCloudStatus = .warning("Inget iCloud-konto inloggat")
-            case .restricted:
-                iCloudStatus = .warning("iCloud är begränsat")
-            case .couldNotDetermine:
-                iCloudStatus = .warning("Kunde inte avgöra status")
-            case .temporarilyUnavailable:
-                iCloudStatus = .warning("Tillfälligt otillgängligt")
-            @unknown default:
-                iCloudStatus = .warning("Okänd iCloud-status")
-            }
-        } catch {
-            iCloudStatus = .failure("Kontrollen misslyckades: \(error.localizedDescription)")
-        }
+        // This beta is local-first and is commonly installed with an unsigned
+        // sideloaded build. Querying CKContainer.default() without the final
+        // iCloud container entitlement can terminate the app on some devices.
+        // Do not probe CloudKit until the app has a configured container and
+        // signed entitlements.
+        iCloudStatus = .pending("Inte aktiverat i denna betaversion")
 
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         switch settings.authorizationStatus {

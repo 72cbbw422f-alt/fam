@@ -12,6 +12,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     @Published private(set) var occurrenceOverrides: [FamilyOccurrenceOverride] = []
     @Published private(set) var shoppingItems: [ShoppingItem] = []
     @Published private(set) var giftIdeas: [GiftIdea] = []
+    @Published private(set) var christmasGifts: [ChristmasGift] = []
     @Published private(set) var notifications: [FamilyNotification] = []
     @Published private(set) var messages: [FamilyMessage] = []
     @Published private(set) var persistenceError: String?
@@ -61,6 +62,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         occurrenceOverrides = []
         shoppingItems = []
         giftIdeas = []
+        christmasGifts = []
         notifications = []
         messages = []
         saveToDisk()
@@ -299,6 +301,41 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         if !saveToDisk() { giftIdeas = previous }
     }
 
+
+    func addChristmasGift(recipient: String, title: String, note: String?, responsibleMemberID: UUID?) {
+        let cleanRecipient = recipient.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanRecipient.isEmpty, cleanRecipient.count <= 100,
+              !cleanTitle.isEmpty, cleanTitle.count <= 160 else { return }
+        let validResponsibleID = members.first(where: { $0.id == responsibleMemberID })?.id
+        let cleanNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        christmasGifts.append(ChristmasGift(recipient: cleanRecipient, title: cleanTitle,
+            note: cleanNote?.isEmpty == true ? nil : cleanNote, responsibleMemberID: validResponsibleID))
+        saveToDisk()
+    }
+
+    func updateChristmasGift(_ gift: ChristmasGift) {
+        guard let index = christmasGifts.firstIndex(where: { $0.id == gift.id }) else { return }
+        let recipient = gift.recipient.trimmingCharacters(in: .whitespacesAndNewlines)
+        let title = gift.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !recipient.isEmpty, recipient.count <= 100, !title.isEmpty, title.count <= 160 else { return }
+        let previous = christmasGifts[index]
+        var updated = gift
+        updated.recipient = recipient
+        updated.title = title
+        let cleanNote = gift.note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        updated.note = cleanNote?.isEmpty == true ? nil : cleanNote
+        updated.responsibleMemberID = members.first(where: { $0.id == gift.responsibleMemberID })?.id
+        christmasGifts[index] = updated
+        if !saveToDisk() { christmasGifts[index] = previous }
+    }
+
+    func deleteChristmasGift(_ id: UUID) {
+        let previous = christmasGifts
+        christmasGifts.removeAll { $0.id == id }
+        if !saveToDisk() { christmasGifts = previous }
+    }
+
     func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) {
         guard let senderID = members.first(where: { $0.role == .owner })?.id else { return }
         let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -335,6 +372,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         var skippedOccurrences: [FamilyOccurrenceException]? = nil
         var occurrenceOverrides: [FamilyOccurrenceOverride]? = nil
         var giftIdeas: [GiftIdea]? = nil
+        var christmasGifts: [ChristmasGift]? = nil
     }
 
     private func loadFromDisk() {
@@ -348,6 +386,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             skippedOccurrences = snapshot.skippedOccurrences ?? []
             occurrenceOverrides = snapshot.occurrenceOverrides ?? []
             giftIdeas = snapshot.giftIdeas ?? []
+            christmasGifts = snapshot.christmasGifts ?? []
             shoppingItems = snapshot.shoppingItems
             notifications = snapshot.notifications
             messages = snapshot.messages ?? []
@@ -375,7 +414,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                                 shoppingItems: shoppingItems, notifications: notifications, messages: messages,
                                 skippedOccurrences: skippedOccurrences,
                                 occurrenceOverrides: occurrenceOverrides,
-                                giftIdeas: giftIdeas)
+                                giftIdeas: giftIdeas, christmasGifts: christmasGifts)
         do {
             let data = try JSONEncoder().encode(snapshot)
             try data.write(to: fileURL, options: .atomic)

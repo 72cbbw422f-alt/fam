@@ -35,3 +35,37 @@ struct GiftIdea: Identifiable, Codable, Equatable {
         self.createdAt = createdAt
     }
 }
+
+
+enum ChristmasGiftStatus: String, Codable, CaseIterable, Identifiable {
+    case idea, planned, purchased
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .idea: return "Idé"
+        case .planned: return "Planerad"
+        case .purchased: return "Inköpt"
+        }
+    }
+}
+
+struct ChristmasGift: Identifiable, Codable, Equatable {
+    let id: UUID
+    var recipient: String
+    var title: String
+    var note: String?
+    var responsibleMemberID: UUID?
+    var status: ChristmasGiftStatus
+    let createdAt: Date
+
+    init(id: UUID = UUID(), recipient: String, title: String, note: String? = nil,
+         responsibleMemberID: UUID? = nil, status: ChristmasGiftStatus = .idea, createdAt: Date = .now) {
+        self.id = id
+        self.recipient = recipient
+        self.title = title
+        self.note = note
+        self.responsibleMemberID = responsibleMemberID
+        self.status = status
+        self.createdAt = createdAt
+    }
+}

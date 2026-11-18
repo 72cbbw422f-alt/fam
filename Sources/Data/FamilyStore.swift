@@ -14,6 +14,7 @@ final class FamilyStore: ObservableObject {
     @Published private(set) var occurrenceOverrides: [FamilyOccurrenceOverride] = []
     @Published private(set) var shoppingItems: [ShoppingItem] = []
     @Published private(set) var giftIdeas: [GiftIdea] = []
+    @Published private(set) var christmasGifts: [ChristmasGift] = []
     @Published private(set) var notifications: [FamilyNotification] = []
     @Published private(set) var messages: [FamilyMessage] = []
     @Published private(set) var persistenceError: String?
@@ -38,6 +39,7 @@ final class FamilyStore: ObservableObject {
         occurrenceOverrides = repository.occurrenceOverrides
         shoppingItems = repository.shoppingItems
         giftIdeas = repository.giftIdeas
+        christmasGifts = repository.christmasGifts
         notifications = repository.notifications
         messages = repository.messages
         persistenceError = repository.persistenceError
@@ -79,6 +81,9 @@ final class FamilyStore: ObservableObject {
     }
     func updateGiftIdea(_ idea: GiftIdea) { repository.updateGiftIdea(idea); refresh() }
     func deleteGiftIdea(_ id: UUID) { repository.deleteGiftIdea(id); refresh() }
+    func addChristmasGift(recipient: String, title: String, note: String?, responsibleMemberID: UUID?) { repository.addChristmasGift(recipient: recipient, title: title, note: note, responsibleMemberID: responsibleMemberID); refresh() }
+    func updateChristmasGift(_ gift: ChristmasGift) { repository.updateChristmasGift(gift); refresh() }
+    func deleteChristmasGift(_ id: UUID) { repository.deleteChristmasGift(id); refresh() }
     func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) {
         repository.sendMessage(text, conversationID: conversationID, kind: kind); refresh()
     }

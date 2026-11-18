@@ -59,6 +59,10 @@ struct FamilyMoreView: View {
                             menuRow("cart", title: "Inköpslista", subtitle: "Det ni behöver handla")
                         }
                         Divider().overlay(FamiljenTheme.sand).padding(.leading, 60)
+                        NavigationLink { ChristmasGiftListView() } label: {
+                            menuRow("gift.fill", title: "Julklappslista", subtitle: "Planera julklappar och vem som ordnar dem")
+                        }
+                        Divider().overlay(FamiljenTheme.sand).padding(.leading, 60)
                         NavigationLink { NotificationsView() } label: {
                             menuRow("bell", title: "Notiser", subtitle: "Aviseringar från Familjen")
                         }

@@ -13,6 +13,7 @@ protocol FamilyRepository: AnyObject {
     var occurrenceOverrides: [FamilyOccurrenceOverride] { get }
     var shoppingItems: [ShoppingItem] { get }
     var giftIdeas: [GiftIdea] { get }
+    var christmasGifts: [ChristmasGift] { get }
     var notifications: [FamilyNotification] { get }
     var messages: [FamilyMessage] { get }
     var persistenceError: String? { get }
@@ -40,6 +41,9 @@ protocol FamilyRepository: AnyObject {
     func deleteShoppingItem(_ id: UUID)
     func addGiftIdea(memberID: UUID, birthdayItemID: UUID, title: String, note: String?)
     func updateGiftIdea(_ idea: GiftIdea)
+    func addChristmasGift(recipient: String, title: String, note: String?, responsibleMemberID: UUID?)
+    func updateChristmasGift(_ gift: ChristmasGift)
+    func deleteChristmasGift(_ id: UUID)
     func deleteGiftIdea(_ id: UUID)
     func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind)
     func markConversationRead(_ conversationID: String)
@@ -49,9 +53,13 @@ protocol FamilyRepository: AnyObject {
 extension FamilyRepository {
     var skippedOccurrences: [FamilyOccurrenceException] { [] }
     var giftIdeas: [GiftIdea] { [] }
+    var christmasGifts: [ChristmasGift] { [] }
     func addGiftIdea(memberID: UUID, birthdayItemID: UUID, title: String, note: String?) { }
     func updateGiftIdea(_ idea: GiftIdea) { }
     func deleteGiftIdea(_ id: UUID) { }
+    func addChristmasGift(recipient: String, title: String, note: String?, responsibleMemberID: UUID?) { }
+    func updateChristmasGift(_ gift: ChristmasGift) { }
+    func deleteChristmasGift(_ id: UUID) { }
     var occurrenceOverrides: [FamilyOccurrenceOverride] { [] }
     func saveOccurrenceOverride(seriesID: UUID, occurrenceDate: Date, item: FamilyItem) { }
     func skipOccurrence(of item: FamilyItem) { }

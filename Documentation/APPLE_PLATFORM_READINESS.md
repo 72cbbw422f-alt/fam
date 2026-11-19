@@ -58,7 +58,7 @@ Current implementation progress on `local-first-beta`:
 - CloudKit record mapping, schema documentation, migrations and deterministic IDs.
 - CKShare creation/acceptance flow and permission model, with device tests deferred until entitlements exist.
 - Local notifications and reminder rescheduling.
-- EventKit calendar import/export with explicit user permission and duplicate protection.
+- Familjen använder en helt egen kalender och har ingen koppling till Apple Kalender eller EventKit.
 - On-device Vision OCR; never upload source screenshots unless the user explicitly chooses a cloud feature that needs them.
 - APNs registration interface and server contract, while keeping credentials out of source control.
 - Export/import and recovery path so local beta data can be migrated safely.

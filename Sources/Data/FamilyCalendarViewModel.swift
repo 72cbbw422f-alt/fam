@@ -8,10 +8,6 @@ final class FamilyCalendarViewModel: ObservableObject {
     @Published private(set) var skippedOccurrences: [FamilyOccurrenceException] = []
     @Published private(set) var occurrenceOverrides: [FamilyOccurrenceOverride] = []
     @Published private(set) var members: [FamilyMember] = []
-    @Published private(set) var appleCalendarEntries: [AppleCalendarEntry] = []
-    @Published private(set) var isAppleCalendarEnabled = false
-    @Published var appleCalendarError: String?
-    private let appleCalendar = AppleCalendarImport()
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
     private let store: any FamilyRepository
@@ -28,19 +24,6 @@ final class FamilyCalendarViewModel: ObservableObject {
         sourceItems = store.items
         items = DashboardViewModel.project(sourceItems, from: .now, skipping: skippedOccurrences, overrides: occurrenceOverrides)
         isLoading = false
-    }
-
-    func enableAppleCalendar() async {
-        await appleCalendar.enableAndLoad()
-        appleCalendarEntries = appleCalendar.entries
-        isAppleCalendarEnabled = appleCalendar.isEnabled
-        appleCalendarError = appleCalendar.errorMessage
-    }
-
-    func refreshAppleCalendar() {
-        appleCalendar.refresh()
-        appleCalendarEntries = appleCalendar.entries
-        appleCalendarError = appleCalendar.errorMessage
     }
 
     func startRealtimeIfNeeded() async {}

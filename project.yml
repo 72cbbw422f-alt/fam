@@ -13,8 +13,6 @@ settings:
     GENERATE_INFOPLIST_FILE: YES
     PRODUCT_BUNDLE_IDENTIFIER: se.familjen.app
     INFOPLIST_KEY_CFBundleDisplayName: Familjen
-    INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: Familjen kan lägga till valda bokningar i din kalender.
-    INFOPLIST_KEY_NSCalendarsUsageDescription: Familjen kan synkronisera valda bokningar med Apple Kalender.
 targets:
   Familjen:
     type: application

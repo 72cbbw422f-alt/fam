@@ -32,7 +32,7 @@ struct FamilySettingsView: View {
                 )) {
                     Label("Lokala kalenderpåminnelser", systemImage: "bell.badge")
                         .font(.body.weight(.medium))
-                    Text("Påminnelser visas på den här iPhonen. De delas inte med andra familjemedlemmars enheter.")
+                    Text("Påminnelser visas på den här iPhonen. De delas inte med andra familjemedlemmars enheter. Du får frågan om notiser första gången du startar Familjen.")
                         .font(.caption)
                         .foregroundStyle(FamiljenTheme.muted)
                 }

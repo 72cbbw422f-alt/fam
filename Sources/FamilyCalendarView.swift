@@ -161,7 +161,6 @@ struct FamilyCalendarView: View {
     @State private var showEditScopeConfirmation = false
     @State private var pendingDeletion: FamilyItem?
     @State private var showDeleteConfirmation = false
-    @AppStorage("familjen.localRemindersEnabled") private var localRemindersEnabled = false
 
     private var visibleItems: [FamilyItem] {
         let peopleFiltered = FamilyCalendarViewModel.filteredItems(model.items, selectedMemberIDs: selectedMemberIDs)
@@ -417,12 +416,6 @@ struct FamilyCalendarView: View {
 
     private var calendarFilterSection: some View {
         Section {
-            Toggle(isOn: $localRemindersEnabled) {
-                Label("Påminnelser på den här enheten", systemImage: "bell.badge")
-                    .font(.subheadline.weight(.medium))
-            }
-            .tint(FamiljenTheme.navy)
-
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     filterChip("Alla", kind: nil)
@@ -670,15 +663,6 @@ struct FamilyCalendarView: View {
             await model.load()
             await refreshLocalReminders()
         }
-        .onChange(of: localRemindersEnabled) { _, enabled in
-            Task {
-                if enabled {
-                    let granted = await LocalReminderScheduler.requestPermission()
-                    if granted { await refreshLocalReminders() }
-                    else { localRemindersEnabled = false }
-                } else { await LocalReminderScheduler.clearAll() }
-            }
-        }
         .onChange(of: model.members.map(\.id)) { _, memberIDs in
             selectedMemberIDs.formIntersection(Set(memberIDs))
         }
@@ -703,7 +687,7 @@ struct FamilyCalendarView: View {
     }
 
     private func refreshLocalReminders() async {
-        guard localRemindersEnabled else { return }
+        guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
         await LocalReminderScheduler.schedule(
             for: model.sourceItems,
             skipping: model.skippedOccurrences,

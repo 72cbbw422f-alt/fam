@@ -76,6 +76,25 @@ private struct FamilyTabShell: View {
         }
         .background(FamiljenTheme.paper.ignoresSafeArea())
         .tint(FamiljenTheme.navy)
+        .task {
+            await requestNotificationPermissionOnFirstLaunch()
+        }
+    }
+
+    @MainActor
+    private func requestNotificationPermissionOnFirstLaunch() async {
+        let key = "familjen.didAskForNotificationPermission"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        UserDefaults.standard.set(true, forKey: key)
+        let granted = await LocalReminderScheduler.requestPermission()
+        UserDefaults.standard.set(granted, forKey: "familjen.localRemindersEnabled")
+        if granted {
+            await LocalReminderScheduler.schedule(
+                for: FamilyStore.shared.items,
+                skipping: FamilyStore.shared.skippedOccurrences,
+                overrides: FamilyStore.shared.occurrenceOverrides
+            )
+        }
     }
 
     private var tabBar: some View {

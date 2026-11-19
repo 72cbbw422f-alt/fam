@@ -592,6 +592,25 @@ struct FamilyCalendarView: View {
                         ProgressView("Hämtar kalendern …")
                     }
                 }
+                .overlay(alignment: .bottomTrailing) {
+                    Button {
+                        editingItem = nil
+                        editingSingleOccurrence = false
+                        showingEditor = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 21, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 58, height: 58)
+                            .background(FamiljenTheme.navy, in: Circle())
+                            .overlay(Circle().stroke(FamiljenTheme.champagne.opacity(0.8), lineWidth: 1.5))
+                            .shadow(color: FamiljenTheme.navy.opacity(0.24), radius: 10, x: 0, y: 5)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Lägg till aktivitet")
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 104)
+                }
         )
     }
 

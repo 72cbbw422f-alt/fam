@@ -2,10 +2,12 @@ name: iOS build
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches: [main, local-first-beta]
   workflow_dispatch:
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -23,17 +25,28 @@ jobs:
           xcode-select -p
           xcodebuild -version
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install build tools
+        run: brew install xcodegen librsvg
 
-      - name: Prepare build-only configuration
-        run: cp Sources/Config.swift.example Sources/Config.swift
+      - name: Render app icon
+        run: rsvg-convert -w 1024 -h 1024 Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.svg -o Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
 
       - name: Generate Xcode project
         run: xcodegen generate
 
       - name: Resolve Swift packages
         run: xcodebuild -resolvePackageDependencies -project Familjen.xcodeproj -scheme Familjen
+
+      - name: Run unit tests
+        run: |
+          DEVICE_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ { print $2; exit }')"
+          test -n "$DEVICE_ID"
+          xcodebuild \
+            -project Familjen.xcodeproj \
+            -scheme Familjen \
+            -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+            CODE_SIGNING_ALLOWED=NO \
+            test
 
       - name: Build for iOS Simulator
         run: |
@@ -44,3 +57,68 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+  build-device-ipa:
+    name: Build unsigned IPA (iPhone)
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          xcode-select -p
+          xcodebuild -version
+
+      - name: Install build tools
+        run: brew install xcodegen librsvg
+
+      - name: Render app icon
+        run: rsvg-convert -w 1024 -h 1024 Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.svg -o Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Resolve Swift packages
+        run: xcodebuild -resolvePackageDependencies -project Familjen.xcodeproj -scheme Familjen
+
+      - name: Build for physical iPhone (unsigned)
+        run: |
+          xcodebuild \
+            -project Familjen.xcodeproj \
+            -scheme Familjen \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          APP_PATH="build/Build/Products/Release-iphoneos/Familjen.app"
+          test -d "$APP_PATH"
+          echo "===== BUILT APP INFO.PLIST ====="
+          /usr/libexec/PlistBuddy -c "Print :UIDeviceFamily" "$APP_PATH/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Print :UIRequiresFullScreen" "$APP_PATH/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Print :UILaunchScreen" "$APP_PATH/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Print :UILaunchStoryboardName" "$APP_PATH/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Print :UISupportedInterfaceOrientations" "$APP_PATH/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$APP_PATH/Info.plist" || true
+          echo "===== APP EXECUTABLE / BUNDLE ====="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleSupportedPlatforms" "$APP_PATH/Info.plist"
+          mkdir -p package/Payload
+          cp -R "$APP_PATH" package/Payload/
+          cd package
+          /usr/bin/zip -qry ../Familjen-unsigned.ipa Payload
+          cd ..
+          test -s Familjen-unsigned.ipa
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Familjen-unsigned-IPA
+          path: Familjen-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

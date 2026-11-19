@@ -1,114 +1,160 @@
 import Combine
 import Foundation
-import Supabase
 
 @MainActor
 final class FamilyCalendarViewModel: ObservableObject {
     @Published private(set) var items: [FamilyItem] = []
+    @Published private(set) var sourceItems: [FamilyItem] = []
+    @Published private(set) var skippedOccurrences: [FamilyOccurrenceException] = []
+    @Published private(set) var occurrenceOverrides: [FamilyOccurrenceOverride] = []
     @Published private(set) var members: [FamilyMember] = []
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
+    private let store: any FamilyRepository
 
-    private let client: SupabaseClient
-    private let repository: FamilyDataRepository
-    private var familyID: UUID?
-    private var realtimeChannel: RealtimeChannelV2?
-    private var realtimeTasks: [Task<Void, Never>] = []
-
-    init(client: SupabaseClient = SupabaseClientProvider.makeClient()) {
-        self.client = client
-        self.repository = SupabaseFamilyRepository(client: client)
+    init(store: (any FamilyRepository)? = nil) {
+        self.store = store ?? FamilyRepositoryFactory.makeDefault()
     }
 
     func load() async {
-        guard !isLoading else { return }
         isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-        do {
-            let session = try await client.auth.session
-            let response = try await client.from("family_members").select("family_id")
-                .eq("user_id", value: session.user.id.uuidString).single().execute()
-            let membership = try JSONDecoder().decode(MembershipRecord.self, from: response.data)
-            familyID = membership.familyID
-            async let loadedItems = repository.loadUpcomingItems(familyID: membership.familyID, from: .now)
-            async let loadedMembers = repository.loadMembers(familyID: membership.familyID)
-            items = try await loadedItems
-            members = try await loadedMembers
-            await startRealtimeIfNeeded()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        members = store.members
+        skippedOccurrences = store.skippedOccurrences
+        occurrenceOverrides = store.occurrenceOverrides
+        sourceItems = store.items
+        items = DashboardViewModel.project(sourceItems, from: .now, skipping: skippedOccurrences, overrides: occurrenceOverrides)
+        isLoading = false
     }
 
-    func startRealtimeIfNeeded() async {
-        guard realtimeChannel == nil, let familyID else { return }
-        do {
-            let channel = client.channel("family-calendar-\\(familyID.uuidString)")
-            let inserts = channel.postgresChange(InsertAction.self, schema: "public", table: "family_items", filter: .eq("family_id", value: familyID.uuidString))
-            let updates = channel.postgresChange(UpdateAction.self, schema: "public", table: "family_items", filter: .eq("family_id", value: familyID.uuidString))
-            let deletes = channel.postgresChange(DeleteAction.self, schema: "public", table: "family_items")
-            await channel.subscribe()
-            realtimeChannel = channel
-            realtimeTasks = [
-                Task { [weak self] in for await _ in inserts { guard !Task.isCancelled else { break }; await self?.reloadItemsFromRealtime() } },
-                Task { [weak self] in for await _ in updates { guard !Task.isCancelled else { break }; await self?.reloadItemsFromRealtime() } },
-                Task { [weak self] in for await _ in deletes { guard !Task.isCancelled else { break }; await self?.reloadItemsFromRealtime() } }
-            ]
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+    func startRealtimeIfNeeded() async {}
+    func stopRealtime() async {}
+
+    func save(id: UUID?, title: String, details: String?, startsAt: Date, kind: FamilyItemKind,
+              memberID: UUID?, isRecurringYearly: Bool, reminderOffsets: [Int]) async -> Bool {
+        await save(id: id, title: title, details: details, startsAt: startsAt, kind: kind,
+                   memberIDs: memberID.map { [$0] } ?? [], isForEveryone: false,
+                   responsibleMemberID: nil, isRecurringYearly: isRecurringYearly,
+                   reminderOffsets: reminderOffsets, location: nil)
     }
 
-    func stopRealtime() async {
-        realtimeTasks.forEach { $0.cancel() }
-        realtimeTasks.removeAll()
-        if let realtimeChannel {
-            await client.removeChannel(realtimeChannel)
-            self.realtimeChannel = nil
-        }
-    }
-
-    private func reloadItemsFromRealtime() async {
-        guard let familyID else { return }
-        do { items = try await repository.loadUpcomingItems(familyID: familyID, from: .now) }
-        catch { errorMessage = error.localizedDescription }
-    }
-
-    func save(id: UUID?, title: String, details: String?, startsAt: Date, kind: FamilyItemKind, memberID: UUID?, isRecurringYearly: Bool) async -> Bool {
-        guard let familyID else { errorMessage = "Familjens uppgifter har inte hämtats ännu."; return false }
-        let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleanTitle.isEmpty, cleanTitle.count <= 160 else {
+    func save(id: UUID?, title: String, details: String?, startsAt: Date, kind: FamilyItemKind,
+              memberIDs: [UUID], isForEveryone: Bool, responsibleMemberID: UUID?,
+              isRecurringYearly: Bool, reminderOffsets: [Int], location: String?, recurrenceFrequency: FamilyRecurrenceFrequency = .none) async -> Bool {
+        let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, clean.count <= 160 else {
             errorMessage = "Ange en rubrik på 1–160 tecken."
             return false
         }
-        do {
-            if let id {
-                try await repository.updateFamilyItem(id: id, title: cleanTitle, details: details, startsAt: startsAt, kind: kind, memberID: memberID, isRecurringYearly: isRecurringYearly)
-            } else {
-                try await repository.createFamilyItem(familyID: familyID, title: cleanTitle, details: details, startsAt: startsAt, kind: kind, memberID: memberID, isRecurringYearly: isRecurringYearly)
-            }
-            await loadItems()
-            return true
-        } catch {
-            errorMessage = error.localizedDescription
+        let persistedDate = preservedRecurringDate(
+            id: id, proposedDate: startsAt, recurring: recurrenceFrequency != .none || isRecurringYearly,
+            recurrenceFrequency: recurrenceFrequency
+        )
+        store.saveCalendarItem(id: id, title: clean, details: details, startsAt: persistedDate,
+                               kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
+                               responsibleMemberID: responsibleMemberID, recurring: isRecurringYearly,
+                               reminderOffsets: reminderOffsets, location: location,
+                               recurrenceFrequency: recurrenceFrequency == FamilyRecurrenceFrequency.none && isRecurringYearly ? .yearly : recurrenceFrequency)
+        await load()
+        if let persistenceError = store.persistenceError {
+            errorMessage = persistenceError
             return false
+        }
+        errorMessage = nil
+        return true
+    }
+
+    func saveOccurrenceOverride(seriesID: UUID, occurrenceDate: Date, title: String,
+                                 details: String?, location: String?, startsAt: Date,
+                                 kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
+                                 responsibleMemberID: UUID?, reminderOffsets: [Int]) async -> Bool {
+        let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, clean.count <= 160,
+              let series = store.items.first(where: { $0.id == seriesID }) else {
+            errorMessage = "Aktiviteten kunde inte hittas."
+            return false
+        }
+        let validIDs = memberIDs.filter { id in store.members.contains(where: { $0.id == id }) }
+        let override = FamilyItem(
+            id: series.id, familyID: series.familyID, title: clean,
+            details: details, startsAt: startsAt, endsAt: nil, kind: kind,
+            memberID: nil, isRecurringYearly: false, reminderOffsets: reminderOffsets,
+            memberIDs: isForEveryone ? [] : validIDs, isForEveryone: isForEveryone,
+            responsibleMemberID: responsibleMemberID, location: location,
+            recurrenceFrequency: FamilyRecurrenceFrequency.none
+        )
+        store.saveOccurrenceOverride(seriesID: seriesID, occurrenceDate: occurrenceDate, item: override)
+        await load()
+        if let persistenceError = store.persistenceError {
+            errorMessage = persistenceError
+            return false
+        }
+        errorMessage = nil
+        return true
+    }
+
+    static func filteredItems(_ items: [FamilyItem], selectedMemberIDs: Set<UUID>) -> [FamilyItem] {
+        guard !selectedMemberIDs.isEmpty else { return items }
+        return items.filter { item in
+            item.isForEveryone || !Set(item.memberIDs).isDisjoint(with: selectedMemberIDs)
         }
     }
 
+    func skipOccurrence(_ item: FamilyItem) async {
+        store.skipOccurrence(of: item)
+        await load()
+        errorMessage = store.persistenceError
+    }
+
     func delete(_ item: FamilyItem) async {
-        do { try await repository.deleteFamilyItem(id: item.id); items.removeAll { $0.id == item.id } }
-        catch { errorMessage = error.localizedDescription }
+        store.deleteItem(item)
+        await load()
+        errorMessage = store.persistenceError
     }
 
-    private func loadItems() async {
-        guard let familyID else { return }
-        do { items = try await repository.loadUpcomingItems(familyID: familyID, from: .now) }
-        catch { errorMessage = error.localizedDescription }
-    }
+    // Keep the series anchor stable when the user only changes the time
+    // on a projected occurrence. A deliberately changed calendar day becomes
+    // the new anchor for the series.
+    private func preservedRecurringDate(id: UUID?, proposedDate: Date,
+                                        recurring: Bool,
+                                        recurrenceFrequency: FamilyRecurrenceFrequency) -> Date {
+        guard recurring, let id,
+              let original = store.items.first(where: { $0.id == id }) else {
+            return proposedDate
+        }
+        let frequency = recurrenceFrequency == .none && original.isRecurringYearly
+            ? FamilyRecurrenceFrequency.yearly : recurrenceFrequency
+        guard frequency != .none else { return proposedDate }
 
-    private struct MembershipRecord: Decodable {
-        let familyID: UUID
-        enum CodingKeys: String, CodingKey { case familyID = "family_id" }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        guard let projected = DashboardViewModel.project([original], from: .now).first,
+              calendar.isDate(proposedDate, inSameDayAs: projected.startsAt) else {
+            return proposedDate
+        }
+
+        let originalParts = calendar.dateComponents([.year, .month, .day], from: original.startsAt)
+        let editedParts = calendar.dateComponents([.hour, .minute, .second], from: proposedDate)
+        var components = DateComponents()
+        components.hour = editedParts.hour
+        components.minute = editedParts.minute
+        components.second = editedParts.second
+
+        switch frequency {
+        case .none:
+            return proposedDate
+        case .weekly:
+            components.year = originalParts.year
+            components.month = originalParts.month
+            components.day = originalParts.day
+        case .monthly:
+            components.year = originalParts.year
+            components.month = originalParts.month
+            components.day = originalParts.day
+        case .yearly:
+            components.year = originalParts.year
+            components.month = originalParts.month
+            components.day = originalParts.day
+        }
+        return calendar.date(from: components) ?? original.startsAt
     }
 }

@@ -1,38 +1,298 @@
 # Familjen roadmap
 
-## Foundation
-- [x] Product scope and visual direction documented
-- [x] Native SwiftUI project scaffold
-- [x] Domain models independent of backend provider
-- [x] Supabase SDK dependency and local-only configuration template
-- [x] Family-scoped Supabase repository for families, members and upcoming items
-- [x] Database integrity migration for family membership and event/member consistency
-- [x] Sign in with Apple implementation and nonce validation
-- [x] Apple Sign In entitlement declared for the Xcode project
-- [x] Family creation and one-time invitation acceptance screens connected to Supabase RPCs
-- [x] Restore signed-in session and route existing family members to the dashboard
-- [x] Dashboard loads the signed-in user's family name and upcoming family items
-- [x] Dashboard shows the next booking and the coming week's events from Supabase
-- [ ] Configure Apple provider and Supabase project values
-- [x] Automated iOS Simulator compilation in GitHub Actions (unsigned build; latest successful baseline: 14 Nov 2026)
-- [ ] Compile, sign and run on a physical iPhone
+## Local-first beta
+- [x] Native SwiftUI app and Scandinavian Premium visual direction
+- [x] Local family setup without sign-in or invitation codes
+- [x] On-device persistence for family, profiles, calendar and shopping list
+- [x] Add, edit and remove child profiles without separate accounts
+- [x] Add, edit and delete appointments, birthdays, events and health visits
+- [x] Yearly birthdays, including 29 February birthdays observed on 28 February in non-leap years
+- [x] On-device OCR for screenshots; images are not uploaded
+- [x] Per-activity reminder choices (one week, one day, one hour, 15 minutes, at start)
+- [x] Apple Calendar read-only import for upcoming events
+- [x] Local family group chat and private conversation UI (device-local prototype only)
+- [x] Add a provider-neutral `FamilyRepository` contract and local repository factory
+- [x] Inject the repository contract into dashboard, calendar, shopping and notification view models
+- [x] Add an observable UI facade so SwiftUI screens no longer depend directly on the local storage implementation
+- [x] Route family profiles, messages, settings, app root, onboarding and dashboard through the facade
+- [x] Expose repository change notifications so view state refreshes after mutations
+- [x] Explicitly include the unit-test bundle in the XcodeGen test scheme
+- [x] Make local storage file location injectable for isolated persistence tests
+- [x] Preserve unreadable local snapshots as recovery files instead of silently overwriting them
+- [x] Add unit tests for family/profile/shopping persistence, calendar CRUD, message read state, input validation, repeat-onboarding protection, observable facade behavior, birthday projection edge cases and local-time-zone handling, reminder persistence, legacy snapshot compatibility and corrupt-snapshot recovery
+- [x] Add unit tests for reminder deduplication, future filtering, legacy fallback and the 60-reminder cap
+- [x] Verify local-first regression suite in CI (run 43980622324 passed 28/28 tests and both simulator/iPhone unsigned builds on SHA 15ee4303; later FAM-019/FAM-020 changes await CI)
+- [ ] Verify persistence, CRUD and reminders on physical iPhones
+- [x] Verify the repository abstraction, calendar regression tests and reminder tests in CI (27/27 passed in run 43950845036; later FAM-018 change awaits a fresh run)
+- [ ] Verify unsigned iOS Simulator build in CI after local-first refactor
+- [ ] Prepare signed device build when signing credentials are available
 
-## Core features
-- [x] Connect dashboard birthday, event and health cards to family calendar; persistent selected family context remains open
-- [x] Family profiles: list adult accounts; add, rename and remove child profiles without login accounts; show birthdays linked to each profile (migration 009; pending device verification)
-- [x] Appointments and health visits: create, edit and delete (calendar UI and Supabase CRUD; pending device verification)
-- [x] Birthdays and events: create, edit and delete; birthdays can optionally repeat yearly and resolve to the next upcoming date (migration 008; pending device verification)
-- [x] Shared shopping list screen with add, check off and remove (Supabase-backed; manual refresh)
-- [x] Realtime updates for shopping-list inserts, updates and deletes while the list is open (pending device verification)
-- [x] Realtime updates for family-calendar additions, edits and deletions while the calendar is open (pending device verification)
-- [x] Notification event records for calendar additions/changes, shopping additions/check-offs/deletions and new family members, plus an in-app notification inbox
-- [x] Realtime notification delivery while app is open, with unread badge
-- [x] APNs backend groundwork: user-scoped device-token registry and migration
-- [ ] iOS APNs registration, secure token upload and Edge Function sender (requires Apple Developer account and APNs credentials)
-- [ ] APNs push notifications when app is backgrounded or closed (requires physical-device testing)
-- [x] Optional local calendar reminders on each device (one day and one hour before; pending physical-device verification)
+## Known beta limitation
+Each iPhone stores its own independent family data. There is no shared calendar, shared shopping list, account login or cloud backup in this phase.
 
-## Apple integrations and migration
-- [ ] Optional Apple Calendar integration via EventKit
-- [ ] CloudKit backend implementation behind the repository boundary
-- [ ] Data export/import and migration verification before switching providers
+## Later: Apple ecosystem
+- [ ] CloudKit private/shared databases and CKShare for family sharing
+- [ ] CloudKit-backed family group and private messaging, read state and cross-device sync
+- [ ] Safe migration from each phone's local data to CloudKit
+- [ ] Conflict handling and family membership permissions
+- [x] Apple Calendar read-only integration via EventKit (calendar selection still pending)
+- [ ] Push notifications if needed after CloudKit and Apple Developer setup
+
+## Planerad funktion: familjemedlemmar i kalendern
+- [x] Införa bakåtkompatibel grundmodell för flera berörda personer, explicit Hela familjen och separat ansvarig person (CI-verifiering inväntas).
+
+- [ ] Hantera familjeprofiler i Inställningar: vuxna och barn utan krav på egna konton.
+- [x] Vid skapande och redigering av kalenderhändelse kunna välja en eller flera berörda personer (CI-verifiering inväntas).
+- [x] Ha ett tydligt val för **Hela familjen**, skilt från en händelse som ännu inte har tilldelats någon (CI-verifiering inväntas).
+- [x] Filtrera kalendern på alla, en person eller flera personer; familjehändelser visas även i personfilter (CI-verifiering inväntas).
+- [x] Visa personkopplingar, familjeomfattning och ansvarig diskret i kalenderlistan och dashboardens kommande tider (CI-verifiering inväntas).
+- [x] Göra datamodellsändringen bakåtkompatibel så befintliga händelser och lokala snapshots bevaras (CI-verifiering inväntas).
+- [x] Lägga till tester för äldre data, flera deltagare, familjeomfattande händelser, borttagning och kalenderfilter (CI-verifiering inväntas).
+
+**Designprincip:** Barn ska kunna finnas som profiler utan egna konton. Funktionen ska stödja praktisk familjeplanering, inte bli ett generellt uppgiftssystem.
+
+**Status:** Första implementationen är incheckad 2026-11-16. En key-path-kompileringsmiss korrigerades (FAM-014). Nästa CI-körning visade ett SwiftUI type-check-fel i toolbar-uttrycket; detta har brutits ut i FAM-015 följdes av en ytterligare förenkling och interpolationsfix (FAM-016 följdes av att filtersektionen bröts ut i FAM-017. Ny CI-verifiering inväntas. Fysisk iPhone-testning återstår.
+
+## Produktgranskning: jämförelse med familjeappar (2026-11-16)
+
+Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. Slutsatsen är att Familjen ska prioritera en stark familjekalender och en genomtänkt iOS-upplevelse, inte försöka kopiera alla konkurrenters moduler.
+
+### Befintligt som ska byggas vidare på
+- Familjeprofiler för vuxna och barn finns redan i `FamilyMembersView`; återanvänd den befintliga hanteringen i Inställningar i stället för att skapa ett parallellt profilsystem.
+- Kalendern har redan aktivitetskategorier, lokal påminnelsehantering och läsning av Apple Kalender via EventKit.
+- Lokal OCR finns redan i projektet. Nästa steg bör vara ett granskat importflöde, inte en separat OCR-funktion.
+- Repository-abstraktion finns, men local-first-betan har ännu inte gemensam data mellan telefoner.
+
+### Prioritering
+
+#### P0 – kvalitet och grund
+- [ ] Slutför verifiering av de senast tillagda födelsedagsregressionstesterna i CI; senaste kända run `43941033673` avbröts och räknas inte som godkänd.
+- [x] Förhindra dataförlust när en familjeprofil tas bort: behåll kalenderhändelser och rensa endast personkopplingen (test verifierat i run 43950845036).
+- [ ] Fortsätt regressionstesta lokal persistens, kalenderredigering och notiser innan större funktionsbyggen. FAM-018 gör skrivfel synliga; dess nya test inväntar CI.
+
+#### P1 – kärnupplevelsen i familjekalendern
+- [x] Familjemedlemmar i kalendern: koppla en händelse till en eller flera profiler (implementation incheckad; simulator-CI verifierad i run 43950845036 (27/27 tester)).
+- [x] Separat och tydligt val för **Hela familjen** (implementation incheckad; CI-verifiering inväntas).
+- [x] Filter för alla, en person och flera valda personer (implementation incheckad; CI-verifiering inväntas).
+- [x] Skilj på deltagare/berörda personer och ansvarig vuxen för händelsen (implementation incheckad; CI-verifiering inväntas).
+- [x] Bakåtkompatibel datamodell från nuvarande `memberID` till stöd för flera personer; bevara befintliga snapshots och poster (implementation incheckad; CI-verifiering inväntas).
+- [x] Lägg till separat plats-/adressfält för kalenderhändelser, med bakåtkompatibel lokal lagring och visning i kalenderlistan (FAM-022; CI inväntas).
+- [x] Stöd årlig återkomst även för vanliga kalenderhändelser, inte bara födelsedagar (FAM-023; CI inväntas).\n- [ ] Utöka återkomst med veckovis/månadsvis och stöd för att ändra en förekomst eller hela serien; kräver en separat serie-/förekomstmodell.
+
+#### P2 – minska manuellt arbete och förbättra iOS-åtkomst
+- [ ] Bygg vidare på befintlig OCR till ett importflöde: bild/PDF → extraherat förslag på titel, datum, tid och plats → användaren granskar → väljer familjemedlem → sparar.
+- [ ] Lägg till kalenderwidget med dagens och närmaste familjehändelser.
+- [ ] Lägg till snabbregistrering av händelser med rimliga standardvärden och så få tryck som möjligt.
+- [ ] Undersök prenumeration/import av externa kalendrar (t.ex. iCal/ICS) med tydlig källa och utan att blanda ihop importerade poster med Familjens egna.
+
+#### P3 – samordning och utökning
+- [ ] Aktivitetsflöde som visar vem som lagt till eller ändrat en händelse, när gemensam synk finns.
+- [ ] Utvärdera flera inköpslistor först efter att kalender och synk är stabila.
+- [ ] Gemensam synk och säkerhetskopiering mellan familjens telefoner krävs för att appen ska fungera som ett gemensamt familjeverktyg. Planera CloudKit/CKShare separat med migrering, behörigheter och konfliktlösning; påbörja inte migreringen utan uttryckligt beslut.
+
+### Medvetet utanför nuvarande produktfokus
+- Hushållssysslor, poängsystem och generella att-göra-listor.
+- GPS-spårning och ankomstaviseringar.
+- Budgetering, recept-/måltidsplanering och ett separat socialt fotoalbum.
+
+### Produktprinciper
+- Funktioner ska lösa ett återkommande familjebehov; undvik funktionsmängd för sin egen skull.
+- Import från bilder eller dokument ska alltid presenteras som ett förslag som användaren godkänner, aldrig skapa kalenderposter utan bekräftelse.
+- Visa tydligt om data är lokal, importerad eller gemensamt synkroniserad.
+- Barn ska kunna vara profiler utan egna konton.
+- Håll gränssnittet kompakt, lättläst och i linje med Scandinavian Premium / Modern iOS.
+
+**Status:** Produktgranskning dokumenterad. Detta är en prioriterad plan, inte ett påstående om att dessa funktioner redan är implementerade.
+
+
+## Kvalitetsförbättring: synlig status för lokal lagring (2026-11-17)
+- [x] Fånga fel när snapshot-katalogen inte kan skapas eller JSON inte kan skrivas.
+- [x] Exponera lagringsfel genom repository och FamilyStore.
+- [x] Visa en varning på dashboarden när en ändring inte kunde sparas.
+- [x] Lägg till regressionstest som säkerställer att ett skrivfel exponeras och att befintlig blockeringsfil inte skrivs över.
+- [ ] Verifiera FAM-018 i CI på aktuell commit.
+- **Viktig begränsning:** vid skrivfel behålls ändringen i minnet och användaren varnas; full rollback av den aktuella mutationen ingår inte ännu.
+
+
+## Kvalitetsrunda: transaktionella kalenderändringar (2026-11-17)
+- [x] Återställ kalenderlistan om skapande eller uppdatering inte kan skrivas till lokal snapshot (FAM-021; CI inväntas).
+- [x] Återställ kalenderposten om radering inte kan sparas (FAM-021; CI inväntas).
+- [x] Återställ familjeprofil och berörda kalenderkopplingar om profilborttagning inte kan sparas (FAM-021; CI inväntas).
+- [x] Lägg till regressionstester för de tre skrivfelen (CI inväntas).
+
+## Kalender: återkoppling vid lagringsfel (2026-11-17)
+- [x] Låt inte kalenderredigeraren stängas om lokal persistens misslyckas (FAM-024; CI inväntas).
+- [x] Visa fel när kalenderpost inte kan raderas och återställs efter skrivfel.
+- [x] Lägg till regressionstest för view model och användarflöde.
+
+## Kalender: årlig återkomst (2026-11-17)
+- [x] Tillåt årlig återkomst för samtliga kalenderkategorier, med bevarat ursprungligt datumankare (FAM-023; CI inväntas).
+- [x] Testa projektion och redigering av en återkommande händelse som inte är en födelsedag.
+- [ ] Veckovis/månadsvis återkomst och val mellan att redigera en förekomst eller hela serien återstår.
+
+## Kalender: platsuppgifter (2026-11-17)
+- [x] Lägg till separat valfritt plats-/adressfält, skilt från anteckningar (FAM-022; CI inväntas).
+- [x] Visa plats i kalenderlistan och behåll kompatibilitet med äldre lokala snapshots.
+- [x] Testa platsens persistens och avkodning av äldre poster utan platsfält.
+
+## Kvalitetsrunda: kalenderfilter och påminnelser (2026-11-17)
+- [x] Rensa inaktuella levererade Familjen-påminnelser när en händelse ändras/raderas och när påminnelser stängs av (FAM-019; CI inväntas).
+- [x] Säkerställ att andra appars notiser inte påverkas av Familjens rensning (regressionstest tillagt; CI inväntas).
+- [x] Rensa borttagna familjemedlemmar ur aktiva personfilter så kalendern inte fastnar i ett föråldrat filterläge (FAM-020; CI inväntas).
+
+
+## Designriktning: praktisk förädling av befintligt gränssnitt (2026-11-18)
+
+**Beslut:** Behåll Familjens nuvarande visuella identitet och övergripande design. Referensutkastet används som inspiration för tydlighet, informationshierarki och innehållstäthet – inte som en ny färg- eller designspecifikation.
+
+### Ska bevaras
+- Nuvarande färgpalett: paper/varm ljus bas, navy, champagne/sand och befintliga dämpade accentfärger.
+- Befintlig typografisk karaktär, former, kort, ikoner och Scandinavian Premium / Modern iOS-uttryck.
+- Befintlig navigeringsstruktur och familjens funktionella grund.
+- Ingen generell omdesign eller byte av färger för att efterlikna referensbilden.
+
+### Ska förbättras
+- Öka läsbarheten med större och tydligare text där informationen är svår att uppfatta.
+- Förbättra hierarkin mellan rubrik, aktivitet, datum/tid, plats, berörda familjemedlemmar och ansvarig.
+- Visa tydligt vem en bokning gäller, exempelvis **Gäller: Alva**, separat från **Ansvarig: Niklas**.
+- Ge startsidan en mer komplett och användbar familjeöversikt med relevanta kort och genvägar.
+- Bygg ut flikarna så att Kalender, Hälsa, Födelsedagar och Inköpslista känns som genomarbetade, ändamålsenliga sidor – inte bara filter eller tomma skal.
+- Prioritera verklig nytta, snabb överblick och få tryck framför dekorativa element eller informationstäthet för sin egen skull.
+
+**Designprincip:** Gör den befintliga Familjen tydligare, rikare och mer praktisk. Referensutkastets styrka är hur snabbt man förstår innehållet; den styrkan ska översättas till Familjens befintliga formspråk utan att kopiera dess visuella identitet eller exempeldata.
+
+**Arbetsordning:** Förfina dashboarden först, därefter utveckla respektive flik stegvis. Varje större UI-ändring ska granskas mot befintlig design och testas på iPhone innan nästa område byggs ut.
+
+
+### Ikoner och aktivitetskategorier – förtydligande (2026-11-18)
+- Behåll befintliga kategorispecifika ikoner; de är en viktig del av snabb igenkänning och ska inte ersättas med generiska symboler.
+- Förbättra läsbarheten genom något större symboler, tydligare kontrast och en mer distinkt kontur.
+- Behåll nuvarande färgsättning, tonade bakgrunder, rundade former och visuella identitet.
+- Samma kategori ska ha konsekvent ikon och färg i dashboard, kalender, redigerare och övriga relevanta vyer.
+- Förändringen ska vara subtil och praktisk, inte en ny ikonstil.
+
+
+## Dashboard: närmaste dagarna (2026-11-18)
+- [x] Lägg till en tydlig översikt över dagens och morgondagens aktiviteter på startsidan.
+- [x] Visa kategorispecifik ikon, tid och berörda familjemedlemmar för varje aktivitet.
+- [x] Visa ansvarig vuxen separat från den eller de personer aktiviteten gäller.
+- [x] Öppna aktivitetsdetaljer direkt från översikten.
+- [x] Visa lugna, tydliga tomlägen när dagen saknar planerade aktiviteter.
+- **Design:** återanvänd befintliga färger, kort, kategoriikoner och typografi; ingen ny visuell identitet.
+
+## Egna översikter: Hälsa och födelsedagar (2026-11-18)
+- [x] Skapa en dedikerad Hälsa-vy med översikt, kommande vårdbesök, tandläkare, medicinposter och historik.
+- [x] Visa berörd familjemedlem och ansvarig separat i hälsovyn.
+- [x] Skapa en dedikerad Födelsedagar-vy med nästa födelsedag och en kronologisk lista.
+- [x] Återanvänd befintliga kalenderposter och årlig projektion; skapa inte ett parallellt födelsedagsregister.
+- [x] Behåll befintlig färgpalett, kategoriikoner och navigationens formspråk.
+- [ ] Verifiera båda vyerna med aktuell CI-körning och på fysisk iPhone.
+- **Begränsning:** ålder visas inte eftersom familjeprofilen inte har ett separat födelseårsfält. Hälsovyn visar kalenderanteckningar, inte journaldata.
+
+
+## Dashboard: undvik upprepade aktiviteter (2026-11-18)
+- [x] Låt översikten "Idag" och "Imorgon" vara den primära platsen för aktiviteter under de närmaste två dagarna.
+- [x] Börja listorna "Kommande tider" och "Kommande händelser" först dagen efter imorgon.
+- [x] Undvik att födelsedagskortet upprepar en födelsedag som redan syns i närtidsöversikten.
+- **Design:** behåll separata listor för vårdbesök/bokade tider och övriga händelser, med befintliga kategorier och ikoner.
+
+
+## Hälsa: samlat kalenderfilter (2026-11-18)
+- [x] Låt kalenderläget **Hälsa** visa vårdbesök, tandläkarbesök och medicinposter tillsammans.
+- [x] Behåll separata filter för respektive kategori när användaren vill avgränsa listan.
+- [x] Förtydliga tomläget så det beskriver hela hälsovyn.
+- **Design:** återanvänd kalenderns befintliga filterchips, kategoriikoner och färger.
+
+## Nästa förbättringar efter första familjetestet (2026-11-18)
+
+### Startsida
+- [x] Visa två profiler i familjeraden på startsidan för den första användningen med Niklas och Villemo.
+
+### Inköpslista
+- [x] Ta bort en vara från den aktiva listan direkt när den bockas av.
+- [x] Lägg till tydlig återkoppling när en vara är avklarad och visa varans namn i listan.
+- [ ] När familjedelning/synk finns: skapa notis till den andra familjemedlemmen när en ny vara läggs till. I local-first-betan är listan enhetslokal, så en annan telefon kan ännu inte se ändringen eller få en notis.
+
+### Kalender
+- [x] Förbättra överblicken med tydlig datumgruppering, antal aktiviteter per dag och särskilda rubriker för idag och imorgon.
+- [x] Behåll redigering av befintliga händelser: tryck på en aktivitet i kalenderlistan för att öppna redigeraren; återkommande händelser frågar om ändringen gäller ett tillfälle eller hela serien.
+- [x] Gör redigeringsmöjligheten tydligare med pennsymbol och tillgänglighetstext på kalenderposterna.
+
+### Familjeprofiler
+- [x] Låt användaren välja profilikon per familjemedlem och visa valet på startsidan, i kalenderfilter och i profilhanteringen; äldre profiler får en standardikon.
+
+**Teknisk ordning:** Förbättra först kalenderns läsbarhet och redigeringsflöde. Därefter byggs profilernas ikonval med bakåtkompatibel lokal lagring. Notiser för nya inköpsvaror mellan två telefoner väntar på gemensam datalagring och notifieringslösning; skapa inte skenbar delning i local-first-betan.
+
+
+
+## Genomförd förbättringsrunda (2026-11-18)
+- [x] Kalendern grupperar aktiviteter per datum och visar antal per dag.
+- [x] Kalenderposter visar en diskret pennsymbol och tillgänglighetstext för redigering.
+- [x] Familjeprofiler kan välja mellan ett urval av SF Symbols; valet lagras bakåtkompatibelt.
+- [x] Profilikonen används på startsidan, i kalenderns personfilter och i profilhanteringen.
+- [x] Inköpslistan visar varunamnen korrekt och bekräftar när en vara bockas av och tas bort.
+- [ ] Kör full CI och verifiera både simulatorbygge och unsigned iPhone-IPA på den samlade ändringen.
+- [ ] Slutlig visuell och funktionell genomgång på fysisk iPhone.
+
+
+## Inställningar (2026-11-18)
+- [x] Samlad inställningssida under Mer.
+- [x] Aktivera/inaktivera lokala kalenderpåminnelser med faktisk behörighetsbegäran och schemaläggning.
+- [x] Välj och spara standardpåminnelser för nya kalenderaktiviteter.
+- [x] Visa genvägar till profilhantering och behörighetskontroll.
+- [x] Visa tydligt att lagringen är lokal och att synkronisering mellan telefoner ännu inte är aktiverad.
+- [ ] Utöka inställningarna först när fler verkliga appomfattande val finns att styra; undvik reglage utan faktisk funktion.
+
+
+## Första praktiska iPhone-testet – återkoppling (2026-11-18)
+
+### Bekräftat fungerande på fysisk iPhone
+- [x] Lokala kalenderpåminnelser fungerar.
+- [x] Familjeprofiler kan redigeras och tas bort.
+- [x] Avbockade inköpsvaror försvinner från den aktiva listan.
+- [ ] Inställningarna återstår att testas av användaren.
+
+### Startsida och varumärke
+- [ ] Ta bort eller omarbeta den lilla versala undertiteln vid logotypen (”VÅR GEMENSAMMA PLANERING”); ge rubrikområdet ett renare uttryck.
+- [ ] Ta fram en egen Familjen-appikon som passar den befintliga Scandinavian Premium-identiteten.
+- [ ] Ge inköpslistekortet på startsidan en tydligare visuell avgränsning så det inte flyter ihop med övriga kort.
+
+### Kalender – ny översikt och interaktion
+- [ ] Komplettera datumgrupperad lista med en tydlig kalenderlik översikt (månad/vecka med markeringar på dagar som har aktiviteter).
+- [ ] Tryck på en aktivitet ska öppna en ren informationsvy med datum, tid, plats, anteckningar, berörda personer och ansvarig – inte direkt redigeraren.
+- [ ] Tryck och håll på en aktivitet ska visa en kontextmeny med Redigera och Radera.
+- [ ] Förstärk kategoriernas ikoner och kontrast utan att byta bort den befintliga kategoriidentiteten.
+
+### Födelsedagar – presentlistor
+- [ ] Från en persons födelsedag ska det gå att öppna en personlig presentlista.
+- [ ] Stöd för att lägga till, ändra och ta bort presentidéer samt markera en idé som ordnad.
+- [ ] Presentlistan ska vara kopplad till rätt person och rätt födelsedag, inte blandas ihop med den vanliga inköpslistan.
+
+### Hälsa – tydligare omfattning
+- [ ] Ompröva Hälsa-vyns nytta utifrån första testet; prioritera tydlig överblick över vårdbesök och tandläkartider.
+- [ ] Definiera vad en medicinpost betyder innan medicinfunktion byggs ut. Nuvarande poster är kalenderhändelser, inte doseringsschema, läkemedelslista eller medicinpåminnelser för intag.
+- **Säkerhetsprincip:** bygg inte en läkemedelsfunktion som kan uppfattas som doseringsstöd förrän datamodell, ansvar och påminnelsebeteende är tydligt specificerade.
+
+**Arbetsordning:** invänta användarens test av Inställningar. Därefter görs en samlad designrunda för startsida och kalender, följt av presentlistor. Behåll befintlig färgpalett, typografi och kortstil; förbättra tydlighet och användbarhet snarare än att göra en generell omdesign.
+
+
+## November 2026 polish pass
+- [x] Birthday tab opens a birthday-focused editor with a clear person prompt, date-only picker and yearly recurrence preselected
+- [x] Show Swedish ISO week numbers in the month calendar
+- [x] Use a tooth symbol for dentist appointments
+- [x] Replace the static dashboard hero gradient with offline, date-aware seasonal illustrations
+- [x] Add an Advent candle scene that lights one additional candle each Advent week
+- [x] Add a Lucia procession scene on 13 December and a Christmas scene from 24 December through 6 January
+- [ ] Physically verify calendar scrolling and day selection on iPhone; current gesture adjustment still needs device validation
+- [ ] Review seasonal hero artwork and spacing on physical iPhone
+- [ ] Verify birthday creation, annual recurrence, member assignment and gift-list navigation on device
+- [ ] Run a fresh simulator test suite and unsigned iPhone build after this polish pass
+
+
+### Follow-up validation — 18 November 2026
+- [x] Birthday-specific form simplification: person-only selection, annual recurrence default, date-only input, no location/notes/activity reminders
+- [x] Simulator unit tests and unsigned iPhone build passed for commit f0876e834ed3d27770f1fbfc715321583f253a18 (workflow 44373601049)
+- [x] Correct Advent scene date boundaries so years where Advent begins in December do not show the candles prematurely
+- [ ] Re-run simulator tests and unsigned iPhone build after Advent date correction
+- [ ] Physical-device scroll verification remains outstanding; successful compilation does not prove gesture behavior
+- [ ] Review seasonal illustrations and birthday workflow on device before distributing the next IPA

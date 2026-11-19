@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#243b59"/><stop offset=".52" stop-color="#101b30"/><stop offset="1" stop-color="#080e1b"/></linearGradient>
+ <radialGradient id="glow" cx=".2" cy=".95" r=".9"><stop stop-color="#b88c58" stop-opacity=".45"/><stop offset="1" stop-color="#b88c58" stop-opacity="0"/></radialGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#fff0c9"/><stop offset=".38" stop-color="#d8b477"/><stop offset="1" stop-color="#9f7040"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12"/></filter>
+</defs>
+<rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+<rect width="1024" height="1024" rx="220" fill="url(#glow)"/>
+<path d="M180 475 L512 190 L844 475" fill="none" stroke="#7e5a37" stroke-width="62" stroke-linecap="round" stroke-linejoin="round" opacity=".55" transform="translate(0 12)" filter="url(#shadow)"/>
+<path d="M180 475 L512 190 L844 475" fill="none" stroke="url(#gold)" stroke-width="54" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M275 395 V720 Q275 750 305 750 H719 Q749 750 749 720 V395" fill="none" stroke="url(#gold)" stroke-width="24" stroke-linecap="round"/>
+<path d="M512 435 C470 376 386 400 398 469 C406 518 462 551 512 594 C562 551 618 518 626 469 C638 400 554 376 512 435Z" fill="none" stroke="url(#gold)" stroke-width="25" stroke-linejoin="round"/>
+<g fill="url(#gold)">
+ <circle cx="420" cy="620" r="48"/><path d="M335 752 Q341 656 420 656 Q499 656 505 752Z"/>
+ <circle cx="606" cy="620" r="48"/><path d="M521 752 Q527 656 606 656 Q685 656 691 752Z"/>
+ <circle cx="315" cy="680" r="34"/><path d="M256 758 Q260 704 315 704 Q370 704 374 758Z"/>
+ <circle cx="512" cy="680" r="34"/><path d="M453 758 Q457 704 512 704 Q567 704 571 758Z"/>
+ <circle cx="709" cy="680" r="34"/><path d="M650 758 Q654 704 709 704 Q764 704 768 758Z"/>
+</g>
+<path d="M180 778 Q365 710 512 760 Q665 812 844 758" fill="none" stroke="url(#gold)" stroke-width="12" stroke-linecap="round"/>
+<text x="512" y="912" text-anchor="middle" font-family="Georgia,serif" font-size="118" font-weight="bold" letter-spacing="-5" fill="#ffedc8">Familjen</text>
+</svg>

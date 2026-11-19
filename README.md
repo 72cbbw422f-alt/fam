@@ -5,26 +5,36 @@ Native iOS family planner built with SwiftUI.
 ## Product direction
 - Scandinavian Premium + Modern iOS
 - Champagne, sand and navy palette
-- Separate areas for appointments, birthdays, events, health visits and shared shopping lists
+- Family calendar, appointments, birthdays, health visits, events and shopping lists
 - No chores or general task-management module
 - Family profiles are separate from login accounts, so children can be represented without accounts
 
+## Current local-first beta
+- Local JSON persistence on each iPhone.
+- No sign-in, backend, CloudKit or cross-device synchronization in this beta.
+- Each device has independent family data.
+- A repository abstraction keeps the storage provider replaceable for a future CloudKit implementation.
+- Local calendar reminders are device-specific.
+- Apple Calendar/EventKit integration has been removed from the current beta.
+
 ## Architecture
 - iOS client: SwiftUI
-- Initial backend: Supabase Auth, PostgreSQL and Realtime
-- Backend access is isolated behind repository protocols so CloudKit can replace Supabase later.
-- Optional Apple Calendar integration via EventKit; Familjen remains the source of truth.
+- Language: Swift
+- Project generation: XcodeGen
+- Minimum iOS version: 17
+- Bundle identifier: `se.familjen.app`
 
-## Setup
-1. Create a Supabase project.
-2. Apply SQL migrations in `supabase/migrations` in filename order.
-3. Copy `Sources/Config.swift.example` to `Sources/Config.swift` and add the Supabase URL and anon/publishable key.
-4. Generate the Xcode project with XcodeGen: `xcodegen generate`.
-5. Open `Familjen.xcodeproj` in Xcode and configure Sign in with Apple and the Supabase Apple provider.
+## Documentation
+- [Master documentation](Documentation/FAMILJEN_MASTER.md)
+- [Development log](Documentation/DEVELOPMENT_LOG.md)
+- [Roadmap](Documentation/ROADMAP.md)
+- [Architecture](Documentation/ARCHITECTURE.md)
+- [Local feature test plan](Documentation/LOCAL_FEATURE_TEST_PLAN.md)
+- [Apple platform readiness](Documentation/APPLE_PLATFORM_READINESS.md)
+- [FlareStore signing plan](Documentation/FLARESTORE_SIGNING_PLAN.md)
 
-Never put a Supabase service-role key in the iOS app or commit secrets.
+## Build
+Generate the Xcode project with XcodeGen (`xcodegen generate`) and build the `Familjen` scheme for iOS 17 or later. No backend configuration is required for the current beta.
 
-## Status
-The source currently includes Sign in with Apple, family onboarding, a live dashboard, shared shopping lists, family calendar, adult and child family profiles with child-profile editing/removal and linked birthday display, in-app notifications, and Supabase Realtime refresh for calendar and shopping-list changes while those screens are open. Other family members receive in-app notification records for calendar additions, edits and deletions, shopping-list additions, check-offs and deletions, and new adult members joining. Optional local calendar reminders can be enabled separately on each device for one day and one hour before an activity.
-
-Remote APNs push delivery while the app is backgrounded or closed is not implemented yet; the backend has only the groundwork for registering device tokens. It requires Apple Developer configuration, device registration, a secure server-side sender and physical-device testing. Birthday entries can optionally repeat yearly, including next-occurrence handling for past original dates. Remaining work includes EventKit, security review, compilation and device testing. No IPA is available until an actual iOS build and signing have been completed.
+## Important
+Do not describe local data as shared or synchronized. CloudKit family sharing, remote push notifications and signed distribution are future work and require separate implementation and device testing.

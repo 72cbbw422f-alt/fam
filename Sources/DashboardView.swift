@@ -289,6 +289,7 @@ struct DashboardView: View {
 
     private var recentShoppingItems: some View {
         let recentItems = store.shoppingItems
+            .filter { !$0.isChecked }
             .sorted { $0.createdAt > $1.createdAt }
             .prefix(3)
 
@@ -305,26 +306,32 @@ struct DashboardView: View {
 
                     VStack(spacing: 0) {
                         ForEach(Array(recentItems)) { item in
-                            HStack(spacing: 10) {
-                                Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 17, weight: .regular))
-                                    .foregroundStyle(item.isChecked ? FamiljenTheme.champagneDeep : FamiljenTheme.muted.opacity(0.7))
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(item.title)
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundStyle(item.isChecked ? FamiljenTheme.muted : FamiljenTheme.ink)
-                                        .strikethrough(item.isChecked)
-                                    Text(item.createdAt.formatted(.relative(presentation: .named)))
-                                        .font(.system(size: 13))
-                                        .foregroundStyle(FamiljenTheme.muted)
+                            Button {
+                                store.setShoppingItem(item.id, checked: true)
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "circle")
+                                        .font(.system(size: 19, weight: .regular))
+                                        .foregroundStyle(FamiljenTheme.muted.opacity(0.8))
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.title)
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundStyle(FamiljenTheme.ink)
+                                        Text(item.createdAt.formatted(.relative(presentation: .named)))
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(FamiljenTheme.muted)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "cart")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(FamiljenTheme.champagneDeep)
                                 }
-                                Spacer()
-                                Image(systemName: "cart")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(FamiljenTheme.champagneDeep)
+                                .contentShape(Rectangle())
                             }
+                            .buttonStyle(.plain)
                             .padding(.horizontal, 13)
                             .padding(.vertical, 9)
+                            .accessibilityLabel("Markera \(item.title) som handlad")
 
                             if item.id != recentItems.last?.id {
                                 Divider().overlay(FamiljenTheme.sand.opacity(0.8)).padding(.leading, 40)

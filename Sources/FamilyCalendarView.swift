@@ -204,7 +204,8 @@ struct FamilyCalendarView: View {
         var iso = Calendar(identifier: .iso8601)
         iso.locale = Locale(identifier: "sv_SE")
         guard let first = monthDays.first else { return [] }
-        let leading = iso.component(.weekday, from: first) - 1
+        let weekday = iso.component(.weekday, from: first)
+        let leading = (weekday - iso.firstWeekday + 7) % 7
         let cells: [Date?] = Array(repeating: nil, count: leading) + monthDays.map { Optional($0) }
         let paddedCount = ((cells.count + 6) / 7) * 7
         let padded = cells + Array(repeating: nil, count: paddedCount - cells.count)
@@ -215,7 +216,10 @@ struct FamilyCalendarView: View {
 
     private func weekNumber(for row: [Date?]) -> String {
         guard let date = row.compactMap({ $0 }).first else { return "" }
-        return "v. " + String(Calendar(identifier: .iso8601).component(.weekOfYear, from: date))
+        var iso = Calendar(identifier: .iso8601)
+        iso.locale = Locale(identifier: "sv_SE")
+        let thursday = iso.date(byAdding: .day, value: 3, to: date) ?? date
+        return "v. " + String(iso.component(.weekOfYear, from: thursday))
     }
 
     private var monthCalendarSection: some View {
@@ -300,21 +304,28 @@ struct FamilyCalendarView: View {
         return Button {
             selectedCalendarDate = isSelected ? nil : day
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: 2) {
                 Text(day.formatted(.dateTime.day()))
-                    .font(.system(size: 14, weight: isSelected || isToday ? .bold : .medium))
+                    .font(.system(size: 14, weight: isSelected || isToday || hasItems ? .bold : .medium))
                     .foregroundStyle(isSelected ? .white : FamiljenTheme.ink)
-                Circle()
-                    .fill(hasItems ? (isSelected ? FamiljenTheme.champagne : FamiljenTheme.champagneDeep) : .clear)
-                    .frame(width: 4, height: 4)
+                if hasItems {
+                    Capsule()
+                        .fill(isSelected ? FamiljenTheme.champagne : FamiljenTheme.champagneDeep)
+                        .frame(width: 13, height: 4)
+                } else {
+                    Color.clear.frame(width: 13, height: 4)
+                }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 38)
             .background {
                 if isSelected {
                     Circle().fill(FamiljenTheme.navy)
-                } else if isToday {
-                    Circle().stroke(FamiljenTheme.champagneDeep, lineWidth: 1.3)
+                } else if hasItems {
+                    Circle().fill(FamiljenTheme.champagne.opacity(0.24))
+                }
+                if isToday && !isSelected {
+                    Circle().stroke(FamiljenTheme.champagneDeep, lineWidth: 1.5)
                 }
             }
             .contentShape(Rectangle())

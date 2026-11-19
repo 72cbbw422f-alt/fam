@@ -5,20 +5,36 @@ Native iOS family planner built with SwiftUI.
 ## Product direction
 - Scandinavian Premium + Modern iOS
 - Champagne, sand and navy palette
-- Separate areas for appointments, birthdays, events, health visits and shared shopping lists
+- Family calendar, appointments, birthdays, health visits, events and shopping lists
 - No chores or general task-management module
 - Family profiles are separate from login accounts, so children can be represented without accounts
 
+## Current local-first beta
+- Local JSON persistence on each iPhone.
+- No sign-in, backend, CloudKit or cross-device synchronization in this beta.
+- Each device has independent family data.
+- A repository abstraction keeps the storage provider replaceable for a future CloudKit implementation.
+- Local calendar reminders are device-specific.
+- Apple Calendar/EventKit integration has been removed from the current beta.
+
 ## Architecture
 - iOS client: SwiftUI
-- Initial backend: Supabase Auth, PostgreSQL and Realtime
-- Backend access is isolated behind repository protocols so CloudKit can replace Supabase later.
-- Optional Apple Calendar integration via EventKit; Familjen remains the source of truth.
+- Language: Swift
+- Project generation: XcodeGen
+- Minimum iOS version: 17
+- Bundle identifier: `se.familjen.app`
 
-## Local-first beta
+## Documentation
+- [Master documentation](Documentation/FAMILJEN_MASTER.md)
+- [Development log](Documentation/DEVELOPMENT_LOG.md)
+- [Roadmap](Documentation/ROADMAP.md)
+- [Architecture](Documentation/ARCHITECTURE.md)
+- [Local feature test plan](Documentation/LOCAL_FEATURE_TEST_PLAN.md)
+- [Apple platform readiness](Documentation/APPLE_PLATFORM_READINESS.md)
+- [FlareStore signing plan](Documentation/FLARESTORE_SIGNING_PLAN.md)
 
-Familjen stores family profiles, calendar entries, shopping items and preferences locally on each iPhone. The current beta has no account system, backend or cross-device synchronization. Each device has independent data until CloudKit family sharing is implemented.
+## Build
+Generate the Xcode project with XcodeGen (`xcodegen generate`) and build the `Familjen` scheme for iOS 17 or later. No backend configuration is required for the current beta.
 
-### Build
-
-Generate the Xcode project with XcodeGen (`xcodegen generate`) and build the `Familjen` scheme for iOS 17 or later. No Supabase configuration is required.
+## Important
+Do not describe local data as shared or synchronized. CloudKit family sharing, remote push notifications and signed distribution are future work and require separate implementation and device testing.

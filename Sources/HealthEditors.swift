@@ -41,6 +41,7 @@ struct HealthRecordEditorView: View {
 
     var body: some View {
         Form {
+            persistenceErrorSection
             Section("Ärende") {
                 TextField("Rubrik", text: $title)
                 Picker("Typ", selection: $type) {
@@ -84,7 +85,7 @@ struct HealthRecordEditorView: View {
                 Section {
                     Button("Ta bort ärende", role: .destructive) {
                         if let original { store.deleteHealthRecord(original.id) }
-                        dismiss()
+                        if store.persistenceError == nil { dismiss() }
                     }
                 }
             }
@@ -116,6 +117,13 @@ struct HealthRecordEditorView: View {
         }
     }
 
+    @ViewBuilder
+    private var persistenceErrorSection: some View {
+        if let message = store.persistenceError {
+            Section { Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red) }
+        }
+    }
+
     private func save() {
         guard let familyID = store.family?.id, let memberID else { return }
         let offsets = [
@@ -142,7 +150,7 @@ struct HealthRecordEditorView: View {
             createdAt: original?.createdAt ?? .now
         )
         store.saveHealthRecord(value)
-        dismiss()
+        if store.persistenceError == nil { dismiss() }
     }
 }
 
@@ -179,6 +187,7 @@ struct HealthPrescriptionEditorView: View {
 
     var body: some View {
         Form {
+            persistenceErrorSection
             Section("Läkemedel") {
                 TextField("Läkemedlets namn", text: $medicationName)
                 memberPicker
@@ -207,7 +216,7 @@ struct HealthPrescriptionEditorView: View {
                 Section {
                     Button("Ta bort recept", role: .destructive) {
                         if let original { store.deleteHealthPrescription(original.id) }
-                        dismiss()
+                        if store.persistenceError == nil { dismiss() }
                     }
                 }
             }
@@ -235,6 +244,13 @@ struct HealthPrescriptionEditorView: View {
         }
     }
 
+    @ViewBuilder
+    private var persistenceErrorSection: some View {
+        if let message = store.persistenceError {
+            Section { Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red) }
+        }
+    }
+
     private func save() {
         guard let familyID = store.family?.id, let memberID else { return }
         let repeats = Int(remainingRepeats)
@@ -253,7 +269,7 @@ struct HealthPrescriptionEditorView: View {
             createdAt: original?.createdAt ?? .now
         )
         store.saveHealthPrescription(value)
-        dismiss()
+        if store.persistenceError == nil { dismiss() }
     }
 }
 
@@ -282,6 +298,7 @@ struct MedicationPickupEditorView: View {
 
     var body: some View {
         Form {
+            persistenceErrorSection
             Section("Uthämtning") {
                 TextField("Läkemedel", text: $medicationName)
                 memberPicker
@@ -303,7 +320,7 @@ struct MedicationPickupEditorView: View {
                 Section {
                     Button("Ta bort uthämtningsärende", role: .destructive) {
                         if let original { store.deleteMedicationPickup(original.id) }
-                        dismiss()
+                        if store.persistenceError == nil { dismiss() }
                     }
                 }
             }
@@ -341,6 +358,13 @@ struct MedicationPickupEditorView: View {
         }
     }
 
+    @ViewBuilder
+    private var persistenceErrorSection: some View {
+        if let message = store.persistenceError {
+            Section { Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red) }
+        }
+    }
+
     private func save() {
         guard let familyID = store.family?.id, let memberID else { return }
         let value = MedicationPickup(
@@ -355,7 +379,7 @@ struct MedicationPickupEditorView: View {
             createdAt: original?.createdAt ?? .now
         )
         store.saveMedicationPickup(value)
-        dismiss()
+        if store.persistenceError == nil { dismiss() }
     }
 }
 
@@ -382,6 +406,7 @@ struct HealthInformationEditorView: View {
 
     var body: some View {
         Form {
+            persistenceErrorSection
             Section("Hälsoinformation") {
                 memberPicker
                 Picker("Typ", selection: $type) {
@@ -395,7 +420,7 @@ struct HealthInformationEditorView: View {
                 Section {
                     Button("Ta bort information", role: .destructive) {
                         if let original { store.deleteHealthProfileInformation(original.id) }
-                        dismiss()
+                        if store.persistenceError == nil { dismiss() }
                     }
                 }
             }
@@ -423,6 +448,13 @@ struct HealthInformationEditorView: View {
         }
     }
 
+    @ViewBuilder
+    private var persistenceErrorSection: some View {
+        if let message = store.persistenceError {
+            Section { Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red) }
+        }
+    }
+
     private func save() {
         guard let familyID = store.family?.id, let memberID else { return }
         store.saveHealthProfileInformation(HealthProfileInformation(
@@ -430,7 +462,7 @@ struct HealthInformationEditorView: View {
             type: type, title: title, details: details, visibility: visibility,
             createdAt: original?.createdAt ?? .now
         ))
-        dismiss()
+        if store.persistenceError == nil { dismiss() }
     }
 }
 
@@ -457,6 +489,7 @@ struct HealthReminderEditorView: View {
 
     var body: some View {
         Form {
+            persistenceErrorSection
             Section("Påminnelse") {
                 TextField("Vad ska du bli påmind om?", text: $title)
                 memberPicker
@@ -468,7 +501,7 @@ struct HealthReminderEditorView: View {
                 Section {
                     Button("Ta bort påminnelse", role: .destructive) {
                         if let original { store.deleteHealthReminder(original.id) }
-                        dismiss()
+                        if store.persistenceError == nil { dismiss() }
                     }
                 }
             }
@@ -496,6 +529,13 @@ struct HealthReminderEditorView: View {
         }
     }
 
+    @ViewBuilder
+    private var persistenceErrorSection: some View {
+        if let message = store.persistenceError {
+            Section { Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red) }
+        }
+    }
+
     private func save() {
         guard let familyID = store.family?.id, let memberID else { return }
         store.saveHealthReminder(HealthReminder(
@@ -504,6 +544,6 @@ struct HealthReminderEditorView: View {
             title: title, firesAt: firesAt, isEnabled: isEnabled,
             visibility: visibility, createdAt: original?.createdAt ?? .now
         ))
-        dismiss()
+        if store.persistenceError == nil { dismiss() }
     }
 }

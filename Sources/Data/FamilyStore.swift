@@ -70,6 +70,7 @@ final class FamilyStore: ObservableObject {
                             kind: kind, memberID: memberID, recurring: recurring,
                             reminderOffsets: reminderOffsets)
         refresh()
+        rescheduleHealthReminders()
     }
     func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
                           kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
@@ -80,8 +81,13 @@ final class FamilyStore: ObservableObject {
                                     responsibleMemberID: responsibleMemberID, recurring: recurring,
                                     reminderOffsets: reminderOffsets, location: location, recurrenceFrequency: recurrenceFrequency)
         refresh()
+        rescheduleHealthReminders()
     }
-    func deleteItem(_ item: FamilyItem) { repository.deleteItem(item); refresh() }
+    func deleteItem(_ item: FamilyItem) {
+        repository.deleteItem(item)
+        refresh()
+        rescheduleHealthReminders()
+    }
     func addShoppingItem(_ title: String) { repository.addShoppingItem(title); refresh() }
     func setShoppingItem(_ id: UUID, checked: Bool) { repository.setShoppingItem(id, checked: checked); refresh() }
     func deleteShoppingItem(_ id: UUID) { repository.deleteShoppingItem(id); refresh() }

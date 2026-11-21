@@ -5,7 +5,33 @@ struct NotificationsView: View {
 
     var body: some View {
         List {
-            if model.notifications.isEmpty && !model.isLoading {
+            if !model.upcomingHealthEntries.isEmpty {
+                Section("Kommande hälsa") {
+                    ForEach(model.upcomingHealthEntries) { entry in
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: entry.symbol)
+                                .font(.title3)
+                                .foregroundStyle(FamiljenTheme.navy)
+                                .frame(width: 34, height: 34)
+                                .background(FamiljenTheme.sand.opacity(0.55), in: Circle())
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(entry.title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(FamiljenTheme.ink)
+                                Text(entry.subtitle)
+                                    .font(.caption)
+                                    .foregroundStyle(FamiljenTheme.muted)
+                                Text(entry.date.formatted(.dateTime.day().month(.abbreviated).hour().minute()))
+                                    .font(.caption2)
+                                    .foregroundStyle(FamiljenTheme.muted)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+
+            if model.notifications.isEmpty && model.upcomingHealthEntries.isEmpty && !model.isLoading {
                 ContentUnavailableView(
                     "Inga notiser ännu",
                     systemImage: "bell",

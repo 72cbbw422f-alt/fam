@@ -198,6 +198,41 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertTrue(store.items.isEmpty)
     }
 
+    func testCalendarEditAndDeleteStayConsistentWithHealthRecord() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        let familyID = try XCTUnwrap(store.family?.id)
+        let record = HealthRecord(
+            familyID: familyID, memberID: member.id, type: .appointment,
+            title: "Ursprungligt besök", startsAt: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+        store.saveHealthRecord(record)
+        let saved = try XCTUnwrap(store.healthRecords.first)
+        let linkedItem = try XCTUnwrap(store.items.first)
+        let movedDate = linkedItem.startsAt.addingTimeInterval(86_400)
+
+        store.saveCalendarItem(
+            id: linkedItem.id, title: "Flyttat besök", details: "Ny anteckning",
+            startsAt: movedDate, kind: .healthVisit, memberIDs: [member.id],
+            isForEveryone: false, responsibleMemberID: nil, recurring: false,
+            reminderOffsets: [86_400], location: "Ny mottagning"
+        )
+
+        XCTAssertEqual(store.healthRecords.first?.title, "Flyttat besök")
+        XCTAssertEqual(store.healthRecords.first?.startsAt, movedDate)
+        XCTAssertEqual(store.healthRecords.first?.notes, "Ny anteckning")
+        XCTAssertEqual(store.healthRecords.first?.location, "Ny mottagning")
+
+        store.deleteItem(try XCTUnwrap(store.items.first))
+        XCTAssertEqual(store.healthRecords.count, 1)
+        XCTAssertEqual(store.healthRecords.first?.status, .cancelled)
+        XCTAssertNil(store.healthRecords.first?.calendarItemID)
+        XCTAssertTrue(store.items.isEmpty)
+    }
+
+
     func testPrivateHealthNoteDoesNotCreateCalendarItem() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

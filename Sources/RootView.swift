@@ -84,17 +84,19 @@ private struct FamilyTabShell: View {
     @MainActor
     private func requestNotificationPermissionOnFirstLaunch() async {
         let key = "familjen.didAskForNotificationPermission"
-        guard !UserDefaults.standard.bool(forKey: key) else { return }
-        UserDefaults.standard.set(true, forKey: key)
-        let granted = await LocalReminderScheduler.requestPermission()
-        UserDefaults.standard.set(granted, forKey: "familjen.localRemindersEnabled")
-        if granted {
-            await LocalReminderScheduler.schedule(
-                for: FamilyStore.shared.items,
-                skipping: FamilyStore.shared.skippedOccurrences,
-                overrides: FamilyStore.shared.occurrenceOverrides
-            )
+        let store = FamilyStore.shared
+        if !UserDefaults.standard.bool(forKey: key) {
+            UserDefaults.standard.set(true, forKey: key)
+            let granted = await LocalReminderScheduler.requestPermission()
+            UserDefaults.standard.set(granted, forKey: "familjen.localRemindersEnabled")
         }
+        guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
+        await LocalReminderScheduler.schedule(
+            for: store.items,
+            skipping: store.skippedOccurrences,
+            overrides: store.occurrenceOverrides,
+            healthReminders: store.healthReminders
+        )
     }
 
     private var tabBar: some View {

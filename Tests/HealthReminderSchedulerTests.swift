@@ -1,6 +1,7 @@
 import XCTest
 @testable import Familjen
 
+@MainActor
 final class HealthReminderSchedulerTests: XCTestCase {
     func testOnlyEnabledFutureHealthRemindersBecomeCandidates() {
         let familyID = UUID()

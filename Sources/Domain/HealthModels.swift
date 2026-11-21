@@ -136,7 +136,7 @@ struct HealthPrescription: Identifiable, Codable, Equatable {
         renewalDueAt: Date? = nil,
         renewalStatus: PrescriptionRenewalStatus = .notRequired,
         notes: String? = nil,
-        visibility: HealthVisibility = .private,
+        visibility: HealthVisibility = .personal,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -183,7 +183,7 @@ struct MedicationPickup: Identifiable, Codable, Equatable {
         medicationName: String,
         dueAt: Date,
         status: MedicationPickupStatus = .planned,
-        visibility: HealthVisibility = .private,
+        visibility: HealthVisibility = .personal,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -236,7 +236,7 @@ struct HealthProfileInformation: Identifiable, Codable, Equatable {
         type: HealthInformationType,
         title: String,
         details: String? = nil,
-        visibility: HealthVisibility = .private,
+        visibility: HealthVisibility = .personal,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -283,7 +283,7 @@ struct HealthReminder: Identifiable, Codable, Equatable {
         title: String,
         firesAt: Date,
         isEnabled: Bool = true,
-        visibility: HealthVisibility = .private,
+        visibility: HealthVisibility = .personal,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {

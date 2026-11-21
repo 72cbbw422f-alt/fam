@@ -84,6 +84,68 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertEqual(store.medicationPickups.first?.status, .collected)
     }
 
+    func testPrescriptionAndPickupCreateIndependentLinkedReminders() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        let familyID = try XCTUnwrap(store.family?.id)
+        let renewalDate = Date(timeIntervalSince1970: 1_800_000_000)
+        let pickupDate = renewalDate.addingTimeInterval(86_400)
+        let prescription = HealthPrescription(
+            familyID: familyID, memberID: member.id, medicationName: "Läkemedel C",
+            renewalDueAt: renewalDate, renewalStatus: .due
+        )
+        store.saveHealthPrescription(prescription)
+        let pickup = MedicationPickup(
+            familyID: familyID, memberID: member.id, prescriptionID: prescription.id,
+            medicationName: "Läkemedel C", dueAt: pickupDate
+        )
+        store.saveMedicationPickup(pickup)
+
+        XCTAssertEqual(store.healthReminders.count, 2)
+        XCTAssertTrue(store.healthReminders.contains {
+            $0.targetType == .prescriptionRenewal && $0.targetID == prescription.id && $0.firesAt == renewalDate
+        })
+        XCTAssertTrue(store.healthReminders.contains {
+            $0.targetType == .medicationPickup && $0.targetID == pickup.id && $0.firesAt == pickupDate
+        })
+
+        var completedPickup = pickup
+        completedPickup.status = .collected
+        store.saveMedicationPickup(completedPickup)
+        XCTAssertEqual(store.healthReminders.count, 1)
+        XCTAssertEqual(store.healthReminders.first?.targetType, .prescriptionRenewal)
+
+        var renewedPrescription = prescription
+        renewedPrescription.renewalStatus = .renewed
+        store.saveHealthPrescription(renewedPrescription)
+        XCTAssertTrue(store.healthReminders.isEmpty)
+    }
+
+    func testUpdatingPrescriptionDoesNotDuplicateItsReminder() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        let familyID = try XCTUnwrap(store.family?.id)
+        let prescription = HealthPrescription(
+            familyID: familyID, memberID: member.id, medicationName: "Läkemedel D",
+            renewalDueAt: Date(timeIntervalSince1970: 1_800_000_000), renewalStatus: .due
+        )
+        store.saveHealthPrescription(prescription)
+        let originalReminderID = try XCTUnwrap(store.healthReminders.first?.id)
+
+        var updated = prescription
+        updated.renewalDueAt = Date(timeIntervalSince1970: 1_800_086_400)
+        store.saveHealthPrescription(updated)
+
+        XCTAssertEqual(store.healthReminders.count, 1)
+        XCTAssertEqual(store.healthReminders.first?.id, originalReminderID)
+        XCTAssertEqual(store.healthReminders.first?.firesAt, updated.renewalDueAt)
+    }
+
+
     func testHealthDataRejectsUnknownFamilyMember() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

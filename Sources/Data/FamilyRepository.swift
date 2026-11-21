@@ -15,6 +15,11 @@ protocol FamilyRepository: AnyObject {
     var giftIdeas: [GiftIdea] { get }
     var christmasGifts: [ChristmasGift] { get }
     var notifications: [FamilyNotification] { get }
+    var healthRecords: [HealthRecord] { get }
+    var healthPrescriptions: [HealthPrescription] { get }
+    var medicationPickups: [MedicationPickup] { get }
+    var healthProfileInformation: [HealthProfileInformation] { get }
+    var healthReminders: [HealthReminder] { get }
     var messages: [FamilyMessage] { get }
     var persistenceError: String? { get }
 
@@ -47,10 +52,35 @@ protocol FamilyRepository: AnyObject {
     func deleteGiftIdea(_ id: UUID)
     func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind)
     func markConversationRead(_ conversationID: String)
+    func saveHealthRecord(_ record: HealthRecord)
+    func deleteHealthRecord(_ id: UUID)
+    func saveHealthPrescription(_ prescription: HealthPrescription)
+    func deleteHealthPrescription(_ id: UUID)
+    func saveMedicationPickup(_ pickup: MedicationPickup)
+    func deleteMedicationPickup(_ id: UUID)
+    func saveHealthProfileInformation(_ information: HealthProfileInformation)
+    func deleteHealthProfileInformation(_ id: UUID)
+    func saveHealthReminder(_ reminder: HealthReminder)
+    func deleteHealthReminder(_ id: UUID)
     func markNotificationRead(_ id: UUID)
 }
 
 extension FamilyRepository {
+    var healthRecords: [HealthRecord] { [] }
+    var healthPrescriptions: [HealthPrescription] { [] }
+    var medicationPickups: [MedicationPickup] { [] }
+    var healthProfileInformation: [HealthProfileInformation] { [] }
+    var healthReminders: [HealthReminder] { [] }
+    func saveHealthRecord(_ record: HealthRecord) { }
+    func deleteHealthRecord(_ id: UUID) { }
+    func saveHealthPrescription(_ prescription: HealthPrescription) { }
+    func deleteHealthPrescription(_ id: UUID) { }
+    func saveMedicationPickup(_ pickup: MedicationPickup) { }
+    func deleteMedicationPickup(_ id: UUID) { }
+    func saveHealthProfileInformation(_ information: HealthProfileInformation) { }
+    func deleteHealthProfileInformation(_ id: UUID) { }
+    func saveHealthReminder(_ reminder: HealthReminder) { }
+    func deleteHealthReminder(_ id: UUID) { }
     var skippedOccurrences: [FamilyOccurrenceException] { [] }
     var giftIdeas: [GiftIdea] { [] }
     var christmasGifts: [ChristmasGift] { [] }

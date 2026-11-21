@@ -57,8 +57,9 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.medicationPickups.first?.prescriptionID, prescription.id)
         XCTAssertEqual(reloaded.healthProfileInformation.map(\.id), [information.id])
         XCTAssertEqual(reloaded.healthProfileInformation.first?.type, .allergy)
-        XCTAssertEqual(reloaded.healthReminders.map(\.id), [reminder.id])
-        XCTAssertEqual(reloaded.healthReminders.first?.targetType, .prescriptionRenewal)
+        XCTAssertEqual(reloaded.healthReminders.count, 2)
+        XCTAssertTrue(reloaded.healthReminders.contains { $0.id == reminder.id })
+        XCTAssertTrue(reloaded.healthReminders.contains { $0.targetID == prescription.id && $0.targetType == .prescriptionRenewal })
     }
 
     func testPrescriptionRenewalAndMedicationPickupHaveIndependentStatuses() throws {

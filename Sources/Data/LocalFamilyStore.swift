@@ -14,6 +14,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     @Published private(set) var giftIdeas: [GiftIdea] = []
     @Published private(set) var christmasGifts: [ChristmasGift] = []
     @Published private(set) var notifications: [FamilyNotification] = []
+    @Published private(set) var healthRecords: [HealthRecord] = []
+    @Published private(set) var healthPrescriptions: [HealthPrescription] = []
+    @Published private(set) var medicationPickups: [MedicationPickup] = []
+    @Published private(set) var healthProfileInformation: [HealthProfileInformation] = []
+    @Published private(set) var healthReminders: [HealthReminder] = []
     @Published private(set) var messages: [FamilyMessage] = []
     @Published private(set) var persistenceError: String?
 
@@ -64,6 +69,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         giftIdeas = []
         christmasGifts = []
         notifications = []
+        healthRecords = []
+        healthPrescriptions = []
+        medicationPickups = []
+        healthProfileInformation = []
+        healthReminders = []
         messages = []
         saveToDisk()
     }
@@ -362,6 +372,152 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         saveToDisk()
     }
 
+
+    // MARK: - Health records
+
+    func saveHealthRecord(_ record: HealthRecord) {
+        guard let family, record.familyID == family.id,
+              members.contains(where: { $0.id == record.memberID }) else { return }
+        let title = record.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, title.count <= 160 else { return }
+        var updated = record
+        updated.title = title
+        updated.provider = Self.cleaned(updated.provider, limit: 120)
+        updated.clinic = Self.cleaned(updated.clinic, limit: 160)
+        updated.location = Self.cleaned(updated.location, limit: 160)
+        updated.address = Self.cleaned(updated.address, limit: 240)
+        updated.notes = Self.cleaned(updated.notes, limit: 4000)
+        updated.updatedAt = .now
+        let previous = healthRecords
+        if let index = healthRecords.firstIndex(where: { $0.id == record.id }) {
+            healthRecords[index] = updated
+        } else {
+            healthRecords.append(updated)
+        }
+        if !saveToDisk() { healthRecords = previous }
+    }
+
+    func deleteHealthRecord(_ id: UUID) {
+        let previous = healthRecords
+        healthRecords.removeAll { $0.id == id }
+        if !saveToDisk() { healthRecords = previous }
+    }
+
+    func saveHealthPrescription(_ prescription: HealthPrescription) {
+        guard let family, prescription.familyID == family.id,
+              members.contains(where: { $0.id == prescription.memberID }) else { return }
+        let name = prescription.medicationName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.count <= 160,
+              prescription.remainingRepeats.map({ $0 >= 0 }) ?? true else { return }
+        var updated = prescription
+        updated.medicationName = name
+        updated.notes = Self.cleaned(updated.notes, limit: 2000)
+        updated.updatedAt = .now
+        let previous = healthPrescriptions
+        if let index = healthPrescriptions.firstIndex(where: { $0.id == prescription.id }) {
+            healthPrescriptions[index] = updated
+        } else {
+            healthPrescriptions.append(updated)
+        }
+        if !saveToDisk() { healthPrescriptions = previous }
+    }
+
+    func deleteHealthPrescription(_ id: UUID) {
+        let previousPrescriptions = healthPrescriptions
+        let previousPickups = medicationPickups
+        healthPrescriptions.removeAll { $0.id == id }
+        // Preserve pickup history; detach it from the deleted prescription.
+        for index in medicationPickups.indices where medicationPickups[index].prescriptionID == id {
+            medicationPickups[index].prescriptionID = nil
+        }
+        if !saveToDisk() {
+            healthPrescriptions = previousPrescriptions
+            medicationPickups = previousPickups
+        }
+    }
+
+    func saveMedicationPickup(_ pickup: MedicationPickup) {
+        guard let family, pickup.familyID == family.id,
+              members.contains(where: { $0.id == pickup.memberID }) else { return }
+        let name = pickup.medicationName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.count <= 160 else { return }
+        if let prescriptionID = pickup.prescriptionID {
+            guard healthPrescriptions.contains(where: {
+                $0.id == prescriptionID && $0.memberID == pickup.memberID
+            }) else { return }
+        }
+        var updated = pickup
+        updated.medicationName = name
+        updated.updatedAt = .now
+        let previous = medicationPickups
+        if let index = medicationPickups.firstIndex(where: { $0.id == pickup.id }) {
+            medicationPickups[index] = updated
+        } else {
+            medicationPickups.append(updated)
+        }
+        if !saveToDisk() { medicationPickups = previous }
+    }
+
+    func deleteMedicationPickup(_ id: UUID) {
+        let previous = medicationPickups
+        medicationPickups.removeAll { $0.id == id }
+        if !saveToDisk() { medicationPickups = previous }
+    }
+
+    func saveHealthProfileInformation(_ information: HealthProfileInformation) {
+        guard let family, information.familyID == family.id,
+              members.contains(where: { $0.id == information.memberID }) else { return }
+        let title = information.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, title.count <= 160 else { return }
+        var updated = information
+        updated.title = title
+        updated.details = Self.cleaned(updated.details, limit: 4000)
+        updated.updatedAt = .now
+        let previous = healthProfileInformation
+        if let index = healthProfileInformation.firstIndex(where: { $0.id == information.id }) {
+            healthProfileInformation[index] = updated
+        } else {
+            healthProfileInformation.append(updated)
+        }
+        if !saveToDisk() { healthProfileInformation = previous }
+    }
+
+    func deleteHealthProfileInformation(_ id: UUID) {
+        let previous = healthProfileInformation
+        healthProfileInformation.removeAll { $0.id == id }
+        if !saveToDisk() { healthProfileInformation = previous }
+    }
+
+    func saveHealthReminder(_ reminder: HealthReminder) {
+        guard let family, reminder.familyID == family.id,
+              members.contains(where: { $0.id == reminder.memberID }) else { return }
+        let title = reminder.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, title.count <= 160 else { return }
+        var updated = reminder
+        updated.title = title
+        updated.updatedAt = .now
+        let previous = healthReminders
+        if let index = healthReminders.firstIndex(where: { $0.id == reminder.id }) {
+            healthReminders[index] = updated
+        } else {
+            healthReminders.append(updated)
+        }
+        if !saveToDisk() { healthReminders = previous }
+    }
+
+    func deleteHealthReminder(_ id: UUID) {
+        let previous = healthReminders
+        healthReminders.removeAll { $0.id == id }
+        if !saveToDisk() { healthReminders = previous }
+    }
+
+    private static func cleaned(_ value: String?, limit: Int) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return String(trimmed.prefix(limit))
+    }
+
     private struct Snapshot: Codable {
         var family: Family?
         var members: [FamilyMember]
@@ -373,6 +529,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         var occurrenceOverrides: [FamilyOccurrenceOverride]? = nil
         var giftIdeas: [GiftIdea]? = nil
         var christmasGifts: [ChristmasGift]? = nil
+        var healthRecords: [HealthRecord]? = nil
+        var healthPrescriptions: [HealthPrescription]? = nil
+        var medicationPickups: [MedicationPickup]? = nil
+        var healthProfileInformation: [HealthProfileInformation]? = nil
+        var healthReminders: [HealthReminder]? = nil
     }
 
     private func loadFromDisk() {
@@ -387,6 +548,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             occurrenceOverrides = snapshot.occurrenceOverrides ?? []
             giftIdeas = snapshot.giftIdeas ?? []
             christmasGifts = snapshot.christmasGifts ?? []
+            healthRecords = snapshot.healthRecords ?? []
+            healthPrescriptions = snapshot.healthPrescriptions ?? []
+            medicationPickups = snapshot.medicationPickups ?? []
+            healthProfileInformation = snapshot.healthProfileInformation ?? []
+            healthReminders = snapshot.healthReminders ?? []
             shoppingItems = snapshot.shoppingItems
             notifications = snapshot.notifications
             messages = snapshot.messages ?? []
@@ -414,7 +580,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                                 shoppingItems: shoppingItems, notifications: notifications, messages: messages,
                                 skippedOccurrences: skippedOccurrences,
                                 occurrenceOverrides: occurrenceOverrides,
-                                giftIdeas: giftIdeas, christmasGifts: christmasGifts)
+                                giftIdeas: giftIdeas, christmasGifts: christmasGifts,
+                                healthRecords: healthRecords, healthPrescriptions: healthPrescriptions,
+                                medicationPickups: medicationPickups,
+                                healthProfileInformation: healthProfileInformation,
+                                healthReminders: healthReminders)
         do {
             let data = try JSONEncoder().encode(snapshot)
             try data.write(to: fileURL, options: .atomic)

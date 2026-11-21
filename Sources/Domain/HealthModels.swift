@@ -59,6 +59,7 @@ struct HealthRecord: Identifiable, Codable, Equatable {
     var notes: String?
     var status: HealthRecordStatus
     var visibility: HealthVisibility
+    var reminderOffsets: [Int]
     var calendarItemID: UUID?
     let createdAt: Date
     var updatedAt: Date
@@ -77,6 +78,7 @@ struct HealthRecord: Identifiable, Codable, Equatable {
         notes: String? = nil,
         status: HealthRecordStatus = .planned,
         visibility: HealthVisibility = .private,
+        reminderOffsets: [Int] = [604_800, 86_400],
         calendarItemID: UUID? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now
@@ -94,6 +96,7 @@ struct HealthRecord: Identifiable, Codable, Equatable {
         self.notes = notes
         self.status = status
         self.visibility = visibility
+        self.reminderOffsets = Array(Set(reminderOffsets.filter { $0 >= 0 })).sorted(by: >)
         self.calendarItemID = calendarItemID
         self.createdAt = createdAt
         self.updatedAt = updatedAt

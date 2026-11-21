@@ -387,20 +387,54 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         updated.location = Self.cleaned(updated.location, limit: 160)
         updated.address = Self.cleaned(updated.address, limit: 240)
         updated.notes = Self.cleaned(updated.notes, limit: 4000)
+        updated.reminderOffsets = Array(Set(updated.reminderOffsets.filter { $0 >= 0 })).sorted(by: >)
         updated.updatedAt = .now
-        let previous = healthRecords
+        let previousRecords = healthRecords
+        let previousItems = items
+        if updated.type == .appointment || updated.type == .followUp {
+            let calendarID = updated.calendarItemID ?? UUID()
+            updated.calendarItemID = calendarID
+            let calendarItem = FamilyItem(
+                id: calendarID, familyID: family.id, title: title, details: updated.notes,
+                startsAt: updated.startsAt, endsAt: nil, kind: .healthVisit,
+                memberID: updated.memberID, isRecurringYearly: false,
+                reminderOffsets: updated.reminderOffsets, memberIDs: [updated.memberID],
+                isForEveryone: false, responsibleMemberID: nil,
+                location: updated.address ?? updated.location,
+                recurrenceFrequency: .none
+            )
+            if let itemIndex = items.firstIndex(where: { $0.id == calendarID }) {
+                items[itemIndex] = calendarItem
+            } else {
+                items.append(calendarItem)
+            }
+        } else if let calendarID = updated.calendarItemID {
+            items.removeAll { $0.id == calendarID }
+            updated.calendarItemID = nil
+        }
         if let index = healthRecords.firstIndex(where: { $0.id == record.id }) {
             healthRecords[index] = updated
         } else {
             healthRecords.append(updated)
         }
-        if !saveToDisk() { healthRecords = previous }
+        if !saveToDisk() {
+            healthRecords = previousRecords
+            items = previousItems
+        }
     }
 
     func deleteHealthRecord(_ id: UUID) {
-        let previous = healthRecords
+        let previousRecords = healthRecords
+        let previousItems = items
+        let linkedCalendarID = healthRecords.first(where: { $0.id == id })?.calendarItemID
         healthRecords.removeAll { $0.id == id }
-        if !saveToDisk() { healthRecords = previous }
+        if let linkedCalendarID {
+            items.removeAll { $0.id == linkedCalendarID }
+        }
+        if !saveToDisk() {
+            healthRecords = previousRecords
+            items = previousItems
+        }
     }
 
     func saveHealthPrescription(_ prescription: HealthPrescription) {

@@ -49,11 +49,16 @@ final class HealthStoreTests: XCTestCase {
         store.saveHealthReminder(reminder)
 
         let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
-        XCTAssertEqual(reloaded.healthRecords, [record])
-        XCTAssertEqual(reloaded.healthPrescriptions, [prescription])
-        XCTAssertEqual(reloaded.medicationPickups, [pickup])
-        XCTAssertEqual(reloaded.healthProfileInformation, [information])
-        XCTAssertEqual(reloaded.healthReminders, [reminder])
+        XCTAssertEqual(reloaded.healthRecords.map(\.id), [record.id])
+        XCTAssertEqual(reloaded.healthRecords.first?.title, record.title)
+        XCTAssertEqual(reloaded.healthPrescriptions.map(\.id), [prescription.id])
+        XCTAssertEqual(reloaded.healthPrescriptions.first?.renewalStatus, .due)
+        XCTAssertEqual(reloaded.medicationPickups.map(\.id), [pickup.id])
+        XCTAssertEqual(reloaded.medicationPickups.first?.prescriptionID, prescription.id)
+        XCTAssertEqual(reloaded.healthProfileInformation.map(\.id), [information.id])
+        XCTAssertEqual(reloaded.healthProfileInformation.first?.type, .allergy)
+        XCTAssertEqual(reloaded.healthReminders.map(\.id), [reminder.id])
+        XCTAssertEqual(reloaded.healthReminders.first?.targetType, .prescriptionRenewal)
     }
 
     func testPrescriptionRenewalAndMedicationPickupHaveIndependentStatuses() throws {

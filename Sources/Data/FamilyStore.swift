@@ -106,7 +106,27 @@ final class FamilyStore: ObservableObject {
     func deleteMedicationPickup(_ id: UUID) { repository.deleteMedicationPickup(id); refresh() }
     func saveHealthProfileInformation(_ information: HealthProfileInformation) { repository.saveHealthProfileInformation(information); refresh() }
     func deleteHealthProfileInformation(_ id: UUID) { repository.deleteHealthProfileInformation(id); refresh() }
-    func saveHealthReminder(_ reminder: HealthReminder) { repository.saveHealthReminder(reminder); refresh() }
-    func deleteHealthReminder(_ id: UUID) { repository.deleteHealthReminder(id); refresh() }
+    func saveHealthReminder(_ reminder: HealthReminder) {
+        repository.saveHealthReminder(reminder)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func deleteHealthReminder(_ id: UUID) {
+        repository.deleteHealthReminder(id)
+        refresh()
+        rescheduleHealthReminders()
+    }
+
+    private func rescheduleHealthReminders() {
+        guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
+        Task {
+            await LocalReminderScheduler.schedule(
+                for: items,
+                skipping: skippedOccurrences,
+                overrides: occurrenceOverrides,
+                healthReminders: healthReminders
+            )
+        }
+    }
     func markNotificationRead(_ id: UUID) { repository.markNotificationRead(id); refresh() }
 }

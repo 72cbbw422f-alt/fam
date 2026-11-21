@@ -108,10 +108,26 @@ final class FamilyStore: ObservableObject {
         refresh()
         rescheduleHealthReminders()
     }
-    func saveHealthPrescription(_ prescription: HealthPrescription) { repository.saveHealthPrescription(prescription); refresh() }
-    func deleteHealthPrescription(_ id: UUID) { repository.deleteHealthPrescription(id); refresh() }
-    func saveMedicationPickup(_ pickup: MedicationPickup) { repository.saveMedicationPickup(pickup); refresh() }
-    func deleteMedicationPickup(_ id: UUID) { repository.deleteMedicationPickup(id); refresh() }
+    func saveHealthPrescription(_ prescription: HealthPrescription) {
+        repository.saveHealthPrescription(prescription)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func deleteHealthPrescription(_ id: UUID) {
+        repository.deleteHealthPrescription(id)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func saveMedicationPickup(_ pickup: MedicationPickup) {
+        repository.saveMedicationPickup(pickup)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func deleteMedicationPickup(_ id: UUID) {
+        repository.deleteMedicationPickup(id)
+        refresh()
+        rescheduleHealthReminders()
+    }
     func saveHealthProfileInformation(_ information: HealthProfileInformation) { repository.saveHealthProfileInformation(information); refresh() }
     func deleteHealthProfileInformation(_ id: UUID) { repository.deleteHealthProfileInformation(id); refresh() }
     func saveHealthReminder(_ reminder: HealthReminder) {

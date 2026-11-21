@@ -2,7 +2,7 @@ name: iOS build
 
 on:
   push:
-    branches: [main, local-first-beta]
+    branches: [main, local-first-beta, feature/health-foundation]
   workflow_dispatch:
 
 concurrency:

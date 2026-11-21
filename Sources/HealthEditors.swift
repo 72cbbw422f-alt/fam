@@ -18,6 +18,7 @@ struct HealthRecordEditorView: View {
     @State private var visibility: HealthVisibility
     @State private var remindOneWeek: Bool
     @State private var remindOneDay: Bool
+    @State private var remindSameDay: Bool
 
     init(store: FamilyStore, record: HealthRecord?) {
         self.store = store
@@ -35,6 +36,7 @@ struct HealthRecordEditorView: View {
         _visibility = State(initialValue: record?.visibility ?? .personal)
         _remindOneWeek = State(initialValue: record?.reminderOffsets.contains(604_800) ?? true)
         _remindOneDay = State(initialValue: record?.reminderOffsets.contains(86_400) ?? true)
+        _remindSameDay = State(initialValue: record?.reminderOffsets.contains(0) ?? false)
     }
 
     var body: some View {
@@ -71,6 +73,7 @@ struct HealthRecordEditorView: View {
             Section("Påminnelser") {
                 Toggle("En vecka före", isOn: $remindOneWeek)
                 Toggle("En dag före", isOn: $remindOneDay)
+                Toggle("Samma dag", isOn: $remindSameDay)
             }
 
             Section("Integritet") {
@@ -117,7 +120,8 @@ struct HealthRecordEditorView: View {
         guard let familyID = store.family?.id, let memberID else { return }
         let offsets = [
             remindOneWeek ? 604_800 : nil,
-            remindOneDay ? 86_400 : nil
+            remindOneDay ? 86_400 : nil,
+            remindSameDay ? 0 : nil
         ].compactMap { $0 }
         let value = HealthRecord(
             id: original?.id ?? UUID(),

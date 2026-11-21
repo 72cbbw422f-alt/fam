@@ -35,20 +35,31 @@ struct FamilyHealthView: View {
 
     private var upcomingRecords: [HealthRecord] {
         store.healthRecords
-            .filter { $0.startsAt >= Calendar.current.startOfDay(for: .now) && $0.status == .planned }
+            .filter {
+                $0.visibility == .sharedSummary
+                    && $0.startsAt >= Calendar.current.startOfDay(for: .now)
+                    && $0.status == .planned
+            }
             .sorted { $0.startsAt < $1.startsAt }
     }
 
     private var pendingRenewals: [HealthPrescription] {
-        store.healthPrescriptions.filter { $0.renewalStatus == .due || $0.renewalStatus == .requested }
+        store.healthPrescriptions.filter {
+            $0.visibility == .sharedSummary
+                && ($0.renewalStatus == .due || $0.renewalStatus == .requested)
+        }
     }
 
     private var pendingPickups: [MedicationPickup] {
-        store.medicationPickups.filter { $0.status == .planned }.sorted { $0.dueAt < $1.dueAt }
+        store.medicationPickups
+            .filter { $0.visibility == .sharedSummary && $0.status == .planned }
+            .sorted { $0.dueAt < $1.dueAt }
     }
 
     private var activeReminders: [HealthReminder] {
-        store.healthReminders.filter { $0.isEnabled && $0.firesAt > .now }.sorted { $0.firesAt < $1.firesAt }
+        store.healthReminders
+            .filter { $0.visibility == .sharedSummary && $0.isEnabled && $0.firesAt > .now }
+            .sorted { $0.firesAt < $1.firesAt }
     }
 
     var body: some View {
@@ -193,11 +204,14 @@ struct FamilyHealthView: View {
 
             sectionHeader("Uthämtning", subtitle: "Separata ärenden för läkemedel som ska hämtas")
             actionButton("Registrera uthämtning", symbol: "plus") { activeEditor = .pickup(nil) }
-            if pendingPickups.isEmpty {
+            let allPendingPickups = store.medicationPickups
+                .filter { $0.status == .planned }
+                .sorted { $0.dueAt < $1.dueAt }
+            if allPendingPickups.isEmpty {
                 emptyCard("Inget att hämta", detail: "Planerade uthämtningar visas här.")
             } else {
                 VStack(spacing: 0) {
-                    ForEach(pendingPickups) { item in
+                    ForEach(allPendingPickups) { item in
                         Button { activeEditor = .pickup(item) } label: {
                             pickupRow(item)
                         }

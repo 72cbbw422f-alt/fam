@@ -98,8 +98,16 @@ final class FamilyStore: ObservableObject {
         repository.sendMessage(text, conversationID: conversationID, kind: kind); refresh()
     }
     func markConversationRead(_ conversationID: String) { repository.markConversationRead(conversationID); refresh() }
-    func saveHealthRecord(_ record: HealthRecord) { repository.saveHealthRecord(record); refresh() }
-    func deleteHealthRecord(_ id: UUID) { repository.deleteHealthRecord(id); refresh() }
+    func saveHealthRecord(_ record: HealthRecord) {
+        repository.saveHealthRecord(record)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func deleteHealthRecord(_ id: UUID) {
+        repository.deleteHealthRecord(id)
+        refresh()
+        rescheduleHealthReminders()
+    }
     func saveHealthPrescription(_ prescription: HealthPrescription) { repository.saveHealthPrescription(prescription); refresh() }
     func deleteHealthPrescription(_ id: UUID) { repository.deleteHealthPrescription(id); refresh() }
     func saveMedicationPickup(_ pickup: MedicationPickup) { repository.saveMedicationPickup(pickup); refresh() }

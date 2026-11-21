@@ -16,6 +16,11 @@ final class FamilyStore: ObservableObject {
     @Published private(set) var giftIdeas: [GiftIdea] = []
     @Published private(set) var christmasGifts: [ChristmasGift] = []
     @Published private(set) var notifications: [FamilyNotification] = []
+    @Published private(set) var healthRecords: [HealthRecord] = []
+    @Published private(set) var healthPrescriptions: [HealthPrescription] = []
+    @Published private(set) var medicationPickups: [MedicationPickup] = []
+    @Published private(set) var healthProfileInformation: [HealthProfileInformation] = []
+    @Published private(set) var healthReminders: [HealthReminder] = []
     @Published private(set) var messages: [FamilyMessage] = []
     @Published private(set) var persistenceError: String?
 
@@ -41,6 +46,11 @@ final class FamilyStore: ObservableObject {
         giftIdeas = repository.giftIdeas
         christmasGifts = repository.christmasGifts
         notifications = repository.notifications
+        healthRecords = repository.healthRecords
+        healthPrescriptions = repository.healthPrescriptions
+        medicationPickups = repository.medicationPickups
+        healthProfileInformation = repository.healthProfileInformation
+        healthReminders = repository.healthReminders
         messages = repository.messages
         persistenceError = repository.persistenceError
     }
@@ -88,5 +98,15 @@ final class FamilyStore: ObservableObject {
         repository.sendMessage(text, conversationID: conversationID, kind: kind); refresh()
     }
     func markConversationRead(_ conversationID: String) { repository.markConversationRead(conversationID); refresh() }
+    func saveHealthRecord(_ record: HealthRecord) { repository.saveHealthRecord(record); refresh() }
+    func deleteHealthRecord(_ id: UUID) { repository.deleteHealthRecord(id); refresh() }
+    func saveHealthPrescription(_ prescription: HealthPrescription) { repository.saveHealthPrescription(prescription); refresh() }
+    func deleteHealthPrescription(_ id: UUID) { repository.deleteHealthPrescription(id); refresh() }
+    func saveMedicationPickup(_ pickup: MedicationPickup) { repository.saveMedicationPickup(pickup); refresh() }
+    func deleteMedicationPickup(_ id: UUID) { repository.deleteMedicationPickup(id); refresh() }
+    func saveHealthProfileInformation(_ information: HealthProfileInformation) { repository.saveHealthProfileInformation(information); refresh() }
+    func deleteHealthProfileInformation(_ id: UUID) { repository.deleteHealthProfileInformation(id); refresh() }
+    func saveHealthReminder(_ reminder: HealthReminder) { repository.saveHealthReminder(reminder); refresh() }
+    func deleteHealthReminder(_ id: UUID) { repository.deleteHealthReminder(id); refresh() }
     func markNotificationRead(_ id: UUID) { repository.markNotificationRead(id); refresh() }
 }

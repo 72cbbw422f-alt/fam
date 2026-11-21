@@ -447,26 +447,39 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         updated.medicationName = name
         updated.notes = Self.cleaned(updated.notes, limit: 2000)
         updated.updatedAt = .now
-        let previous = healthPrescriptions
+        let previousPrescriptions = healthPrescriptions
+        let previousReminders = healthReminders
         if let index = healthPrescriptions.firstIndex(where: { $0.id == prescription.id }) {
             healthPrescriptions[index] = updated
         } else {
             healthPrescriptions.append(updated)
         }
-        if !saveToDisk() { healthPrescriptions = previous }
+        let renewalIsActive = updated.renewalStatus == .due || updated.renewalStatus == .requested
+        upsertLinkedHealthReminder(
+            targetType: .prescriptionRenewal, targetID: updated.id, memberID: updated.memberID,
+            title: "Receptförnyelse", firesAt: renewalIsActive ? updated.renewalDueAt : nil,
+            visibility: updated.visibility
+        )
+        if !saveToDisk() {
+            healthPrescriptions = previousPrescriptions
+            healthReminders = previousReminders
+        }
     }
 
     func deleteHealthPrescription(_ id: UUID) {
         let previousPrescriptions = healthPrescriptions
         let previousPickups = medicationPickups
+        let previousReminders = healthReminders
         healthPrescriptions.removeAll { $0.id == id }
         // Preserve pickup history; detach it from the deleted prescription.
         for index in medicationPickups.indices where medicationPickups[index].prescriptionID == id {
             medicationPickups[index].prescriptionID = nil
         }
+        healthReminders.removeAll { $0.targetType == .prescriptionRenewal && $0.targetID == id }
         if !saveToDisk() {
             healthPrescriptions = previousPrescriptions
             medicationPickups = previousPickups
+            healthReminders = previousReminders
         }
     }
 
@@ -483,19 +496,34 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         var updated = pickup
         updated.medicationName = name
         updated.updatedAt = .now
-        let previous = medicationPickups
+        let previousPickups = medicationPickups
+        let previousReminders = healthReminders
         if let index = medicationPickups.firstIndex(where: { $0.id == pickup.id }) {
             medicationPickups[index] = updated
         } else {
             medicationPickups.append(updated)
         }
-        if !saveToDisk() { medicationPickups = previous }
+        upsertLinkedHealthReminder(
+            targetType: .medicationPickup, targetID: updated.id, memberID: updated.memberID,
+            title: "Läkemedel att hämta",
+            firesAt: updated.status == .planned ? updated.dueAt : nil,
+            visibility: updated.visibility
+        )
+        if !saveToDisk() {
+            medicationPickups = previousPickups
+            healthReminders = previousReminders
+        }
     }
 
     func deleteMedicationPickup(_ id: UUID) {
-        let previous = medicationPickups
+        let previousPickups = medicationPickups
+        let previousReminders = healthReminders
         medicationPickups.removeAll { $0.id == id }
-        if !saveToDisk() { medicationPickups = previous }
+        healthReminders.removeAll { $0.targetType == .medicationPickup && $0.targetID == id }
+        if !saveToDisk() {
+            medicationPickups = previousPickups
+            healthReminders = previousReminders
+        }
     }
 
     func saveHealthProfileInformation(_ information: HealthProfileInformation) {
@@ -543,6 +571,36 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let previous = healthReminders
         healthReminders.removeAll { $0.id == id }
         if !saveToDisk() { healthReminders = previous }
+    }
+
+    private func upsertLinkedHealthReminder(
+        targetType: HealthReminderTarget,
+        targetID: UUID,
+        memberID: UUID,
+        title: String,
+        firesAt: Date?,
+        visibility: HealthVisibility
+    ) {
+        if let index = healthReminders.firstIndex(where: {
+            $0.targetType == targetType && $0.targetID == targetID
+        }) {
+            guard let firesAt else {
+                healthReminders.remove(at: index)
+                return
+            }
+            healthReminders[index].memberID = memberID
+            healthReminders[index].title = title
+            healthReminders[index].firesAt = firesAt
+            healthReminders[index].isEnabled = true
+            healthReminders[index].visibility = visibility
+            healthReminders[index].updatedAt = .now
+        } else if let firesAt {
+            healthReminders.append(HealthReminder(
+                familyID: family?.id ?? UUID(), memberID: memberID,
+                targetType: targetType, targetID: targetID, title: title,
+                firesAt: firesAt, isEnabled: true, visibility: visibility
+            ))
+        }
     }
 
     private static func cleaned(_ value: String?, limit: Int) -> String? {

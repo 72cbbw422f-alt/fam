@@ -169,6 +169,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let previousItems = items
         let previousSkippedOccurrences = skippedOccurrences
         let previousOccurrenceOverrides = occurrenceOverrides
+        let previousHealthRecords = healthRecords
         if let id, let index = items.firstIndex(where: { $0.id == id }) {
             let previousSeriesStart = items[index].startsAt
             let previousFrequency = items[index].recurrenceFrequency
@@ -187,6 +188,20 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                 skippedOccurrences.removeAll { $0.seriesID == id }
                 occurrenceOverrides.removeAll { $0.seriesID == id }
             }
+            if let healthIndex = healthRecords.firstIndex(where: { $0.calendarItemID == id }) {
+                if kind == .healthVisit, let memberID = validMemberIDs.first {
+                    healthRecords[healthIndex].title = clean
+                    healthRecords[healthIndex].startsAt = startsAt
+                    healthRecords[healthIndex].memberID = memberID
+                    healthRecords[healthIndex].notes = details
+                    healthRecords[healthIndex].location = location
+                    healthRecords[healthIndex].updatedAt = .now
+                } else {
+                    healthRecords[healthIndex].calendarItemID = nil
+                    healthRecords[healthIndex].status = .cancelled
+                    healthRecords[healthIndex].updatedAt = .now
+                }
+            }
         } else {
             items.append(FamilyItem(id: UUID(), familyID: family.id, title: clean,
                                     details: details, startsAt: startsAt, endsAt: nil,
@@ -204,6 +219,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             items = previousItems
             skippedOccurrences = previousSkippedOccurrences
             occurrenceOverrides = previousOccurrenceOverrides
+            healthRecords = previousHealthRecords
         }
     }
 

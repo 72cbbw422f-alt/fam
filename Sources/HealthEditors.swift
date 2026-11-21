@@ -21,7 +21,7 @@ struct HealthRecordEditorView: View {
 
     init(store: FamilyStore, record: HealthRecord?) {
         self.store = store
-        original = record
+        original = record.flatMap { candidate in store.healthRecords.contains(where: { $0.id == candidate.id }) ? candidate : nil }
         _title = State(initialValue: record?.title ?? "")
         _type = State(initialValue: record?.type ?? .appointment)
         _memberID = State(initialValue: record?.memberID ?? store.members.first?.id)

@@ -1,14 +1,14 @@
 import Foundation
 
 enum HealthVisibility: String, Codable, CaseIterable, Identifiable {
-    case private
+    case personal
     case sharedSummary
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .private: return "Privat"
+        case .personal: return "Privat"
         case .sharedSummary: return "Visa i familjeöversikten"
         }
     }
@@ -77,7 +77,7 @@ struct HealthRecord: Identifiable, Codable, Equatable {
         address: String? = nil,
         notes: String? = nil,
         status: HealthRecordStatus = .planned,
-        visibility: HealthVisibility = .private,
+        visibility: HealthVisibility = .personal,
         reminderOffsets: [Int] = [604_800, 86_400],
         calendarItemID: UUID? = nil,
         createdAt: Date = .now,

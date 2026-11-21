@@ -211,13 +211,21 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let previousItems = items
         let previousSkippedOccurrences = skippedOccurrences
         let previousOccurrenceOverrides = occurrenceOverrides
+        let previousHealthRecords = healthRecords
         items.removeAll { $0.id == item.id }
         skippedOccurrences.removeAll { $0.seriesID == item.id }
         occurrenceOverrides.removeAll { $0.seriesID == item.id }
+        // A calendar deletion cancels the linked health appointment but keeps its history.
+        for index in healthRecords.indices where healthRecords[index].calendarItemID == item.id {
+            healthRecords[index].calendarItemID = nil
+            healthRecords[index].status = .cancelled
+            healthRecords[index].updatedAt = .now
+        }
         if !saveToDisk() {
             items = previousItems
             skippedOccurrences = previousSkippedOccurrences
             occurrenceOverrides = previousOccurrenceOverrides
+            healthRecords = previousHealthRecords
         }
     }
 

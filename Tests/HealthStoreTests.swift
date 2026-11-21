@@ -252,6 +252,37 @@ final class HealthStoreTests: XCTestCase {
     }
 
 
+    func testPrivateHealthAppointmentsAreExcludedFromFamilyDashboardAndCalendar() async throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        let familyID = try XCTUnwrap(store.family?.id)
+        let privateRecord = HealthRecord(
+            familyID: familyID, memberID: member.id, type: .appointment,
+            title: "Privat besök", startsAt: Date.now.addingTimeInterval(86_400),
+            visibility: .personal
+        )
+        let sharedRecord = HealthRecord(
+            familyID: familyID, memberID: member.id, type: .appointment,
+            title: "Delat besök", startsAt: Date.now.addingTimeInterval(172_800),
+            visibility: .sharedSummary
+        )
+        store.saveHealthRecord(privateRecord)
+        store.saveHealthRecord(sharedRecord)
+
+        let dashboard = DashboardViewModel(store: store)
+        await dashboard.load()
+        let calendar = FamilyCalendarViewModel(store: store)
+        await calendar.load()
+
+        XCTAssertFalse(dashboard.upcomingItems.contains { $0.title == "Privat besök" })
+        XCTAssertTrue(dashboard.upcomingItems.contains { $0.title == "Delat besök" })
+        XCTAssertFalse(calendar.sourceItems.contains { $0.title == "Privat besök" })
+        XCTAssertTrue(calendar.sourceItems.contains { $0.title == "Delat besök" })
+    }
+
+
     func testLegacySnapshotWithoutHealthFieldsLoadsEmptyHealthCollections() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

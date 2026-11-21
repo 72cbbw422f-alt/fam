@@ -21,7 +21,12 @@ final class FamilyCalendarViewModel: ObservableObject {
         members = store.members
         skippedOccurrences = store.skippedOccurrences
         occurrenceOverrides = store.occurrenceOverrides
-        sourceItems = store.items
+        let privateHealthCalendarIDs = Set(
+            store.healthRecords
+                .filter { $0.visibility == .personal }
+                .compactMap(\.calendarItemID)
+        )
+        sourceItems = store.items.filter { !privateHealthCalendarIDs.contains($0.id) }
         items = DashboardViewModel.project(sourceItems, from: .now, skipping: skippedOccurrences, overrides: occurrenceOverrides)
         isLoading = false
     }

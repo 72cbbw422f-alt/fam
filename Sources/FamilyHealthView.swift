@@ -146,19 +146,23 @@ struct FamilyHealthView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(upcomingRecords.prefix(5)) { record in
-                        recordRow(record)
+                        Button { activeEditor = .record(record) } label: { recordRow(record) }
+                            .buttonStyle(.plain)
                         rowDivider
                     }
                     ForEach(pendingRenewals.prefix(4)) { prescription in
-                        prescriptionRow(prescription)
+                        Button { activeEditor = .prescription(prescription) } label: { prescriptionRow(prescription) }
+                            .buttonStyle(.plain)
                         rowDivider
                     }
                     ForEach(pendingPickups.prefix(4)) { pickup in
-                        pickupRow(pickup)
+                        Button { activeEditor = .pickup(pickup) } label: { pickupRow(pickup) }
+                            .buttonStyle(.plain)
                         rowDivider
                     }
                     ForEach(activeReminders.prefix(4)) { reminder in
-                        reminderRow(reminder)
+                        Button { activeEditor = .reminder(reminder) } label: { reminderRow(reminder) }
+                            .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 13)
@@ -381,7 +385,7 @@ struct FamilyHealthView: View {
                     Text("Förnya: \(date.formatted(.dateTime.day().month(.abbreviated).year()))")
                         .font(.system(size: 12, weight: .medium)).foregroundStyle(FamiljenTheme.navy)
                 }
-                Text("Uttag kvar: \(item.remainingRepeats.map(String.init) ?? "Ej angivet")")
+                Text("Uttag kvar: \(item.remainingRepeats.map { String($0) } ?? "Ej angivet")")
                     .font(.system(size: 12)).foregroundStyle(FamiljenTheme.muted)
             }
             Spacer(minLength: 0)

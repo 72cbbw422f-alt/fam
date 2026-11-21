@@ -100,6 +100,61 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertNil(store.persistenceError)
     }
 
+    func testHealthAppointmentCreatesUpdatesAndDeletesLinkedCalendarItem() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        let familyID = try XCTUnwrap(store.family?.id)
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        var record = HealthRecord(
+            familyID: familyID, memberID: member.id, type: .appointment,
+            title: "Vårdcentral", startsAt: start, address: "Storgatan 1",
+            reminderOffsets: [604_800, 86_400]
+        )
+
+        store.saveHealthRecord(record)
+        let saved = try XCTUnwrap(store.healthRecords.first)
+        let linkedID = try XCTUnwrap(saved.calendarItemID)
+        XCTAssertEqual(store.items.count, 1)
+        XCTAssertEqual(store.items.first?.id, linkedID)
+        XCTAssertEqual(store.items.first?.kind, .healthVisit)
+        XCTAssertEqual(store.items.first?.memberIDs, [member.id])
+        XCTAssertEqual(store.items.first?.reminderOffsets, [604_800, 86_400])
+
+        record = saved
+        record.title = "Vårdcentral – ändrad"
+        record.startsAt = start.addingTimeInterval(3_600)
+        store.saveHealthRecord(record)
+
+        XCTAssertEqual(store.items.count, 1)
+        XCTAssertEqual(store.items.first?.id, linkedID)
+        XCTAssertEqual(store.items.first?.title, "Vårdcentral – ändrad")
+
+        store.deleteHealthRecord(saved.id)
+        XCTAssertTrue(store.healthRecords.isEmpty)
+        XCTAssertTrue(store.items.isEmpty)
+    }
+
+    func testPrivateHealthNoteDoesNotCreateCalendarItem() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        let familyID = try XCTUnwrap(store.family?.id)
+        let note = HealthRecord(
+            familyID: familyID, memberID: member.id, type: .note,
+            title: "Privat anteckning", startsAt: .now
+        )
+
+        store.saveHealthRecord(note)
+
+        XCTAssertEqual(store.healthRecords.count, 1)
+        XCTAssertNil(store.healthRecords.first?.calendarItemID)
+        XCTAssertTrue(store.items.isEmpty)
+    }
+
+
     func testLegacySnapshotWithoutHealthFieldsLoadsEmptyHealthCollections() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

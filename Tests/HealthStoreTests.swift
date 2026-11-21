@@ -38,8 +38,8 @@ final class HealthStoreTests: XCTestCase {
             title: "Pollen", details: "Registrerad uppgift"
         )
         let reminder = HealthReminder(
-            familyID: familyID, memberID: member.id, targetType: .prescriptionRenewal,
-            targetID: prescription.id, title: "Påminnelse om recept", firesAt: now
+            familyID: familyID, memberID: member.id, targetType: .custom,
+            title: "Egen påminnelse", firesAt: now
         )
 
         store.saveHealthRecord(record)
@@ -57,8 +57,8 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.medicationPickups.first?.prescriptionID, prescription.id)
         XCTAssertEqual(reloaded.healthProfileInformation.map(\.id), [information.id])
         XCTAssertEqual(reloaded.healthProfileInformation.first?.type, .allergy)
-        XCTAssertEqual(reloaded.healthReminders.count, 2)
-        XCTAssertTrue(reloaded.healthReminders.contains { $0.id == reminder.id })
+        XCTAssertEqual(reloaded.healthReminders.count, 3)
+        XCTAssertTrue(reloaded.healthReminders.contains { $0.id == reminder.id && $0.targetType == .custom })
         XCTAssertTrue(reloaded.healthReminders.contains { $0.targetID == prescription.id && $0.targetType == .prescriptionRenewal })
     }
 

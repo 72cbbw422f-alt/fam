@@ -175,6 +175,7 @@ final class HealthStoreTests: XCTestCase {
         var record = HealthRecord(
             familyID: familyID, memberID: member.id, type: .appointment,
             title: "Vårdcentral", startsAt: start, address: "Storgatan 1",
+            latitude: 61.7284, longitude: 17.1057,
             reminderOffsets: [604_800, 86_400]
         )
 
@@ -186,6 +187,8 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertEqual(store.items.first?.kind, .healthVisit)
         XCTAssertEqual(store.items.first?.memberIDs, [member.id])
         XCTAssertEqual(store.items.first?.reminderOffsets, [604_800, 86_400])
+        XCTAssertEqual(store.items.first?.latitude, record.latitude)
+        XCTAssertEqual(store.items.first?.longitude, record.longitude)
 
         record = saved
         record.title = "Vårdcentral – ändrad"
@@ -227,6 +230,8 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertEqual(store.healthRecords.first?.startsAt, movedDate)
         XCTAssertEqual(store.healthRecords.first?.notes, "Ny anteckning")
         XCTAssertEqual(store.healthRecords.first?.location, "Ny mottagning")
+        XCTAssertEqual(store.healthRecords.first?.latitude, linkedItem.latitude)
+        XCTAssertEqual(store.healthRecords.first?.longitude, linkedItem.longitude)
 
         store.deleteItem(try XCTUnwrap(store.items.first))
         XCTAssertEqual(store.healthRecords.count, 1)
@@ -285,6 +290,37 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertTrue(calendar.sourceItems.contains { $0.title == "Delat besök" })
     }
 
+
+    func testCalendarEventPersistsMapCoordinatesAndDecodesWithoutThem() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        let familyID = try XCTUnwrap(store.family?.id)
+        store.saveCalendarItem(
+            id: nil, title: "Möte", details: "Ta med handlingar",
+            startsAt: Date(timeIntervalSince1970: 1_800_000_000), kind: .appointment,
+            memberIDs: [member.id], isForEveryone: false, responsibleMemberID: nil,
+            recurring: false, reminderOffsets: [3_600], location: "Hudiksvall",
+            latitude: 61.7284, longitude: 17.1057
+        )
+
+        let saved = try XCTUnwrap(store.items.first)
+        XCTAssertEqual(saved.latitude, 61.7284)
+        XCTAssertEqual(saved.longitude, 17.1057)
+        XCTAssertEqual(saved.details, "Ta med handlingar")
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.items.first?.latitude, 61.7284)
+        XCTAssertEqual(reloaded.items.first?.longitude, 17.1057)
+
+        var legacy = saved
+        legacy.latitude = nil
+        legacy.longitude = nil
+        let decoded = try JSONDecoder().decode(FamilyItem.self, from: JSONEncoder().encode(legacy))
+        XCTAssertNil(decoded.latitude)
+        XCTAssertNil(decoded.longitude)
+    }
 
     func testHealthRecordDecodesWhenOptionalMapCoordinatesAreAbsent() throws {
         let record = HealthRecord(

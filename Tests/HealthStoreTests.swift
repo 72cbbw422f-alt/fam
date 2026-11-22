@@ -117,6 +117,41 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertEqual(store.medicationPickups.first?.status, .collected)
     }
 
+    func testDeletingHealthRecordRemovesLinkedCalendarItemAndRecordReminder() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        let familyID = try XCTUnwrap(store.family?.id)
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        let record = HealthRecord(
+            familyID: familyID, memberID: member.id, type: .appointment,
+            title: "Vårdbesök", startsAt: date, visibility: .sharedSummary
+        )
+        let linkedReminder = HealthReminder(
+            familyID: familyID, memberID: member.id, targetType: .record,
+            targetID: record.id, title: "Vårdbesök", firesAt: date
+        )
+        let unrelatedReminder = HealthReminder(
+            familyID: familyID, memberID: member.id, targetType: .custom,
+            title: "Egen påminnelse", firesAt: date
+        )
+        store.saveHealthRecord(record)
+        store.saveHealthReminder(linkedReminder)
+        store.saveHealthReminder(unrelatedReminder)
+        XCTAssertEqual(store.items.count, 1)
+
+        store.deleteHealthRecord(record.id)
+
+        XCTAssertTrue(store.healthRecords.isEmpty)
+        XCTAssertTrue(store.items.isEmpty)
+        XCTAssertEqual(store.healthReminders.map(\\.id), [unrelatedReminder.id])
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.healthRecords.isEmpty)
+        XCTAssertTrue(reloaded.items.isEmpty)
+        XCTAssertEqual(reloaded.healthReminders.map(\\.id), [unrelatedReminder.id])
+    }
+
     func testDeletingPrescriptionDetachesPickupHistoryAndRemovesRenewalReminder() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

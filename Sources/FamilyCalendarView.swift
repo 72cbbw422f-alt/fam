@@ -33,23 +33,13 @@ private final class CalendarPlaceSearchModel: NSObject, ObservableObject, MKLoca
         suggestions = []
     }
 
-    func resolve(_ suggestion: MKLocalSearchCompletion) async -> String {
+    func resolve(_ suggestion: MKLocalSearchCompletion) async -> MKMapItem? {
         let request = MKLocalSearch.Request(completion: suggestion)
         do {
             let response = try await MKLocalSearch(request: request).start()
-            guard let place = response.mapItems.first else {
-                return [suggestion.title, suggestion.subtitle]
-                    .filter { !$0.isEmpty }
-                    .joined(separator: ", ")
-            }
-            let name = place.name ?? suggestion.title
-            let address = place.placemark.title ?? suggestion.subtitle
-            if address.localizedCaseInsensitiveContains(name) { return address }
-            return [name, address].filter { !$0.isEmpty }.joined(separator: ", ")
+            return response.mapItems.first
         } catch {
-            return [suggestion.title, suggestion.subtitle]
-                .filter { !$0.isEmpty }
-                .joined(separator: ", ")
+            return nil
         }
     }
 
@@ -62,8 +52,11 @@ private final class CalendarPlaceSearchModel: NSObject, ObservableObject, MKLoca
 
 private struct PlaceSearchField: View {
     @Binding var text: String
+    @Binding var latitude: Double?
+    @Binding var longitude: Double?
     @StateObject private var searchModel = CalendarPlaceSearchModel()
     @State private var isResolving = false
+    @State private var isApplyingSelection = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -74,6 +67,10 @@ private struct PlaceSearchField: View {
                     .textContentType(.fullStreetAddress)
                     .autocorrectionDisabled()
                     .onChange(of: text) { _, value in
+                        if !isApplyingSelection {
+                            latitude = nil
+                            longitude = nil
+                        }
                         searchModel.updateQuery(value)
                     }
                 if isResolving {
@@ -98,8 +95,19 @@ private struct PlaceSearchField: View {
                             searchModel.clearSuggestions()
                             isResolving = true
                             Task {
-                                let resolved = await searchModel.resolve(suggestion)
-                                text = resolved
+                                if let resolved = await searchModel.resolve(suggestion) {
+                                    isApplyingSelection = true
+                                    text = resolved.name ?? suggestion.title
+                                    latitude = resolved.placemark.coordinate.latitude
+                                    longitude = resolved.placemark.coordinate.longitude
+                                    if let address = resolved.placemark.title, !address.isEmpty {
+                                        text = "\(text) · \(address)"
+                                    }
+                                    Task { @MainActor in
+                                        await Task.yield()
+                                        isApplyingSelection = false
+                                    }
+                                }
                                 isResolving = false
                             }
                         } label: {
@@ -642,11 +650,11 @@ struct FamilyCalendarView: View {
             FamilyCalendarItemDetailView(item: item, members: model.members)
         }
         .sheet(isPresented: $showingEditor, onDismiss: { editingItem = nil }) {
-            FamilyItemEditor(item: editingItem, members: model.members, singleOccurrence: editingSingleOccurrence, initialKind: selectedKind) { title, details, location, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurrenceFrequency, reminderOffsets in
+            FamilyItemEditor(item: editingItem, members: model.members, singleOccurrence: editingSingleOccurrence, initialKind: selectedKind) { title, details, location, latitude, longitude, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurrenceFrequency, reminderOffsets in
                 if editingSingleOccurrence, let item = editingItem {
                     return await model.saveOccurrenceOverride(
                         seriesID: item.id, occurrenceDate: item.startsAt, title: title,
-                        details: details, location: location, startsAt: date, kind: kind,
+                        details: details, location: location, latitude: latitude, longitude: longitude, startsAt: date, kind: kind,
                         memberIDs: memberIDs, isForEveryone: isForEveryone,
                         responsibleMemberID: responsibleMemberID, reminderOffsets: reminderOffsets
                     )
@@ -654,7 +662,7 @@ struct FamilyCalendarView: View {
                 return await model.save(id: editingItem?.id, title: title, details: details, startsAt: date,
                                         kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
                                         responsibleMemberID: responsibleMemberID, isRecurringYearly: recurrenceFrequency == .yearly,
-                                        reminderOffsets: reminderOffsets, location: location,
+                                        reminderOffsets: reminderOffsets, location: location, latitude: latitude, longitude: longitude,
                                         recurrenceFrequency: recurrenceFrequency)
             }
         }
@@ -783,11 +791,13 @@ private struct FamilyItemEditor: View {
     let members: [FamilyMember]
     var singleOccurrence: Bool = false
     var initialKind: FamilyItemKind? = nil
-    let onSave: (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool
+    let onSave: (String, String?, String?, Double?, Double?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool
 
     @State private var title: String
     @State private var details: String
     @State private var location: String
+    @State private var latitude: Double?
+    @State private var longitude: Double?
     @State private var startsAt: Date
     @State private var kind: FamilyItemKind
     @State private var selectedMemberIDs: Set<UUID>
@@ -801,7 +811,7 @@ private struct FamilyItemEditor: View {
     @State private var isReadingImage = false
     @State private var importMessage: String?
 
-    init(item: FamilyItem?, members: [FamilyMember], singleOccurrence: Bool = false, initialKind: FamilyItemKind? = nil, onSave: @escaping (String, String?, String?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool) {
+    init(item: FamilyItem?, members: [FamilyMember], singleOccurrence: Bool = false, initialKind: FamilyItemKind? = nil, onSave: @escaping (String, String?, String?, Double?, Double?, Date, FamilyItemKind, [UUID], Bool, UUID?, FamilyRecurrenceFrequency, [Int]) async -> Bool) {
         self.item = item
         self.members = members
         self.singleOccurrence = singleOccurrence
@@ -810,6 +820,8 @@ private struct FamilyItemEditor: View {
         _title = State(initialValue: item?.title ?? "")
         _details = State(initialValue: item?.details ?? "")
         _location = State(initialValue: item?.location ?? "")
+        _latitude = State(initialValue: item?.latitude)
+        _longitude = State(initialValue: item?.longitude)
         _startsAt = State(initialValue: item?.startsAt ?? .now)
         _kind = State(initialValue: item?.kind ?? initialKind ?? .appointment)
         _selectedMemberIDs = State(initialValue: Set(item?.memberIDs ?? []))
@@ -900,7 +912,7 @@ private struct FamilyItemEditor: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     if kind != .birthday {
-                        PlaceSearchField(text: $location)
+                        PlaceSearchField(text: $location, latitude: $latitude, longitude: $longitude)
                         TextField("Anteckningar (valfritt)", text: $details, axis: .vertical).lineLimit(2...5)
                     }
                 }

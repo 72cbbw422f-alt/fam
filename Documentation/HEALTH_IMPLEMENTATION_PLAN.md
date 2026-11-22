@@ -135,3 +135,10 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
   - Osignerad iPhone-byggnad, IPA-paketering och artifact-uppladdning: success.
   - iOS Simulator-jobbets enhetstester: failure; simulatorbygget hoppades över.
 - Felet har inte kunnat isoleras från tillgänglig check-run-information. Den körningen verifierar därför inte testsviten trots att iPhone-paketet byggdes.
+
+
+## Åtgärdat CI-fel i påminnelsetest (2026-11-22)
+- GitHub Actions run 45037720362 gav ett tydligt kompileringsfel i Tests/HealthReminderSchedulerTests.swift: en key path för offset hade dubbla omvända snedstreck och kunde inte parsas av Swift.
+- Raden är korrigerad till en giltig Swift-key-path (\\.offset). Felet låg i testkoden, inte i appens produktionskod.
+- iPhone-bygget i samma körning lyckades; simulatorns tester stoppades vid kompilering av testmålet.
+- Korrigeringen ligger i commit 94a52454cf3c4d41bc1f15b33ad4556962fa5339. Ny CI-verifiering krävs.

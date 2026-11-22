@@ -4,7 +4,7 @@ import MapKit
 
 
 @MainActor
-private final class CalendarPlaceSearchModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
+private final class CalendarPlaceSearchModel: NSObject, ObservableObject, @preconcurrency MKLocalSearchCompleterDelegate {
     @Published var suggestions: [MKLocalSearchCompletion] = []
     private let completer = MKLocalSearchCompleter()
 

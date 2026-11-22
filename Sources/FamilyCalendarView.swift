@@ -1090,37 +1090,53 @@ private struct FamilyCalendarItemDetailView: View {
         return names.isEmpty ? "Inte tilldelad" : names.joined(separator: " · ")
     }
 
+    private var locationTitle: String? {
+        guard let location = item.location?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !location.isEmpty else { return nil }
+        return location
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 16) {
                     HStack(spacing: 14) {
-                        CategoryIcon(kind: item.kind, size: 54)
-                        VStack(alignment: .leading, spacing: 4) {
+                        CategoryIcon(kind: item.kind, size: 58)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(item.kind.displayName.uppercased())
+                                .font(.system(size: 11, weight: .bold))
+                                .tracking(1.2)
+                                .foregroundStyle(FamiljenTheme.champagneDeep)
                             Text(item.title)
-                                .font(.system(size: 23, weight: .semibold, design: .serif))
+                                .font(.system(size: 25, weight: .semibold, design: .serif))
                                 .foregroundStyle(FamiljenTheme.ink)
-                            Text(item.kind.displayName)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(FamiljenTheme.muted)
                         }
                     }
-                    detailRow("Datum", value: item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.wide).year()).capitalized, symbol: "calendar")
-                    detailRow("Tid", value: item.startsAt.formatted(.dateTime.hour().minute()), symbol: "clock")
-                    if let location = item.location, !location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        detailRow("Plats", value: location, symbol: "mappin.and.ellipse")
-                    }
-                    detailRow("Gäller", value: peopleText, symbol: "person.2")
+
+                    detailCard("Datum", value: item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.wide).year()).capitalized, symbol: "calendar")
+                    detailCard("Tid", value: timeDescription, symbol: "clock")
+                    detailCard("Gäller", value: peopleText, symbol: "person.2")
+
                     if let responsibleID = item.responsibleMemberID,
                        let responsible = members.first(where: { $0.id == responsibleID }) {
-                        detailRow("Ansvarig", value: responsible.displayName, symbol: "person.crop.circle.badge.checkmark")
+                        detailCard("Ansvarig", value: responsible.displayName, symbol: "person.crop.circle.badge.checkmark")
                     }
-                    if let details = item.details,
-                       !details.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        VStack(alignment: .leading, spacing: 7) {
+
+                    if let locationTitle {
+                        detailCard("Plats", value: locationTitle, symbol: "mappin.and.ellipse")
+                    }
+
+                    if let latitude = item.latitude, let longitude = item.longitude,
+                       (-90...90).contains(latitude), (-180...180).contains(longitude) {
+                        mapSection(latitude: latitude, longitude: longitude, title: locationTitle ?? item.title)
+                    }
+
+                    if let details = item.details?.trimmingCharacters(in: .whitespacesAndNewlines),
+                       !details.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
                             Label("Anteckningar", systemImage: "note.text")
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(FamiljenTheme.muted)
+                                .foregroundStyle(FamiljenTheme.champagneDeep)
                             Text(details)
                                 .font(.system(size: 16))
                                 .foregroundStyle(FamiljenTheme.ink)
@@ -1129,15 +1145,23 @@ private struct FamilyCalendarItemDetailView: View {
                         .padding(15)
                         .background(.white, in: RoundedRectangle(cornerRadius: 16))
                     }
+
+                    if let offsets = item.reminderOffsets, !offsets.isEmpty {
+                        detailCard("Påminnelser", value: reminderSummary(offsets), symbol: "bell")
+                    }
+
+                    if item.recurrenceFrequency != .none {
+                        detailCard("Upprepning", value: item.recurrenceFrequency.title, symbol: "repeat")
+                    }
                 }
                 .padding(20)
             }
             .background(FamiljenTheme.paper.ignoresSafeArea())
-            .navigationTitle("Aktivitet")
+            .navigationTitle("Aktivitetsdetaljer")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Stäng") { dismiss() }
+                    Button("Klart") { dismiss() }
                         .foregroundStyle(FamiljenTheme.navy)
                 }
             }
@@ -1145,24 +1169,76 @@ private struct FamilyCalendarItemDetailView: View {
         .tint(FamiljenTheme.navy)
     }
 
-    private func detailRow(_ title: String, value: String, symbol: String) -> some View {
+    private var timeDescription: String {
+        let start = item.startsAt.formatted(.dateTime.hour().minute())
+        guard let end = item.endsAt else { return start }
+        return "\(start)–\(end.formatted(.dateTime.hour().minute()))"
+    }
+
+    private func detailCard(_ title: String, value: String, symbol: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: symbol)
-                .font(.system(size: 16, weight: .medium))
+                .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(FamiljenTheme.champagneDeep)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title.uppercased())
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(0.7)
+                .frame(width: 25)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(FamiljenTheme.muted)
                 Text(value)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(FamiljenTheme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
         .padding(15)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(.white, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func mapSection(latitude: Double, longitude: Double, title: String) -> some View {
+        let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        let region = MKCoordinateRegion(center: coordinate, latitudinalMeters: 850, longitudinalMeters: 850)
+        return VStack(alignment: .leading, spacing: 10) {
+            Label("Plats på kartan", systemImage: "map")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(FamiljenTheme.champagneDeep)
+            Map(initialPosition: .region(region)) {
+                Marker(title, coordinate: coordinate)
+            }
+            .frame(height: 190)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            Button {
+                let destination = MKMapItem(placemark: MKPlacemark(coordinate: coordinate))
+                destination.name = title
+                destination.openInMaps(launchOptions: [
+                    MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving
+                ])
+            } label: {
+                Label("Öppna vägbeskrivning i Apple Kartor", systemImage: "arrow.triangle.turn.up.right.diamond")
+                    .font(.system(size: 14, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(FamiljenTheme.navy, in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(15)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func reminderSummary(_ offsets: [Int]) -> String {
+        offsets.sorted(by: >).map { offset in
+            switch offset {
+            case 0: return "Vid start"
+            case 900: return "15 minuter före"
+            case 3_600: return "En timme före"
+            case 86_400: return "En dag före"
+            case 604_800: return "En vecka före"
+            default: return "\(max(0, offset / 60)) minuter före"
+            }
+        }.joined(separator: ", ")
     }
 }

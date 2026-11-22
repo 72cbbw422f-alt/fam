@@ -61,6 +61,7 @@ struct HealthPlaceSearchField: View {
 
     @StateObject private var model = HealthPlaceSearchModel()
     @FocusState private var isFocused: Bool
+    @State private var isApplyingSelection = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -69,24 +70,32 @@ struct HealthPlaceSearchField: View {
                 .autocorrectionDisabled()
                 .focused($isFocused)
                 .onChange(of: location) { _, value in
-                    // A changed place invalidates the old pin until a new result is selected.
-                    latitude = nil
-                    longitude = nil
+                    // Typing a new place invalidates the old pin; choosing a result does not.
+                    if !isApplyingSelection {
+                        latitude = nil
+                        longitude = nil
+                    }
                     model.update(query: value)
                 }
 
             if !model.completions.isEmpty && isFocused {
                 VStack(spacing: 0) {
-                    ForEach(Array(model.completions.enumerated()), id: \.offset) { _, completion in
+                    ForEach(Array(model.completions.enumerated()), id: \.offset) { element in
+                        let completion = element.element
                         Button {
                             Task {
                                 guard let item = await model.resolve(completion) else { return }
+                                isApplyingSelection = true
                                 location = item.name ?? completion.title
                                 address = Self.formattedAddress(for: item.placemark)
                                 latitude = item.placemark.coordinate.latitude
                                 longitude = item.placemark.coordinate.longitude
                                 model.clearResults()
                                 isFocused = false
+                                Task { @MainActor in
+                                    await Task.yield()
+                                    isApplyingSelection = false
+                                }
                             }
                         } label: {
                             VStack(alignment: .leading, spacing: 3) {
@@ -105,7 +114,7 @@ struct HealthPlaceSearchField: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(model.isResolving)
-                        if completion != model.completions.last {
+                        if element.offset < model.completions.count - 1 {
                             Divider()
                         }
                     }

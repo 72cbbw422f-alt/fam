@@ -290,11 +290,15 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     func addShoppingItem(_ title: String) {
+        addShoppingItem(title, category: .other)
+    }
+
+    func addShoppingItem(_ title: String, category: ShoppingCategory) {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let family, !clean.isEmpty, clean.count <= 160 else { return }
         shoppingItems.append(ShoppingItem(id: UUID(), listID: family.id,
-                                          title: clean,
-                                          isChecked: false, createdAt: .now))
+                                          title: clean, isChecked: false,
+                                          createdAt: .now, category: category))
         saveToDisk()
     }
 

@@ -104,3 +104,8 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Ett nytt regressionstest verifierar att borttagning av ett recept tar bort dess receptförnyelsepåminnelse men bevarar läkemedelshämtningens historik.
 - Testet kontrollerar även att hämtningen kopplas loss från det borttagna receptet och att resultatet överlever omladdning från lokal lagring.
 - Testet är tillagt men ännu inte verifierat av GitHub Actions. Senaste fysiska iPhone-testning återstår.
+
+## Översikt över väntande vårdbesök (2026-11-22)
+- Familjens hälsoöversikt inkluderar både planerade och inväntande/framtida vårdbesök. Detta gör att besök som väntar på bekräftelse inte försvinner från översikten.
+- Urvalet följer nu samma statuslogik som notiscentrets kommande hälsoärenden.
+- Ändringen är kodad men behöver verifieras i nästa CI-körning och på fysisk iPhone.

@@ -22,7 +22,7 @@ final class HealthStoreTests: XCTestCase {
         let record = HealthRecord(
             familyID: familyID, memberID: member.id, type: .appointment,
             title: "Vårdcentral", startsAt: now, clinic: "Hudiksvalls hälsocentral",
-            visibility: .sharedSummary
+            latitude: 61.7284, longitude: 17.1057, visibility: .sharedSummary
         )
         let prescription = HealthPrescription(
             familyID: familyID, memberID: member.id, medicationName: "Läkemedel A",
@@ -51,6 +51,8 @@ final class HealthStoreTests: XCTestCase {
         let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
         XCTAssertEqual(reloaded.healthRecords.map(\.id), [record.id])
         XCTAssertEqual(reloaded.healthRecords.first?.title, record.title)
+        XCTAssertEqual(reloaded.healthRecords.first?.latitude, 61.7284)
+        XCTAssertEqual(reloaded.healthRecords.first?.longitude, 17.1057)
         XCTAssertEqual(reloaded.healthPrescriptions.map(\.id), [prescription.id])
         XCTAssertEqual(reloaded.healthPrescriptions.first?.renewalStatus, .due)
         XCTAssertEqual(reloaded.medicationPickups.map(\.id), [pickup.id])
@@ -283,6 +285,20 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertTrue(calendar.sourceItems.contains { $0.title == "Delat besök" })
     }
 
+
+    func testHealthRecordDecodesWhenOptionalMapCoordinatesAreAbsent() throws {
+        let record = HealthRecord(
+            familyID: UUID(), memberID: UUID(), type: .appointment,
+            title: "Gammalt besök", startsAt: Date(timeIntervalSince1970: 1_800_000_000),
+            address: "Storgatan 1"
+        )
+        let encoded = try JSONEncoder().encode(record)
+        let decoded = try JSONDecoder().decode(HealthRecord.self, from: encoded)
+
+        XCTAssertEqual(decoded.address, "Storgatan 1")
+        XCTAssertNil(decoded.latitude)
+        XCTAssertNil(decoded.longitude)
+    }
 
     func testLegacySnapshotWithoutHealthFieldsLoadsEmptyHealthCollections() throws {
         let (store, directory) = try makeStore()

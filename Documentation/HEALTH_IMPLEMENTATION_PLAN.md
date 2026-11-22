@@ -167,3 +167,12 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Regressionstestet `testDeletingHealthRecordRemovesLinkedCalendarItemAndRecordReminder` kontrollerar borttagning av vårdpost, kopplad kalenderpost och riktad påminnelse, bevarande av fristående påminnelse samt resultat efter omladdning.
 - Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthStoreTests.swift`.
 - Ändringen ligger på `feature/health-foundation`; CI för den senaste testcommitten måste slutföras innan den betraktas som verifierad.
+
+## Verifierad bygg och test – 2026-11-22 (commit c49ce0c)
+- GitHub Actions run `45066213384` slutfördes med `success` för båda jobben på `feature/health-foundation`.
+- iOS Simulator: samtliga 75 enhetstester kördes; 0 fel. Simulatorbygget avslutades med `BUILD SUCCEEDED`.
+- iPhone: Release-bygget utan kodsignering lyckades; `Familjen-unsigned.ipa` paketerades och laddades upp som artifact.
+- Artifact: `Familjen-unsigned-IPA`, ID `14771836388`, 2 622 024 byte, SHA-256 `b46e6e6aa1829cb58784af72dad68ba127e8bf4950898568093ed8eae92c21b0`, giltigt till 2026-12-06.
+- Regressionstestet för borttagning av vårdärende och tillhörande påminnelse ingår i de 75 godkända testerna.
+- Kvarvarande Xcode-varning: App Intents-metadata hoppas över eftersom målet inte länkar `AppIntents.framework`; detta är inte ett bygg- eller testfel.
+- Verifieringen omfattar CI, inte installation eller körning på fysisk iPhone. IPA-filen är osignerad och måste signeras via användarens sideload-flöde.

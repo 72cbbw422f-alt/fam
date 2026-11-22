@@ -995,8 +995,8 @@ final class LocalFamilyStoreTests: XCTestCase {
         let itemID = UUID()
         let legacyJSON = """
         {
-          "id": "\\(itemID.uuidString)",
-          "list_id": "\\(familyID.uuidString)",
+          "id": "\(itemID.uuidString)",
+          "list_id": "\(familyID.uuidString)",
           "title": "Mjölk",
           "is_checked": false,
           "created_at": 1767261600

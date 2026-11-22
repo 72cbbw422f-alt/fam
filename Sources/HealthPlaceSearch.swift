@@ -154,7 +154,7 @@ struct HealthPlaceSearchField: View {
         let locality = [placemark.postalCode, placemark.locality]
             .compactMap { $0 }
             .joined(separator: " ")
-        let parts = [street, locality, placemark.country].filter { !$0.isEmpty }
+        let parts = [street, locality, placemark.country].compactMap { $0 }.filter { !$0.isEmpty }
         return parts.joined(separator: ", ")
     }
 }

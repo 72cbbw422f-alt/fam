@@ -13,6 +13,8 @@ struct HealthRecordEditorView: View {
     @State private var clinic: String
     @State private var location: String
     @State private var address: String
+    @State private var latitude: Double?
+    @State private var longitude: Double?
     @State private var notes: String
     @State private var status: HealthRecordStatus
     @State private var visibility: HealthVisibility
@@ -31,6 +33,8 @@ struct HealthRecordEditorView: View {
         _clinic = State(initialValue: record?.clinic ?? "")
         _location = State(initialValue: record?.location ?? "")
         _address = State(initialValue: record?.address ?? "")
+        _latitude = State(initialValue: record?.latitude)
+        _longitude = State(initialValue: record?.longitude)
         _notes = State(initialValue: record?.notes ?? "")
         _status = State(initialValue: record?.status ?? .planned)
         _visibility = State(initialValue: record?.visibility ?? .personal)
@@ -62,8 +66,12 @@ struct HealthRecordEditorView: View {
             Section("Vårdkontakt") {
                 TextField("Vårdgivare", text: $provider)
                 TextField("Mottagning", text: $clinic)
-                TextField("Plats", text: $location)
-                TextField("Adress", text: $address)
+                HealthPlaceSearchField(
+                    location: $location,
+                    address: $address,
+                    latitude: $latitude,
+                    longitude: $longitude
+                )
             }
 
             Section("Anteckningar") {
@@ -142,6 +150,8 @@ struct HealthRecordEditorView: View {
             clinic: clinic,
             location: location,
             address: address,
+            latitude: latitude,
+            longitude: longitude,
             notes: notes,
             status: status,
             visibility: visibility,

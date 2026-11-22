@@ -38,7 +38,7 @@ struct FamilyHealthView: View {
             .filter {
                 $0.visibility == .sharedSummary
                     && $0.startsAt >= Calendar.current.startOfDay(for: .now)
-                    && $0.status == .planned
+                    && ($0.status == .planned || $0.status == .awaiting)
             }
             .sorted { $0.startsAt < $1.startsAt }
     }

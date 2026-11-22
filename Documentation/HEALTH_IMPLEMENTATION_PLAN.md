@@ -151,3 +151,10 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Artifact: `Familjen-unsigned-IPA`, ID `14760514981`, SHA-256 `fc6f73c9821ce8614aa71940831f33edccee3d2edc68034c994d43a688b0385a`, tillgängligt till 2026-12-06.
 - Kvarvarande varningar: tre explicita Swift-varningar om tvetydig `.none` i `HealthReminderSchedulerTests.swift`; Xcode hoppar även över App Intents-metadata eftersom `AppIntents.framework` inte används. Dessa är varningar, inte test- eller byggfel.
 - Detta verifierar CI på commit `e391dadbec15b93d363caf7843f26524ba3bef88`. Signering, FlareStore-installation, faktisk iPhone-körning, MapKit i enheten och leverans av lokala notiser är fortfarande inte verifierade.
+
+
+## Städning av Swift-varningar i påminnelsetester (2026-11-22)
+- De tre kvarvarande varningarna om tvetydig `.none` i `HealthReminderSchedulerTests.swift` kom från implicit enum-inferens för ett optionalt återkommande fält.
+- Testfixturerna använder nu den explicita typen `FamilyRecurrenceFrequency.none` på samtliga tre ställen.
+- Ändringen är enbart testkod och ändrar inte appens körbeteende.
+- Commit: `a9874970cad7e91995f2eb13568119c44cf11df6`. CI för denna kodversion inväntas.

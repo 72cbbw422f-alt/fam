@@ -988,4 +988,34 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertTrue(store.christmasGifts.isEmpty)
     }
 
-}
+
+
+    func testShoppingCategoriesAndCheckedItemsPersistAndLegacyItemsDecode() throws {
+        let familyID = UUID()
+        let itemID = UUID()
+        let legacyJSON = """
+        {
+          "id": "\\(itemID.uuidString)",
+          "list_id": "\\(familyID.uuidString)",
+          "title": "Mjölk",
+          "is_checked": false,
+          "created_at": "2026-01-01T10:00:00Z"
+        }
+        """
+        let legacyItem = try JSONDecoder().decode(ShoppingItem.self, from: Data(legacyJSON.utf8))
+        XCTAssertNil(legacyItem.category)
+        XCTAssertEqual(legacyItem.title, "Mjölk")
+
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Äpplen", category: .fruitVegetables)
+        let item = try XCTUnwrap(store.shoppingItems.first)
+        XCTAssertEqual(item.category, .fruitVegetables)
+
+        store.setShoppingItem(item.id, checked: true)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.shoppingItems.first?.category, .fruitVegetables)
+        XCTAssertEqual(reloaded.shoppingItems.first?.isChecked, true)
+    }
+}\n

@@ -3,6 +3,11 @@ import XCTest
 
 @MainActor
 final class HealthReminderSchedulerTests: XCTestCase {
+    func testFailedReminderAddPreservesObsoleteNotificationsForRetry() {
+        XCTAssertFalse(LocalReminderScheduler.shouldRemoveObsoleteReminders(afterSuccessfulAdds: false))
+        XCTAssertTrue(LocalReminderScheduler.shouldRemoveObsoleteReminders(afterSuccessfulAdds: true))
+    }
+
     func testCalendarReminderIdentityChangesWhenAppointmentTimeChanges() {
         let familyID = UUID()
         let now = Date(timeIntervalSince1970: 1_800_000_000)

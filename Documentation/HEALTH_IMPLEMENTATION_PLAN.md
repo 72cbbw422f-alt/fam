@@ -109,3 +109,4 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Familjens hälsoöversikt inkluderar både planerade och inväntande/framtida vårdbesök. Detta gör att besök som väntar på bekräftelse inte försvinner från översikten.
 - Urvalet följer nu samma statuslogik som notiscentrets kommande hälsoärenden.
 - Ändringen är kodad men behöver verifieras i nästa CI-körning och på fysisk iPhone.
+- Regressionstest i `HealthNotificationCenterTests` täcker nu även att framtida vårdbesök med status `awaiting` visas tillsammans med planerade besök, medan privata och avslutade besök filtreras bort.

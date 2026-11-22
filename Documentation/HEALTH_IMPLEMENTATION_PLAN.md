@@ -63,4 +63,8 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Samma körning: fysisk iPhone-byggnad, paketering och uppladdning av osignerad IPA slutförd med success.
 - Detta verifierar CI-byggnaden, inte installation eller notisleverans på fysisk iPhone.
 - Individuell autentisering/behörighetskontroll och familjesynk är fortfarande inte implementerade.
-- 2026-11-21: Notiscenterintegration med privacy-filter och test är tillagd efter den godkända körningen; ny CI-körning krävs.
+- 2026-11-21: Notiscenterintegration med privacy-filter och test är tillagd.
+- 2026-11-21: Delade hälsoärenden i notiscentret är tryckbara och öppnar en separat, neutral sammanfattning med rubrik, familjemedlem och datum/tid. Sammanfattningen exponerar inte påminnelsetext eller privata anteckningar.
+- Verifierad kodcommit för notiscentrets tryckbara sammanfattning: `7b2306e84db940b0659bf0a393a6dd69aacfad3f` på `feature/health-foundation`.
+- GitHub Actions run `44961600818`: simulatorns enhetstester och iOS Simulator-bygge godkända; fysisk iPhone-byggnad, IPA-paketering och artifact-uppladdning godkända.
+- Artifact: `Familjen-unsigned-IPA`, ID `14730240562`. IPA har verifierats som ett iPhoneOS-arm64-paket med bundle identifier `se.familjen.app` och minimum iOS 17.0. Installering och signering via FlareStore är inte verifierade.

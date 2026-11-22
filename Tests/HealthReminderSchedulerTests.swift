@@ -17,14 +17,14 @@ final class HealthReminderSchedulerTests: XCTestCase {
             details: nil, startsAt: now.addingTimeInterval(7_200),
             endsAt: nil, kind: .healthVisit, memberID: nil,
             isRecurringYearly: false, reminderOffsets: [3_600],
-            recurrenceFrequency: .none
+            recurrenceFrequency: FamilyRecurrenceFrequency.none
         )
         let moved = FamilyItem(
             id: itemID, familyID: familyID, title: "Vårdbesök",
             details: nil, startsAt: now.addingTimeInterval(10_800),
             endsAt: nil, kind: .healthVisit, memberID: nil,
             isRecurringYearly: false, reminderOffsets: [3_600],
-            recurrenceFrequency: .none
+            recurrenceFrequency: FamilyRecurrenceFrequency.none
         )
 
         let originalCandidate = LocalReminderScheduler.makeCandidates(for: [original], now: now).first
@@ -45,7 +45,7 @@ final class HealthReminderSchedulerTests: XCTestCase {
             details: nil, startsAt: now.addingTimeInterval(1_800),
             endsAt: nil, kind: .healthVisit, memberID: nil,
             isRecurringYearly: false, reminderOffsets: [3_600, 900],
-            recurrenceFrequency: .none
+            recurrenceFrequency: FamilyRecurrenceFrequency.none
         )
 
         let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)

@@ -121,7 +121,8 @@ struct FamilySettingsView: View {
                 await LocalReminderScheduler.schedule(
                     for: store.items,
                     skipping: store.skippedOccurrences,
-                    overrides: store.occurrenceOverrides
+                    overrides: store.occurrenceOverrides,
+                    healthReminders: store.healthReminders
                 )
             }
         }
@@ -154,7 +155,8 @@ struct FamilySettingsView: View {
             await LocalReminderScheduler.schedule(
                 for: store.items,
                 skipping: store.skippedOccurrences,
-                overrides: store.occurrenceOverrides
+                overrides: store.occurrenceOverrides,
+                    healthReminders: store.healthReminders
             )
             reminderStatus = "Påminnelser är aktiverade på den här enheten."
         } else {

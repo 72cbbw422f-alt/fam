@@ -50,7 +50,7 @@ final class HealthReminderSchedulerTests: XCTestCase {
 
         let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
 
-        XCTAssertEqual(candidates.map(\\.offset), [900])
+        XCTAssertEqual(candidates.map(\.offset), [900])
         XCTAssertTrue(candidates.allSatisfy { $0.fireDate > now })
     }
 

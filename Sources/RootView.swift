@@ -51,6 +51,7 @@ private struct FamilyTabShell: View {
     }
 
     @State private var selectedTab: Tab = .overview
+    @State private var overviewNavigationID = UUID()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -58,6 +59,7 @@ private struct FamilyTabShell: View {
                 switch selectedTab {
                 case .overview:
                     DashboardView()
+                        .id(overviewNavigationID)
                 case .calendar:
                     FamilyCalendarView()
                 case .health:
@@ -104,6 +106,12 @@ private struct FamilyTabShell: View {
             ForEach(Tab.allCases, id: \.rawValue) { tab in
                 Button {
                     withAnimation(.easeInOut(duration: 0.16)) {
+                        if tab == .overview {
+                            // Recreate the dashboard navigation stack so this tab
+                            // always returns to the overview root, even when it is
+                            // already selected and a detail screen is pushed.
+                            overviewNavigationID = UUID()
+                        }
                         selectedTab = tab
                     }
                 } label: {

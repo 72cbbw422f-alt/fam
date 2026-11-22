@@ -11,10 +11,37 @@ struct ReminderCandidate: Identifiable {
     }
 }
 
+struct HealthReminderCandidate: Identifiable {
+    let reminder: HealthReminder
+    var id: String { reminder.id.uuidString }
+}
+
+private enum ManagedReminderCandidate {
+    case calendar(ReminderCandidate)
+    case health(HealthReminderCandidate)
+
+    var fireDate: Date {
+        switch self {
+        case .calendar(let candidate): return candidate.fireDate
+        case .health(let candidate): return candidate.reminder.firesAt
+        }
+    }
+
+    var identifier: String {
+        switch self {
+        case .calendar(let candidate):
+            return "familjen-item-" + candidate.id
+        case .health(let candidate):
+            return "familjen-health-" + candidate.id
+        }
+    }
+}
+
 @MainActor
 enum LocalReminderScheduler {
     private static let center = UNUserNotificationCenter.current()
     private static let identifierPrefix = "familjen-item-"
+    private static let healthIdentifierPrefix = "familjen-health-"
     private static let maximumPendingReminders = 60
     private static let defaultOffsets = [24 * 60 * 60, 60 * 60]
     private static var operationTask: Task<Void, Never>?
@@ -54,10 +81,27 @@ enum LocalReminderScheduler {
         return Array(candidates.prefix(maximumPendingReminders))
     }
 
+    static func makeHealthCandidates(for reminders: [HealthReminder], now: Date) -> [HealthReminderCandidate] {
+        reminders
+            .filter { $0.isEnabled && $0.firesAt > now }
+            .sorted {
+                if $0.firesAt != $1.firesAt { return $0.firesAt < $1.firesAt }
+                return $0.id.uuidString < $1.id.uuidString
+            }
+            .map(HealthReminderCandidate.init(reminder:))
+    }
+
     static func obsoleteManagedIdentifiers(existingIdentifiers: [String], desiredIdentifiers: Set<String>) -> [String] {
         existingIdentifiers
-            .filter { $0.hasPrefix(identifierPrefix) && !desiredIdentifiers.contains($0) }
+            .filter {
+                ($0.hasPrefix(identifierPrefix) || $0.hasPrefix(healthIdentifierPrefix))
+                    && !desiredIdentifiers.contains($0)
+            }
             .sorted()
+    }
+
+    static func shouldRemoveObsoleteReminders(afterSuccessfulAdds: Bool) -> Bool {
+        afterSuccessfulAdds
     }
 
     private static func deliveredRequests() async -> [UNNotification] {
@@ -70,11 +114,13 @@ enum LocalReminderScheduler {
 
     static func schedule(for items: [FamilyItem],
                          skipping exceptions: [FamilyOccurrenceException] = [],
-                         overrides: [FamilyOccurrenceOverride] = []) async {
+                         overrides: [FamilyOccurrenceOverride] = [],
+                         healthReminders: [HealthReminder] = []) async {
         let previous = operationTask
         let current = Task { @MainActor in
             await previous?.value
-            await performSchedule(for: items, skipping: exceptions, overrides: overrides)
+            await performSchedule(for: items, skipping: exceptions, overrides: overrides,
+                                  healthReminders: healthReminders)
         }
         operationTask = current
         await current.value
@@ -82,42 +128,70 @@ enum LocalReminderScheduler {
 
     private static func performSchedule(for items: [FamilyItem],
                                         skipping exceptions: [FamilyOccurrenceException],
-                                        overrides: [FamilyOccurrenceOverride]) async {
+                                        overrides: [FamilyOccurrenceOverride],
+                                        healthReminders: [HealthReminder]) async {
         let pending = await center.pendingNotificationRequests()
         let delivered = await deliveredRequests()
         let existingIDs = pending.map(\.identifier) + delivered.map { $0.request.identifier }
-        let candidates = makeCandidates(for: items, now: .now, skipping: exceptions, overrides: overrides)
-        let desiredIDs = Set(candidates.map { identifierPrefix + identifier(for: $0) })
+        let calendarCandidates = makeCandidates(for: items, now: .now, skipping: exceptions, overrides: overrides)
+            .map(ManagedReminderCandidate.calendar)
+        let healthCandidates = makeHealthCandidates(for: healthReminders, now: .now)
+            .map(ManagedReminderCandidate.health)
+        let candidates = (calendarCandidates + healthCandidates).sorted {
+            if $0.fireDate != $1.fireDate { return $0.fireDate < $1.fireDate }
+            return $0.identifier < $1.identifier
+        }.prefix(maximumPendingReminders)
+        let desiredIDs = Set(candidates.map(\.identifier))
 
-        // Add/update desired reminders before removing obsolete ones. This avoids
-        // deleting the previous reminder set if adding a replacement fails.
+        // Add/update desired reminders before removing obsolete ones. Calendar and
+        // health reminders share one cap but use disjoint identifier namespaces.
+        // If any add fails, retain obsolete requests rather than risk losing reminders.
+        var allDesiredAddsSucceeded = true
         for candidate in candidates {
             let content = UNMutableNotificationContent()
-            content.title = "Påminnelse: \(reminderLabel(for: candidate.offset))"
-            content.body = "\(candidate.item.title) · \(candidate.item.startsAt.formatted(.dateTime.hour().minute()))"
+            let fireDate: Date
+            switch candidate {
+            case .calendar(let value):
+                fireDate = value.fireDate
+                if [.healthVisit, .dentist, .medication].contains(value.item.kind) {
+                    content.title = "Hälsopåminnelse från Familjen"
+                    content.body = "Du har ett kommande hälsoärende."
+                } else {
+                    content.title = "Påminnelse: \(reminderLabel(for: value.offset))"
+                    content.body = "\(value.item.title) · \(value.item.startsAt.formatted(.dateTime.hour().minute()))"
+                }
+            case .health(let value):
+                fireDate = value.reminder.firesAt
+                content.title = "Hälsopåminnelse från Familjen"
+                content.body = "Du har ett hälsoärende att följa upp."
+            }
             content.sound = .default
 
             var calendar = Calendar.current
             calendar.timeZone = .current
             var components = calendar.dateComponents(
                 [.year, .month, .day, .hour, .minute, .second],
-                from: candidate.fireDate
+                from: fireDate
             )
             components.calendar = calendar
             components.timeZone = calendar.timeZone
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             let request = UNNotificationRequest(
-                identifier: identifierPrefix + identifier(for: candidate),
+                identifier: candidate.identifier,
                 content: content,
                 trigger: trigger
             )
             do {
                 try await center.add(request)
             } catch {
+                allDesiredAddsSucceeded = false
                 // A failed local reminder must not block calendar usage.
             }
         }
 
+        guard shouldRemoveObsoleteReminders(afterSuccessfulAdds: allDesiredAddsSucceeded) else {
+            return
+        }
         let obsoleteIDs = obsoleteManagedIdentifiers(
             existingIdentifiers: existingIDs, desiredIdentifiers: desiredIDs
         )
@@ -154,7 +228,7 @@ enum LocalReminderScheduler {
         let pending = await center.pendingNotificationRequests()
         let delivered = await deliveredRequests()
         let ids = (pending.map(\.identifier) + delivered.map { $0.request.identifier })
-            .filter { $0.hasPrefix(identifierPrefix) }
+            .filter { $0.hasPrefix(identifierPrefix) || $0.hasPrefix(healthIdentifierPrefix) }
         center.removePendingNotificationRequests(withIdentifiers: ids)
         center.removeDeliveredNotifications(withIdentifiers: ids)
     }

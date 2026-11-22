@@ -2,6 +2,23 @@
 
 > Levande arbetslogg för beslut, implementation, buggar, testresultat och kvarstående risker. Uppdateras i samma utvecklingsgren som koden. Datum anges enligt svensk tid.
 
+## 2026-11-22 – regressionstester för återkommande kalenderhändelser
+
+**Granskning**
+- Veckovis och månadsvis återkomst finns redan i datamodellen, redigeraren och projektionen. Kalendern erbjuder också val mellan att ändra ett enskilt tillfälle och hela serien.
+- Fortsättningen fokuserade därför på att täcka dessa befintliga flöden med regressionstester, inte att implementera funktionen en gång till.
+
+**Ändrat**
+- Lade till test som redigerar klockslag på en veckovis respektive månadsvis serie och verifierar att ursprungligt datumankare och återkomstfrekvens bevaras.
+- Lade till test som redigerar en enskild veckoförekomst och verifierar att efterföljande förekomst och grundserien förblir oförändrade.
+- Berörd fil: `Tests/LocalFamilyStoreTests.swift`.
+- Kodcommit: `3db2592d6dde9427988cc46a3ce9652b071058da`.
+
+**Verifiering**
+- Testerna är incheckade men ännu inte körda i CI vid dokumentationstillfället.
+- Ingen fysisk iPhone-testning har genomförts för dessa nya testfall.
+- Nästa kvalitetsgrind är en avslutad grön CI-körning på dokumentationscommiten, inklusive simulatorns enhetstester och unsigned iPhone-bygge.
+
 ## Projektstatus – 2026-11-16
 
 - Repository: `72cbbw422f-alt/fam`

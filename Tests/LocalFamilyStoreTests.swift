@@ -460,6 +460,82 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(persistedParts.hour, 19)
     }
 
+    func testWeeklyAndMonthlySeriesKeepTheirOriginalAnchorWhenTimeIsEdited() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.current
+
+        for frequency in [FamilyRecurrenceFrequency.weekly, .monthly] {
+            let (store, directory) = try makeStore()
+            defer { try? FileManager.default.removeItem(at: directory) }
+            store.createFamily(name: "Familjen", ownerName: "Niklas")
+
+            let anchor = try XCTUnwrap(calendar.date(from: DateComponents(
+                year: 2030, month: frequency == .weekly ? 4 : 1,
+                day: frequency == .weekly ? 3 : 31, hour: 9
+            )))
+            store.saveCalendarItem(
+                id: nil, title: "Återkommande aktivitet", details: nil, startsAt: anchor,
+                kind: .event, memberIDs: [], isForEveryone: true, responsibleMemberID: nil,
+                recurring: false, reminderOffsets: [], location: nil, recurrenceFrequency: frequency
+            )
+            let series = try XCTUnwrap(store.items.first)
+            let editedDate = try XCTUnwrap(calendar.date(bySettingHour: 11, minute: 30, second: 0, of: anchor))
+            let viewModel = FamilyCalendarViewModel(store: store)
+
+            let saved = await viewModel.save(
+                id: series.id, title: series.title, details: nil, startsAt: editedDate,
+                kind: .event, memberIDs: [], isForEveryone: true, responsibleMemberID: nil,
+                isRecurringYearly: false, reminderOffsets: [], location: nil,
+                recurrenceFrequency: frequency
+            )
+
+            XCTAssertTrue(saved, "Expected \(frequency.rawValue) series edit to save")
+            let persisted = try XCTUnwrap(store.items.first)
+            let parts = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: persisted.startsAt)
+            XCTAssertEqual(parts.year, 2030)
+            XCTAssertEqual(parts.month, frequency == .weekly ? 4 : 1)
+            XCTAssertEqual(parts.day, frequency == .weekly ? 3 : 31)
+            XCTAssertEqual(parts.hour, 11)
+            XCTAssertEqual(parts.minute, 30)
+            XCTAssertEqual(persisted.recurrenceFrequency, frequency)
+        }
+    }
+
+    func testEditingOneWeeklyOccurrenceDoesNotChangeTheSeriesOrNextOccurrence() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2030, month: 4, day: 3, hour: 9)))
+        let nextWeek = try XCTUnwrap(calendar.date(byAdding: .day, value: 7, to: anchor))
+        let series = FamilyItem(
+            id: UUID(), familyID: UUID(), title: "Veckomöte", details: nil,
+            startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [], recurrenceFrequency: .weekly
+        )
+        let changedOccurrence = FamilyItem(
+            id: series.id, familyID: series.familyID, title: "Veckomöte – flyttat",
+            details: "Gäller bara detta tillfälle", startsAt: anchor.addingTimeInterval(2 * 60 * 60),
+            endsAt: nil, kind: .event, memberID: nil, isRecurringYearly: false,
+            reminderOffsets: [], recurrenceFrequency: .none
+        )
+        let override = FamilyOccurrenceOverride(
+            seriesID: series.id, occurrenceDate: anchor, item: changedOccurrence
+        )
+
+        let edited = try XCTUnwrap(DashboardViewModel.project(
+            [series], from: anchor, overrides: [override]
+        ).first)
+        XCTAssertEqual(edited.title, "Veckomöte – flyttat")
+        XCTAssertEqual(edited.startsAt, changedOccurrence.startsAt)
+
+        let following = try XCTUnwrap(DashboardViewModel.project(
+            [series], from: nextWeek, overrides: [override]
+        ).first)
+        XCTAssertEqual(following.title, "Veckomöte")
+        XCTAssertEqual(following.startsAt, nextWeek)
+        XCTAssertEqual(series.startsAt, anchor)
+        XCTAssertEqual(series.recurrenceFrequency, .weekly)
+    }
+
     func testCorruptedSnapshotIsPreservedForRecovery() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("FamiljenCorruptTests-\(UUID().uuidString)", isDirectory: true)

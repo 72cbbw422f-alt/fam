@@ -30,7 +30,7 @@ struct FamilySettingsView: View {
                     get: { localRemindersEnabled },
                     set: { enabled in Task { await updateReminderSetting(enabled) } }
                 )) {
-                    Label("Lokala kalenderpåminnelser", systemImage: "bell.badge")
+                    Label("Lokala påminnelser", systemImage: "bell.badge")
                         .font(.body.weight(.medium))
                     Text("Påminnelser visas på den här iPhonen. De delas inte med andra familjemedlemmars enheter. Du får frågan om notiser första gången du startar Familjen.")
                         .font(.caption)
@@ -121,7 +121,8 @@ struct FamilySettingsView: View {
                 await LocalReminderScheduler.schedule(
                     for: store.items,
                     skipping: store.skippedOccurrences,
-                    overrides: store.occurrenceOverrides
+                    overrides: store.occurrenceOverrides,
+                    healthReminders: store.healthReminders
                 )
             }
         }
@@ -154,13 +155,14 @@ struct FamilySettingsView: View {
             await LocalReminderScheduler.schedule(
                 for: store.items,
                 skipping: store.skippedOccurrences,
-                overrides: store.occurrenceOverrides
+                overrides: store.occurrenceOverrides,
+                    healthReminders: store.healthReminders
             )
             reminderStatus = "Påminnelser är aktiverade på den här enheten."
         } else {
             localRemindersEnabled = false
             await LocalReminderScheduler.clearAll()
-            reminderStatus = "Lokala kalenderpåminnelser är avstängda."
+            reminderStatus = "Lokala påminnelser är avstängda."
         }
     }
 }

@@ -28,7 +28,7 @@ final class OccurrenceOverrideTests: XCTestCase {
             id: series.id, familyID: series.familyID, title: "Veckomöte – flyttat",
             details: "Ny tid", startsAt: movedDate, endsAt: nil, kind: .event,
             memberID: nil, isRecurringYearly: false, reminderOffsets: [3600],
-            isForEveryone: true, recurrenceFrequency: .none
+            isForEveryone: true, recurrenceFrequency: FamilyRecurrenceFrequency.none
         )
 
         store.saveOccurrenceOverride(

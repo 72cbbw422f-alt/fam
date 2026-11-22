@@ -56,7 +56,13 @@ final class DashboardViewModel: ObservableObject {
     func load() async {
         isLoading = true
         family = store.family
-        upcomingItems = Self.project(store.items, from: .now, skipping: store.skippedOccurrences, overrides: store.occurrenceOverrides)
+        let privateHealthCalendarIDs = Set(
+            store.healthRecords
+                .filter { $0.visibility == .personal }
+                .compactMap(\.calendarItemID)
+        )
+        let dashboardItems = store.items.filter { !privateHealthCalendarIDs.contains($0.id) }
+        upcomingItems = Self.project(dashboardItems, from: .now, skipping: store.skippedOccurrences, overrides: store.occurrenceOverrides)
         isLoading = false
     }
 

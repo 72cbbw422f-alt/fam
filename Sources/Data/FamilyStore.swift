@@ -16,6 +16,11 @@ final class FamilyStore: ObservableObject {
     @Published private(set) var giftIdeas: [GiftIdea] = []
     @Published private(set) var christmasGifts: [ChristmasGift] = []
     @Published private(set) var notifications: [FamilyNotification] = []
+    @Published private(set) var healthRecords: [HealthRecord] = []
+    @Published private(set) var healthPrescriptions: [HealthPrescription] = []
+    @Published private(set) var medicationPickups: [MedicationPickup] = []
+    @Published private(set) var healthProfileInformation: [HealthProfileInformation] = []
+    @Published private(set) var healthReminders: [HealthReminder] = []
     @Published private(set) var messages: [FamilyMessage] = []
     @Published private(set) var persistenceError: String?
 
@@ -41,6 +46,11 @@ final class FamilyStore: ObservableObject {
         giftIdeas = repository.giftIdeas
         christmasGifts = repository.christmasGifts
         notifications = repository.notifications
+        healthRecords = repository.healthRecords
+        healthPrescriptions = repository.healthPrescriptions
+        medicationPickups = repository.medicationPickups
+        healthProfileInformation = repository.healthProfileInformation
+        healthReminders = repository.healthReminders
         messages = repository.messages
         persistenceError = repository.persistenceError
     }
@@ -60,18 +70,24 @@ final class FamilyStore: ObservableObject {
                             kind: kind, memberID: memberID, recurring: recurring,
                             reminderOffsets: reminderOffsets)
         refresh()
+        rescheduleHealthReminders()
     }
     func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
                           kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
                           responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int],
-                          location: String? = nil, recurrenceFrequency: FamilyRecurrenceFrequency = .none) {
+                          location: String? = nil, latitude: Double? = nil, longitude: Double? = nil, recurrenceFrequency: FamilyRecurrenceFrequency = .none) {
         repository.saveCalendarItem(id: id, title: title, details: details, startsAt: startsAt,
                                     kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
                                     responsibleMemberID: responsibleMemberID, recurring: recurring,
-                                    reminderOffsets: reminderOffsets, location: location, recurrenceFrequency: recurrenceFrequency)
+                                    reminderOffsets: reminderOffsets, location: location, latitude: latitude, longitude: longitude, recurrenceFrequency: recurrenceFrequency)
         refresh()
+        rescheduleHealthReminders()
     }
-    func deleteItem(_ item: FamilyItem) { repository.deleteItem(item); refresh() }
+    func deleteItem(_ item: FamilyItem) {
+        repository.deleteItem(item)
+        refresh()
+        rescheduleHealthReminders()
+    }
     func addShoppingItem(_ title: String) { repository.addShoppingItem(title); refresh() }
     func setShoppingItem(_ id: UUID, checked: Bool) { repository.setShoppingItem(id, checked: checked); refresh() }
     func deleteShoppingItem(_ id: UUID) { repository.deleteShoppingItem(id); refresh() }
@@ -88,5 +104,59 @@ final class FamilyStore: ObservableObject {
         repository.sendMessage(text, conversationID: conversationID, kind: kind); refresh()
     }
     func markConversationRead(_ conversationID: String) { repository.markConversationRead(conversationID); refresh() }
+    func saveHealthRecord(_ record: HealthRecord) {
+        repository.saveHealthRecord(record)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func deleteHealthRecord(_ id: UUID) {
+        repository.deleteHealthRecord(id)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func saveHealthPrescription(_ prescription: HealthPrescription) {
+        repository.saveHealthPrescription(prescription)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func deleteHealthPrescription(_ id: UUID) {
+        repository.deleteHealthPrescription(id)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func saveMedicationPickup(_ pickup: MedicationPickup) {
+        repository.saveMedicationPickup(pickup)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func deleteMedicationPickup(_ id: UUID) {
+        repository.deleteMedicationPickup(id)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func saveHealthProfileInformation(_ information: HealthProfileInformation) { repository.saveHealthProfileInformation(information); refresh() }
+    func deleteHealthProfileInformation(_ id: UUID) { repository.deleteHealthProfileInformation(id); refresh() }
+    func saveHealthReminder(_ reminder: HealthReminder) {
+        repository.saveHealthReminder(reminder)
+        refresh()
+        rescheduleHealthReminders()
+    }
+    func deleteHealthReminder(_ id: UUID) {
+        repository.deleteHealthReminder(id)
+        refresh()
+        rescheduleHealthReminders()
+    }
+
+    private func rescheduleHealthReminders() {
+        guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
+        Task {
+            await LocalReminderScheduler.schedule(
+                for: items,
+                skipping: skippedOccurrences,
+                overrides: occurrenceOverrides,
+                healthReminders: healthReminders
+            )
+        }
+    }
     func markNotificationRead(_ id: UUID) { repository.markNotificationRead(id); refresh() }
 }

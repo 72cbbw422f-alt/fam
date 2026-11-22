@@ -27,7 +27,7 @@ final class OccurrenceOverrideRestorationTests: XCTestCase {
             id: series.id, familyID: series.familyID, title: series.title,
             details: nil, startsAt: originalDate, endsAt: nil, kind: .event,
             memberID: nil, isRecurringYearly: false, reminderOffsets: [],
-            recurrenceFrequency: .none
+            recurrenceFrequency: FamilyRecurrenceFrequency.none
         )
 
         store.skipOccurrence(of: occurrence)
@@ -72,7 +72,7 @@ final class OccurrenceOverrideRestorationTests: XCTestCase {
             id: series.id, familyID: series.familyID, title: series.title,
             details: nil, startsAt: originalDate, endsAt: nil, kind: .event,
             memberID: nil, isRecurringYearly: false, reminderOffsets: [],
-            recurrenceFrequency: .none
+            recurrenceFrequency: FamilyRecurrenceFrequency.none
         )
         store.skipOccurrence(of: occurrence)
         let originalSkips = store.skippedOccurrences

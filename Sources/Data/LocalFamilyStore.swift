@@ -14,6 +14,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     @Published private(set) var giftIdeas: [GiftIdea] = []
     @Published private(set) var christmasGifts: [ChristmasGift] = []
     @Published private(set) var notifications: [FamilyNotification] = []
+    @Published private(set) var healthRecords: [HealthRecord] = []
+    @Published private(set) var healthPrescriptions: [HealthPrescription] = []
+    @Published private(set) var medicationPickups: [MedicationPickup] = []
+    @Published private(set) var healthProfileInformation: [HealthProfileInformation] = []
+    @Published private(set) var healthReminders: [HealthReminder] = []
     @Published private(set) var messages: [FamilyMessage] = []
     @Published private(set) var persistenceError: String?
 
@@ -64,6 +69,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         giftIdeas = []
         christmasGifts = []
         notifications = []
+        healthRecords = []
+        healthPrescriptions = []
+        medicationPickups = []
+        healthProfileInformation = []
+        healthReminders = []
         messages = []
         saveToDisk()
     }
@@ -143,7 +153,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
                           kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
                           responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int],
-                          location: String? = nil, recurrenceFrequency: FamilyRecurrenceFrequency = .none) {
+                          location: String? = nil, latitude: Double? = nil, longitude: Double? = nil, recurrenceFrequency: FamilyRecurrenceFrequency = .none) {
         guard let family else { return }
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
@@ -159,12 +169,15 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let previousItems = items
         let previousSkippedOccurrences = skippedOccurrences
         let previousOccurrenceOverrides = occurrenceOverrides
+        let previousHealthRecords = healthRecords
         if let id, let index = items.firstIndex(where: { $0.id == id }) {
             let previousSeriesStart = items[index].startsAt
             let previousFrequency = items[index].recurrenceFrequency
             items[index].title = clean
             items[index].details = details
             items[index].location = location
+            items[index].latitude = latitude
+            items[index].longitude = longitude
             items[index].startsAt = startsAt
             items[index].kind = kind
             items[index].memberIDs = isForEveryone ? [] : validMemberIDs
@@ -177,6 +190,22 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                 skippedOccurrences.removeAll { $0.seriesID == id }
                 occurrenceOverrides.removeAll { $0.seriesID == id }
             }
+            if let healthIndex = healthRecords.firstIndex(where: { $0.calendarItemID == id }) {
+                if kind == .healthVisit, let memberID = validMemberIDs.first {
+                    healthRecords[healthIndex].title = clean
+                    healthRecords[healthIndex].startsAt = startsAt
+                    healthRecords[healthIndex].memberID = memberID
+                    healthRecords[healthIndex].notes = details
+                    healthRecords[healthIndex].location = location
+                    healthRecords[healthIndex].latitude = latitude
+                    healthRecords[healthIndex].longitude = longitude
+                    healthRecords[healthIndex].updatedAt = .now
+                } else {
+                    healthRecords[healthIndex].calendarItemID = nil
+                    healthRecords[healthIndex].status = .cancelled
+                    healthRecords[healthIndex].updatedAt = .now
+                }
+            }
         } else {
             items.append(FamilyItem(id: UUID(), familyID: family.id, title: clean,
                                     details: details, startsAt: startsAt, endsAt: nil,
@@ -188,12 +217,15 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                                     isForEveryone: isForEveryone,
                                     responsibleMemberID: validResponsibleID,
                                     location: location,
+                                    latitude: latitude,
+                                    longitude: longitude,
                                     recurrenceFrequency: recurrenceFrequency == .none && recurring ? .yearly : recurrenceFrequency))
         }
         if !saveToDisk() {
             items = previousItems
             skippedOccurrences = previousSkippedOccurrences
             occurrenceOverrides = previousOccurrenceOverrides
+            healthRecords = previousHealthRecords
         }
     }
 
@@ -201,13 +233,21 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let previousItems = items
         let previousSkippedOccurrences = skippedOccurrences
         let previousOccurrenceOverrides = occurrenceOverrides
+        let previousHealthRecords = healthRecords
         items.removeAll { $0.id == item.id }
         skippedOccurrences.removeAll { $0.seriesID == item.id }
         occurrenceOverrides.removeAll { $0.seriesID == item.id }
+        // A calendar deletion cancels the linked health appointment but keeps its history.
+        for index in healthRecords.indices where healthRecords[index].calendarItemID == item.id {
+            healthRecords[index].calendarItemID = nil
+            healthRecords[index].status = .cancelled
+            healthRecords[index].updatedAt = .now
+        }
         if !saveToDisk() {
             items = previousItems
             skippedOccurrences = previousSkippedOccurrences
             occurrenceOverrides = previousOccurrenceOverrides
+            healthRecords = previousHealthRecords
         }
     }
 
@@ -362,6 +402,275 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         saveToDisk()
     }
 
+
+    // MARK: - Health records
+
+    func saveHealthRecord(_ record: HealthRecord) {
+        guard let family, record.familyID == family.id,
+              members.contains(where: { $0.id == record.memberID }) else { return }
+        let title = record.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, title.count <= 160 else { return }
+        let hasLatitude = record.latitude != nil
+        let hasLongitude = record.longitude != nil
+        guard hasLatitude == hasLongitude else { return }
+        if let latitude = record.latitude, let longitude = record.longitude {
+            guard latitude.isFinite, longitude.isFinite,
+                  (-90...90).contains(latitude), (-180...180).contains(longitude) else { return }
+        }
+        var updated = record
+        updated.title = title
+        updated.provider = Self.cleaned(updated.provider, limit: 120)
+        updated.clinic = Self.cleaned(updated.clinic, limit: 160)
+        updated.location = Self.cleaned(updated.location, limit: 160)
+        updated.address = Self.cleaned(updated.address, limit: 240)
+        updated.notes = Self.cleaned(updated.notes, limit: 4000)
+        updated.reminderOffsets = Array(Set(updated.reminderOffsets.filter { $0 >= 0 })).sorted(by: >)
+        updated.updatedAt = .now
+        let previousRecords = healthRecords
+        let previousItems = items
+        if updated.type == .appointment || updated.type == .followUp {
+            let calendarID = updated.calendarItemID ?? UUID()
+            updated.calendarItemID = calendarID
+            let calendarItem = FamilyItem(
+                id: calendarID, familyID: family.id, title: title, details: updated.notes,
+                startsAt: updated.startsAt, endsAt: nil, kind: .healthVisit,
+                memberID: updated.memberID, isRecurringYearly: false,
+                reminderOffsets: updated.reminderOffsets, memberIDs: [updated.memberID],
+                isForEveryone: false, responsibleMemberID: nil,
+                location: updated.address ?? updated.location,
+                latitude: updated.latitude,
+                longitude: updated.longitude,
+                recurrenceFrequency: FamilyRecurrenceFrequency.none
+            )
+            if let itemIndex = items.firstIndex(where: { $0.id == calendarID }) {
+                items[itemIndex] = calendarItem
+            } else {
+                items.append(calendarItem)
+            }
+        } else if let calendarID = updated.calendarItemID {
+            items.removeAll { $0.id == calendarID }
+            updated.calendarItemID = nil
+        }
+        if let index = healthRecords.firstIndex(where: { $0.id == record.id }) {
+            healthRecords[index] = updated
+        } else {
+            healthRecords.append(updated)
+        }
+        if !saveToDisk() {
+            healthRecords = previousRecords
+            items = previousItems
+        }
+    }
+
+    func deleteHealthRecord(_ id: UUID) {
+        let previousRecords = healthRecords
+        let previousItems = items
+        let previousReminders = healthReminders
+        let linkedCalendarID = healthRecords.first(where: { $0.id == id })?.calendarItemID
+        healthRecords.removeAll { $0.id == id }
+        if let linkedCalendarID {
+            items.removeAll { $0.id == linkedCalendarID }
+        }
+        // Record-specific reminders must not outlive the health record they describe.
+        healthReminders.removeAll { $0.targetType == .record && $0.targetID == id }
+        if !saveToDisk() {
+            healthRecords = previousRecords
+            items = previousItems
+            healthReminders = previousReminders
+        }
+    }
+
+    func saveHealthPrescription(_ prescription: HealthPrescription) {
+        guard let family, prescription.familyID == family.id,
+              members.contains(where: { $0.id == prescription.memberID }) else { return }
+        let name = prescription.medicationName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.count <= 160,
+              prescription.remainingRepeats.map({ $0 >= 0 }) ?? true else { return }
+        var updated = prescription
+        updated.medicationName = name
+        updated.notes = Self.cleaned(updated.notes, limit: 2000)
+        updated.updatedAt = .now
+        let previousPrescriptions = healthPrescriptions
+        let previousReminders = healthReminders
+        if let index = healthPrescriptions.firstIndex(where: { $0.id == prescription.id }) {
+            healthPrescriptions[index] = updated
+        } else {
+            healthPrescriptions.append(updated)
+        }
+        let renewalIsActive = updated.renewalStatus == .due || updated.renewalStatus == .requested
+        upsertLinkedHealthReminder(
+            targetType: .prescriptionRenewal, targetID: updated.id, memberID: updated.memberID,
+            title: "Receptförnyelse", firesAt: renewalIsActive ? updated.renewalDueAt : nil,
+            visibility: updated.visibility
+        )
+        if !saveToDisk() {
+            healthPrescriptions = previousPrescriptions
+            healthReminders = previousReminders
+        }
+    }
+
+    func deleteHealthPrescription(_ id: UUID) {
+        let previousPrescriptions = healthPrescriptions
+        let previousPickups = medicationPickups
+        let previousReminders = healthReminders
+        healthPrescriptions.removeAll { $0.id == id }
+        // Preserve pickup history; detach it from the deleted prescription.
+        for index in medicationPickups.indices where medicationPickups[index].prescriptionID == id {
+            medicationPickups[index].prescriptionID = nil
+        }
+        healthReminders.removeAll { $0.targetType == .prescriptionRenewal && $0.targetID == id }
+        if !saveToDisk() {
+            healthPrescriptions = previousPrescriptions
+            medicationPickups = previousPickups
+            healthReminders = previousReminders
+        }
+    }
+
+    func saveMedicationPickup(_ pickup: MedicationPickup) {
+        guard let family, pickup.familyID == family.id,
+              members.contains(where: { $0.id == pickup.memberID }) else { return }
+        let name = pickup.medicationName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.count <= 160 else { return }
+        if let prescriptionID = pickup.prescriptionID {
+            guard healthPrescriptions.contains(where: {
+                $0.id == prescriptionID && $0.memberID == pickup.memberID
+            }) else { return }
+        }
+        var updated = pickup
+        updated.medicationName = name
+        updated.updatedAt = .now
+        let previousPickups = medicationPickups
+        let previousReminders = healthReminders
+        if let index = medicationPickups.firstIndex(where: { $0.id == pickup.id }) {
+            medicationPickups[index] = updated
+        } else {
+            medicationPickups.append(updated)
+        }
+        upsertLinkedHealthReminder(
+            targetType: .medicationPickup, targetID: updated.id, memberID: updated.memberID,
+            title: "Läkemedel att hämta",
+            firesAt: updated.status == .planned ? updated.dueAt : nil,
+            visibility: updated.visibility
+        )
+        if !saveToDisk() {
+            medicationPickups = previousPickups
+            healthReminders = previousReminders
+        }
+    }
+
+    func deleteMedicationPickup(_ id: UUID) {
+        let previousPickups = medicationPickups
+        let previousReminders = healthReminders
+        medicationPickups.removeAll { $0.id == id }
+        healthReminders.removeAll { $0.targetType == .medicationPickup && $0.targetID == id }
+        if !saveToDisk() {
+            medicationPickups = previousPickups
+            healthReminders = previousReminders
+        }
+    }
+
+    func saveHealthProfileInformation(_ information: HealthProfileInformation) {
+        guard let family, information.familyID == family.id,
+              members.contains(where: { $0.id == information.memberID }) else { return }
+        let title = information.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, title.count <= 160 else { return }
+        var updated = information
+        updated.title = title
+        updated.details = Self.cleaned(updated.details, limit: 4000)
+        updated.updatedAt = .now
+        let previous = healthProfileInformation
+        if let index = healthProfileInformation.firstIndex(where: { $0.id == information.id }) {
+            healthProfileInformation[index] = updated
+        } else {
+            healthProfileInformation.append(updated)
+        }
+        if !saveToDisk() { healthProfileInformation = previous }
+    }
+
+    func deleteHealthProfileInformation(_ id: UUID) {
+        let previous = healthProfileInformation
+        healthProfileInformation.removeAll { $0.id == id }
+        if !saveToDisk() { healthProfileInformation = previous }
+    }
+
+    func saveHealthReminder(_ reminder: HealthReminder) {
+        guard let family, reminder.familyID == family.id,
+              members.contains(where: { $0.id == reminder.memberID }) else { return }
+        let linkedTargetIsValid: Bool
+        switch reminder.targetType {
+        case .record:
+            linkedTargetIsValid = reminder.targetID.map { targetID in
+                healthRecords.contains { $0.id == targetID && $0.memberID == reminder.memberID }
+            } ?? false
+        case .prescriptionRenewal:
+            linkedTargetIsValid = reminder.targetID.map { targetID in
+                healthPrescriptions.contains { $0.id == targetID && $0.memberID == reminder.memberID }
+            } ?? false
+        case .medicationPickup:
+            linkedTargetIsValid = reminder.targetID.map { targetID in
+                medicationPickups.contains { $0.id == targetID && $0.memberID == reminder.memberID }
+            } ?? false
+        case .custom:
+            linkedTargetIsValid = true
+        }
+        guard linkedTargetIsValid else { return }
+        let title = reminder.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, title.count <= 160 else { return }
+        var updated = reminder
+        updated.title = title
+        updated.updatedAt = .now
+        let previous = healthReminders
+        if let index = healthReminders.firstIndex(where: { $0.id == reminder.id }) {
+            healthReminders[index] = updated
+        } else {
+            healthReminders.append(updated)
+        }
+        if !saveToDisk() { healthReminders = previous }
+    }
+
+    func deleteHealthReminder(_ id: UUID) {
+        let previous = healthReminders
+        healthReminders.removeAll { $0.id == id }
+        if !saveToDisk() { healthReminders = previous }
+    }
+
+    private func upsertLinkedHealthReminder(
+        targetType: HealthReminderTarget,
+        targetID: UUID,
+        memberID: UUID,
+        title: String,
+        firesAt: Date?,
+        visibility: HealthVisibility
+    ) {
+        if let index = healthReminders.firstIndex(where: {
+            $0.targetType == targetType && $0.targetID == targetID
+        }) {
+            guard let firesAt else {
+                healthReminders.remove(at: index)
+                return
+            }
+            healthReminders[index].memberID = memberID
+            healthReminders[index].title = title
+            healthReminders[index].firesAt = firesAt
+            healthReminders[index].isEnabled = true
+            healthReminders[index].visibility = visibility
+            healthReminders[index].updatedAt = .now
+        } else if let firesAt {
+            healthReminders.append(HealthReminder(
+                familyID: family?.id ?? UUID(), memberID: memberID,
+                targetType: targetType, targetID: targetID, title: title,
+                firesAt: firesAt, isEnabled: true, visibility: visibility
+            ))
+        }
+    }
+
+    private static func cleaned(_ value: String?, limit: Int) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return String(trimmed.prefix(limit))
+    }
+
     private struct Snapshot: Codable {
         var family: Family?
         var members: [FamilyMember]
@@ -373,6 +682,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         var occurrenceOverrides: [FamilyOccurrenceOverride]? = nil
         var giftIdeas: [GiftIdea]? = nil
         var christmasGifts: [ChristmasGift]? = nil
+        var healthRecords: [HealthRecord]? = nil
+        var healthPrescriptions: [HealthPrescription]? = nil
+        var medicationPickups: [MedicationPickup]? = nil
+        var healthProfileInformation: [HealthProfileInformation]? = nil
+        var healthReminders: [HealthReminder]? = nil
     }
 
     private func loadFromDisk() {
@@ -387,6 +701,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             occurrenceOverrides = snapshot.occurrenceOverrides ?? []
             giftIdeas = snapshot.giftIdeas ?? []
             christmasGifts = snapshot.christmasGifts ?? []
+            healthRecords = snapshot.healthRecords ?? []
+            healthPrescriptions = snapshot.healthPrescriptions ?? []
+            medicationPickups = snapshot.medicationPickups ?? []
+            healthProfileInformation = snapshot.healthProfileInformation ?? []
+            healthReminders = snapshot.healthReminders ?? []
             shoppingItems = snapshot.shoppingItems
             notifications = snapshot.notifications
             messages = snapshot.messages ?? []
@@ -414,7 +733,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                                 shoppingItems: shoppingItems, notifications: notifications, messages: messages,
                                 skippedOccurrences: skippedOccurrences,
                                 occurrenceOverrides: occurrenceOverrides,
-                                giftIdeas: giftIdeas, christmasGifts: christmasGifts)
+                                giftIdeas: giftIdeas, christmasGifts: christmasGifts,
+                                healthRecords: healthRecords, healthPrescriptions: healthPrescriptions,
+                                medicationPickups: medicationPickups,
+                                healthProfileInformation: healthProfileInformation,
+                                healthReminders: healthReminders)
         do {
             let data = try JSONEncoder().encode(snapshot)
             try data.write(to: fileURL, options: .atomic)

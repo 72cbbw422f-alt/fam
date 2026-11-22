@@ -138,6 +138,8 @@ struct FamilyItem: Identifiable, Codable, Equatable {
     var title: String
     var details: String?
     var location: String?
+    var latitude: Double?
+    var longitude: Double?
     var startsAt: Date
     var endsAt: Date?
     var kind: FamilyItemKind
@@ -164,12 +166,14 @@ struct FamilyItem: Identifiable, Codable, Equatable {
          endsAt: Date?, kind: FamilyItemKind, memberID: UUID?,
          isRecurringYearly: Bool, reminderOffsets: [Int]?,
          memberIDs: [UUID]? = nil, isForEveryone: Bool = false,
-         responsibleMemberID: UUID? = nil, location: String? = nil, recurrenceFrequency: FamilyRecurrenceFrequency? = nil) {
+         responsibleMemberID: UUID? = nil, location: String? = nil, latitude: Double? = nil, longitude: Double? = nil, recurrenceFrequency: FamilyRecurrenceFrequency? = nil) {
         self.id = id
         self.familyID = familyID
         self.title = title
         self.details = details
         self.location = location
+        self.latitude = latitude
+        self.longitude = longitude
         self.startsAt = startsAt
         self.endsAt = endsAt
         self.kind = kind
@@ -183,7 +187,7 @@ struct FamilyItem: Identifiable, Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case id, title, details, kind
-        case location
+        case location, latitude, longitude
         case familyID = "family_id"
         case startsAt = "starts_at"
         case endsAt = "ends_at"
@@ -203,6 +207,8 @@ struct FamilyItem: Identifiable, Codable, Equatable {
         title = try container.decode(String.self, forKey: .title)
         details = try container.decodeIfPresent(String.self, forKey: .details)
         location = try container.decodeIfPresent(String.self, forKey: .location)
+        latitude = try container.decodeIfPresent(Double.self, forKey: .latitude)
+        longitude = try container.decodeIfPresent(Double.self, forKey: .longitude)
         startsAt = try container.decode(Date.self, forKey: .startsAt)
         endsAt = try container.decodeIfPresent(Date.self, forKey: .endsAt)
         kind = try container.decode(FamilyItemKind.self, forKey: .kind)
@@ -226,6 +232,8 @@ struct FamilyItem: Identifiable, Codable, Equatable {
         try container.encode(title, forKey: .title)
         try container.encodeIfPresent(details, forKey: .details)
         try container.encodeIfPresent(location, forKey: .location)
+        try container.encodeIfPresent(latitude, forKey: .latitude)
+        try container.encodeIfPresent(longitude, forKey: .longitude)
         try container.encode(startsAt, forKey: .startsAt)
         try container.encodeIfPresent(endsAt, forKey: .endsAt)
         try container.encode(kind, forKey: .kind)

@@ -10,7 +10,6 @@ struct HealthRecordEditorView: View {
     @State private var memberID: UUID?
     @State private var startsAt: Date
     @State private var provider: String
-    @State private var clinic: String
     @State private var location: String
     @State private var address: String
     @State private var latitude: Double?
@@ -30,7 +29,6 @@ struct HealthRecordEditorView: View {
         _memberID = State(initialValue: record?.memberID ?? store.members.first?.id)
         _startsAt = State(initialValue: record?.startsAt ?? .now)
         _provider = State(initialValue: record?.provider ?? "")
-        _clinic = State(initialValue: record?.clinic ?? "")
         _location = State(initialValue: record?.location ?? "")
         _address = State(initialValue: record?.address ?? "")
         _latitude = State(initialValue: record?.latitude)
@@ -65,7 +63,6 @@ struct HealthRecordEditorView: View {
 
             Section("Vårdkontakt") {
                 TextField("Vårdgivare", text: $provider)
-                TextField("Mottagning", text: $clinic)
                 HealthPlaceSearchField(
                     location: $location,
                     address: $address,
@@ -147,7 +144,7 @@ struct HealthRecordEditorView: View {
             title: title,
             startsAt: startsAt,
             provider: provider,
-            clinic: clinic,
+            clinic: nil,
             location: location,
             address: address,
             latitude: latitude,

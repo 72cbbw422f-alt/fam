@@ -410,6 +410,13 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
               members.contains(where: { $0.id == record.memberID }) else { return }
         let title = record.title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty, title.count <= 160 else { return }
+        let hasLatitude = record.latitude != nil
+        let hasLongitude = record.longitude != nil
+        guard hasLatitude == hasLongitude else { return }
+        if let latitude = record.latitude, let longitude = record.longitude {
+            guard latitude.isFinite, longitude.isFinite,
+                  (-90...90).contains(latitude), (-180...180).contains(longitude) else { return }
+        }
         var updated = record
         updated.title = title
         updated.provider = Self.cleaned(updated.provider, limit: 120)

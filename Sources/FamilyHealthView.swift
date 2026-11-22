@@ -378,8 +378,8 @@ struct FamilyHealthView: View {
                     .font(.system(size: 12, weight: .medium)).foregroundStyle(FamiljenTheme.muted)
                 Text(item.startsAt.formatted(.dateTime.day().month(.wide).year().hour().minute().locale(Locale(identifier: "sv_SE"))))
                     .font(.system(size: 13, weight: .semibold)).foregroundStyle(FamiljenTheme.navy)
-                if let clinic = item.clinic, !clinic.isEmpty {
-                    Text(clinic).font(.system(size: 12)).foregroundStyle(FamiljenTheme.muted)
+                if let location = item.location, !location.isEmpty {
+                    Text(location).font(.system(size: 12)).foregroundStyle(FamiljenTheme.muted)
                 }
             }
             Spacer(minLength: 0)

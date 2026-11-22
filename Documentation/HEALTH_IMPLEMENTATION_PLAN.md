@@ -115,3 +115,9 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Scheduler-testsviten täcker nu att en ändrad starttid för en kalenderhändelse ger ett nytt påminnelse-ID och ett nytt korrekt beräknat aviseringsdatum.
 - Ett separat test säkerställer att påminnelser vars aviseringsdatum redan passerat inte schemaläggs, även om själva kalenderhändelsen ligger framåt i tiden.
 - Testerna är tillagda på `feature/health-foundation`; CI-resultat för senaste commit inväntas. Ingen lokal Xcode-körning eller fysisk iPhone-verifiering har gjorts.
+
+## Bevarande av hälsoaviseringar i inställningar (2026-11-22)
+- Granskningen hittade två anrop i `FamilySettingsView` som schemalade om kalenderpåminnelser utan att skicka med familjens `healthReminders`.
+- Eftersom schemaläggaren hanterar kalender- och hälsopåminnelser gemensamt och tar bort hanterade aviseringar som inte ingår i önskad mängd, kunde öppning av inställningarna eller aktivering av påminnelser rensa redan schemalagda hälsoaviseringar.
+- Båda anropen skickar nu med `store.healthReminders`, så hela påminnelsemängden bevaras vid omplanering.
+- Ändringen är kodad på `feature/health-foundation`. CI för denna senaste ändring inväntas; ingen fysisk iPhone-verifiering är gjord.

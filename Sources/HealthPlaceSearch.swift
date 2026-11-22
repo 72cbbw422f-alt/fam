@@ -2,7 +2,7 @@ import MapKit
 import SwiftUI
 
 @MainActor
-private final class HealthPlaceSearchModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
+private final class HealthPlaceSearchModel: NSObject, ObservableObject, @preconcurrency MKLocalSearchCompleterDelegate {
     @Published private(set) var completions: [MKLocalSearchCompletion] = []
     @Published var isResolving = false
     @Published var errorMessage: String?

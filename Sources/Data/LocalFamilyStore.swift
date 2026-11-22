@@ -433,7 +433,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                 location: updated.address ?? updated.location,
                 latitude: updated.latitude,
                 longitude: updated.longitude,
-                recurrenceFrequency: .none
+                recurrenceFrequency: FamilyRecurrenceFrequency.none
             )
             if let itemIndex = items.firstIndex(where: { $0.id == calendarID }) {
                 items[itemIndex] = calendarItem

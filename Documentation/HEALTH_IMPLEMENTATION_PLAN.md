@@ -110,3 +110,8 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Urvalet följer nu samma statuslogik som notiscentrets kommande hälsoärenden.
 - Ändringen är kodad men behöver verifieras i nästa CI-körning och på fysisk iPhone.
 - Regressionstest i `HealthNotificationCenterTests` täcker nu även att framtida vårdbesök med status `awaiting` visas tillsammans med planerade besök, medan privata och avslutade besök filtreras bort.
+
+## Regressionstester för kalenderpåminnelser (2026-11-22)
+- Scheduler-testsviten täcker nu att en ändrad starttid för en kalenderhändelse ger ett nytt påminnelse-ID och ett nytt korrekt beräknat aviseringsdatum.
+- Ett separat test säkerställer att påminnelser vars aviseringsdatum redan passerat inte schemaläggs, även om själva kalenderhändelsen ligger framåt i tiden.
+- Testerna är tillagda på `feature/health-foundation`; CI-resultat för senaste commit inväntas. Ingen lokal Xcode-körning eller fysisk iPhone-verifiering har gjorts.

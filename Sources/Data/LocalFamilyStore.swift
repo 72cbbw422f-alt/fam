@@ -596,6 +596,24 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func saveHealthReminder(_ reminder: HealthReminder) {
         guard let family, reminder.familyID == family.id,
               members.contains(where: { $0.id == reminder.memberID }) else { return }
+        let linkedTargetIsValid: Bool
+        switch reminder.targetType {
+        case .record:
+            linkedTargetIsValid = reminder.targetID.map { targetID in
+                healthRecords.contains { $0.id == targetID && $0.memberID == reminder.memberID }
+            } ?? false
+        case .prescriptionRenewal:
+            linkedTargetIsValid = reminder.targetID.map { targetID in
+                healthPrescriptions.contains { $0.id == targetID && $0.memberID == reminder.memberID }
+            } ?? false
+        case .medicationPickup:
+            linkedTargetIsValid = reminder.targetID.map { targetID in
+                medicationPickups.contains { $0.id == targetID && $0.memberID == reminder.memberID }
+            } ?? false
+        case .custom:
+            linkedTargetIsValid = true
+        }
+        guard linkedTargetIsValid else { return }
         let title = reminder.title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty, title.count <= 160 else { return }
         var updated = reminder

@@ -117,6 +117,38 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertEqual(store.medicationPickups.first?.status, .collected)
     }
 
+    func testDeletingPrescriptionDetachesPickupHistoryAndRemovesRenewalReminder() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        let familyID = try XCTUnwrap(store.family?.id)
+        let dueDate = Date(timeIntervalSince1970: 1_800_000_000)
+        let prescription = HealthPrescription(
+            familyID: familyID, memberID: member.id, medicationName: "Läkemedel E",
+            renewalDueAt: dueDate, renewalStatus: .due
+        )
+        store.saveHealthPrescription(prescription)
+        let pickup = MedicationPickup(
+            familyID: familyID, memberID: member.id, prescriptionID: prescription.id,
+            medicationName: "Läkemedel E", dueAt: dueDate.addingTimeInterval(86_400)
+        )
+        store.saveMedicationPickup(pickup)
+        XCTAssertEqual(store.healthReminders.count, 2)
+
+        store.deleteHealthPrescription(prescription.id)
+
+        XCTAssertTrue(store.healthPrescriptions.isEmpty)
+        XCTAssertEqual(store.medicationPickups.count, 1)
+        XCTAssertNil(store.medicationPickups.first?.prescriptionID)
+        XCTAssertEqual(store.healthReminders.count, 1)
+        XCTAssertEqual(store.healthReminders.first?.targetType, .medicationPickup)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.healthPrescriptions.isEmpty)
+        XCTAssertNil(reloaded.medicationPickups.first?.prescriptionID)
+        XCTAssertEqual(reloaded.healthReminders.count, 1)
+    }
+
     func testPrescriptionAndPickupCreateIndependentLinkedReminders() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

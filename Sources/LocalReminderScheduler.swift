@@ -100,6 +100,10 @@ enum LocalReminderScheduler {
             .sorted()
     }
 
+    static func shouldRemoveObsoleteReminders(afterSuccessfulAdds: Bool) -> Bool {
+        afterSuccessfulAdds
+    }
+
     private static func deliveredRequests() async -> [UNNotification] {
         await withCheckedContinuation { continuation in
             center.getDeliveredNotifications { notifications in
@@ -141,6 +145,8 @@ enum LocalReminderScheduler {
 
         // Add/update desired reminders before removing obsolete ones. Calendar and
         // health reminders share one cap but use disjoint identifier namespaces.
+        // If any add fails, retain obsolete requests rather than risk losing reminders.
+        var allDesiredAddsSucceeded = true
         for candidate in candidates {
             let content = UNMutableNotificationContent()
             let fireDate: Date
@@ -178,10 +184,14 @@ enum LocalReminderScheduler {
             do {
                 try await center.add(request)
             } catch {
+                allDesiredAddsSucceeded = false
                 // A failed local reminder must not block calendar usage.
             }
         }
 
+        guard shouldRemoveObsoleteReminders(afterSuccessfulAdds: allDesiredAddsSucceeded) else {
+            return
+        }
         let obsoleteIDs = obsoleteManagedIdentifiers(
             existingIdentifiers: existingIDs, desiredIdentifiers: desiredIDs
         )

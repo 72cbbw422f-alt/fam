@@ -98,3 +98,9 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Tre tvetydiga .none-uttryck i återkommande kalenderhändelsers tester har skrivits om till den explicita enum-typen FamilyRecurrenceFrequency.none.
 - Ändringarna ligger på feature/health-foundation. CI för den nya kodversionen måste passera innan ändringarna betraktas som verifierade.
 - Fysisk iPhone-testning av platsval, kartvisning, Apple Kartor och notisleverans återstår.
+
+
+## Receptborttagning och påminnelsekoppling (2026-11-22)
+- Ett nytt regressionstest verifierar att borttagning av ett recept tar bort dess receptförnyelsepåminnelse men bevarar läkemedelshämtningens historik.
+- Testet kontrollerar även att hämtningen kopplas loss från det borttagna receptet och att resultatet överlever omladdning från lokal lagring.
+- Testet är tillagt men ännu inte verifierat av GitHub Actions. Senaste fysiska iPhone-testning återstår.

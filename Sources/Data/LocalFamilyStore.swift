@@ -465,14 +465,18 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func deleteHealthRecord(_ id: UUID) {
         let previousRecords = healthRecords
         let previousItems = items
+        let previousReminders = healthReminders
         let linkedCalendarID = healthRecords.first(where: { $0.id == id })?.calendarItemID
         healthRecords.removeAll { $0.id == id }
         if let linkedCalendarID {
             items.removeAll { $0.id == linkedCalendarID }
         }
+        // Record-specific reminders must not outlive the health record they describe.
+        healthReminders.removeAll { $0.targetType == .record && $0.targetID == id }
         if !saveToDisk() {
             healthRecords = previousRecords
             items = previousItems
+            healthReminders = previousReminders
         }
     }
 

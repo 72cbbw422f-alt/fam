@@ -184,3 +184,10 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Regressionstestet `testHealthReminderRequiresMatchingLinkedTarget` täcker saknat vårdärende, fel familjemedlem, saknat receptmål och att en fristående påminnelse fortfarande sparas.
 - Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthStoreTests.swift`.
 - Kodändringen ligger på `feature/health-foundation`. CI-verifiering inväntas; inga fysiska iPhone-tester är utförda.
+
+## Förenklad platsinmatning i hälsoärenden (2026-11-22)
+- Hälsoärendets avsnitt för vårdkontakt visar nu endast vårdgivare och en platsökning. Separata fält för mottagning och adress är borttagna från formuläret för att undvika dubblerad information.
+- Platsfältet använder fortsatt MapKit-autocomplete. När en plats väljs sparas platsnamn, formaterad adress och koordinater i bakgrunden; koordinaterna används för kartförhandsvisning och Apple Kartor.
+- Adressen finns kvar i datamodellen och detaljvyerna för bakåtkompatibilitet och navigering, men användaren behöver inte fylla i den separat. Äldre mottagningsuppgifter lämnas i lagringen men redigeras inte längre via det förenklade formuläret.
+- Berörda filer: `Sources/HealthEditors.swift`, `Sources/HealthPlaceSearch.swift`.
+- Ändringen behöver verifieras i CI och på fysisk iPhone, särskilt MapKit-sökning och val av plats.

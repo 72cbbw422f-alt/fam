@@ -197,6 +197,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                     healthRecords[healthIndex].memberID = memberID
                     healthRecords[healthIndex].notes = details
                     healthRecords[healthIndex].location = location
+                    healthRecords[healthIndex].latitude = latitude
+                    healthRecords[healthIndex].longitude = longitude
                     healthRecords[healthIndex].updatedAt = .now
                 } else {
                     healthRecords[healthIndex].calendarItemID = nil
@@ -429,6 +431,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                 reminderOffsets: updated.reminderOffsets, memberIDs: [updated.memberID],
                 isForEveryone: false, responsibleMemberID: nil,
                 location: updated.address ?? updated.location,
+                latitude: updated.latitude,
+                longitude: updated.longitude,
                 recurrenceFrequency: .none
             )
             if let itemIndex = items.firstIndex(where: { $0.id == calendarID }) {

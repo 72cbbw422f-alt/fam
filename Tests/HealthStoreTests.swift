@@ -215,7 +215,6 @@ final class HealthStoreTests: XCTestCase {
             title: "Ursprungligt besök", startsAt: Date(timeIntervalSince1970: 1_800_000_000)
         )
         store.saveHealthRecord(record)
-        let saved = try XCTUnwrap(store.healthRecords.first)
         let linkedItem = try XCTUnwrap(store.items.first)
         let movedDate = linkedItem.startsAt.addingTimeInterval(86_400)
 
@@ -296,7 +295,6 @@ final class HealthStoreTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         store.createFamily(name: "Familjen", ownerName: "Niklas")
         let member = try XCTUnwrap(store.members.first)
-        let familyID = try XCTUnwrap(store.family?.id)
         store.saveCalendarItem(
             id: nil, title: "Möte", details: "Ta med handlingar",
             startsAt: Date(timeIntervalSince1970: 1_800_000_000), kind: .appointment,
@@ -337,7 +335,7 @@ final class HealthStoreTests: XCTestCase {
     }
 
     func testLegacySnapshotWithoutHealthFieldsLoadsEmptyHealthCollections() throws {
-        let (store, directory) = try makeStore()
+        let (_, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
         let familyID = UUID()
         let memberID = UUID()

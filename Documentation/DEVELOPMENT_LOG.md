@@ -644,6 +644,9 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Kalenderns datumformat använder nu explicit svensk locale (`sv_SE`) i stället för att förlita sig på enhetens aktuella språkval.
 - Veckodagsrubrikerna i månadsvyn använder svenska tvåbokstavsförkortningar: Må, Ti, On, To, Fr, Lö, Sö.
 
+
+- Uppdaterade `.github/workflows/ios-build.yml` så att pushar på `feature/ux-navigation-shopping` också kör simulatorns enhetstester/build och unsigned iPhone-build. Detta gör att den separata UX-grenen får samma CI-kvalitetsgrind.
+
 **Berörda filer**
 - `Sources/RootView.swift`
 - `Sources/FamilyCalendarView.swift`

@@ -197,3 +197,8 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - När användaren väljer ett nytt MapKit-förslag hålls adress och koordinater intakta under programmatiska uppdateringar av platsfältet.
 - Berörd fil: `Sources/HealthPlaceSearch.swift`.
 - Ändringen behöver verifieras i CI och på fysisk iPhone.
+
+## Visa valt vårdställe i hälsoöversikten (2026-11-22)
+- Rader för vårdärenden visar nu det valda platsnamnet (`location`) i stället för det äldre mottagningsfältet (`clinic`). Det gör att platsen som väljs via Apple Kartor syns direkt i listan.
+- Berörd fil: `Sources/FamilyHealthView.swift`.
+- Ändringen behöver verifieras i CI. Ingen fysisk iPhone-verifiering är gjord.

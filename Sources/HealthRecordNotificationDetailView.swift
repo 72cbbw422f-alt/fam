@@ -92,7 +92,9 @@ struct HealthRecordNotificationDetailView: View {
             if let address = nonEmpty(record.address) {
                 detailCard("Adress", value: address, symbol: "location")
             }
-            if let latitude = record.latitude, let longitude = record.longitude {
+            if let latitude = record.latitude, let longitude = record.longitude,
+               latitude.isFinite, longitude.isFinite,
+               (-90...90).contains(latitude), (-180...180).contains(longitude) {
                 mapSection(latitude: latitude, longitude: longitude, title: record.location ?? record.clinic ?? record.title)
             }
             if let notes = nonEmpty(record.notes) {

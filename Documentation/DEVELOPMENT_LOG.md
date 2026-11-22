@@ -634,3 +634,26 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 
 **Verifiering**
 - Källkod och regressionstest är incheckade. CI-verifiering inväntas.
+
+
+## 2026-11-22 – UX-förbättringar: översiktsnavigation och svensk kalender
+
+**Ändringar**
+- Skapade separat arbetsgren `feature/ux-navigation-shopping` från den aktuella hälsogrenens commit `4489fcbd0c73892f764ab4de152b1ed3ab664833`. Pågående PR #2 lämnades orörd och ommergad.
+- Översiktsfliken får nu ett nytt navigations-ID när den trycks. Dashboardens `NavigationStack` återskapas därmed och återgår till startsidan även om Översikt redan är vald och en undersida ligger ovanpå.
+- Kalenderns datumformat använder nu explicit svensk locale (`sv_SE`) i stället för att förlita sig på enhetens aktuella språkval.
+- Veckodagsrubrikerna i månadsvyn använder svenska tvåbokstavsförkortningar: Må, Ti, On, To, Fr, Lö, Sö.
+
+**Berörda filer**
+- `Sources/RootView.swift`
+- `Sources/FamilyCalendarView.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Källändringarna är incheckade på `feature/ux-navigation-shopping`.
+- Inga lokala Xcode-tester kan köras i den tillgängliga miljön.
+- CI har ännu inte verifierat dessa commits. Ingen IPA har skapats från denna arbetsgren.
+- Navigationen behöver dessutom verifieras visuellt/interaktivt på iPhone när nästa IPA finns.
+
+**Kvarstår**
+- Fortsatt UX-arbete med Bring-inspirerad inköpslista. Datamodell, lokal persistens, äldre snapshots och regressionstester ska granskas innan kategorier och övriga listfunktioner implementeras.

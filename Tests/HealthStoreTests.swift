@@ -117,6 +117,47 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertEqual(store.medicationPickups.first?.status, .collected)
     }
 
+    func testHealthReminderRequiresMatchingLinkedTarget() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let owner = try XCTUnwrap(store.members.first(where: { $0.role == .owner }))
+        let child = try XCTUnwrap(store.members.first(where: { $0.displayName == "Cleo" }))
+        let familyID = try XCTUnwrap(store.family?.id)
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        let record = HealthRecord(
+            familyID: familyID, memberID: owner.id, type: .appointment,
+            title: "Vårdbesök", startsAt: date
+        )
+        store.saveHealthRecord(record)
+
+        let missingRecordTarget = HealthReminder(
+            familyID: familyID, memberID: owner.id, targetType: .record,
+            targetID: UUID(), title: "Saknat ärende", firesAt: date
+        )
+        let wrongMemberTarget = HealthReminder(
+            familyID: familyID, memberID: child.id, targetType: .record,
+            targetID: record.id, title: "Fel familjemedlem", firesAt: date
+        )
+        let missingPrescriptionTarget = HealthReminder(
+            familyID: familyID, memberID: owner.id, targetType: .prescriptionRenewal,
+            targetID: nil, title: "Saknat recept", firesAt: date
+        )
+        let customReminder = HealthReminder(
+            familyID: familyID, memberID: owner.id, targetType: .custom,
+            title: "Egen påminnelse", firesAt: date
+        )
+
+        store.saveHealthReminder(missingRecordTarget)
+        store.saveHealthReminder(wrongMemberTarget)
+        store.saveHealthReminder(missingPrescriptionTarget)
+        store.saveHealthReminder(customReminder)
+
+        XCTAssertEqual(store.healthReminders.map(\.id), [customReminder.id])
+        XCTAssertNil(store.persistenceError)
+    }
+
     func testDeletingHealthRecordRemovesLinkedCalendarItemAndRecordReminder() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

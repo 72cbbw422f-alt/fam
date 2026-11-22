@@ -5,13 +5,42 @@ struct ShoppingList: Identifiable, Codable {
     let title: String
 }
 
+enum ShoppingCategory: String, Codable, CaseIterable, Identifiable {
+    case fruitVegetables, dairy, meatFish, pantry, frozen, household, other
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .fruitVegetables: return "Frukt & grönt"
+        case .dairy: return "Mejeri"
+        case .meatFish: return "Kött & fisk"
+        case .pantry: return "Skafferi"
+        case .frozen: return "Frys"
+        case .household: return "Hushåll"
+        case .other: return "Övrigt"
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .fruitVegetables: return "carrot"
+        case .dairy: return "drop"
+        case .meatFish: return "fish"
+        case .pantry: return "basket"
+        case .frozen: return "snowflake"
+        case .household: return "sparkles"
+        case .other: return "square.grid.2x2"
+        }
+    }
+}
+
 struct ShoppingItem: Identifiable, Codable, Equatable {
     let id: UUID
     let listID: UUID
     var title: String
     var isChecked: Bool
     let createdAt: Date
-    enum CodingKeys: String, CodingKey { case id, title; case listID = "list_id"; case isChecked = "is_checked"; case createdAt = "created_at" }
+    var category: ShoppingCategory? = nil
+    enum CodingKeys: String, CodingKey { case id, title, category; case listID = "list_id"; case isChecked = "is_checked"; case createdAt = "created_at" }
 }
 
 

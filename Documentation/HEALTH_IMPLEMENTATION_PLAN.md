@@ -68,3 +68,12 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Verifierad kodcommit för notiscentrets tryckbara sammanfattning: `7b2306e84db940b0659bf0a393a6dd69aacfad3f` på `feature/health-foundation`.
 - GitHub Actions run `44961600818`: simulatorns enhetstester och iOS Simulator-bygge godkända; fysisk iPhone-byggnad, IPA-paketering och artifact-uppladdning godkända.
 - Artifact: `Familjen-unsigned-IPA`, ID `14730240562`. IPA har verifierats som ett iPhoneOS-arm64-paket med bundle identifier `se.familjen.app` och minimum iOS 17.0. Installering och signering via FlareStore är inte verifierade.
+
+
+## Detaljvy och kartplatser (2026-11-22)
+- Hälsoposter har nu valfria koordinatfält (`latitude`/`longitude`) utöver platsnamn och adress. Fälten är valfria för att äldre lokala snapshots fortsatt ska kunna avkodas.
+- Ärendeeditorn använder MapKit-sökning för att föreslå adresser och intressanta platser. När en träff väljs sparas platsnamn, formaterad adress och koordinater. Manuell adressinmatning är fortsatt möjlig.
+- Notiscentrets hälsoärenden öppnar en utökad detaljvy med status, familjemedlem, datum/tid, vårdgivare, mottagning, plats, adress, anteckningar och påminnelser när uppgifterna finns.
+- Om koordinater finns visas en kartförhandsvisning och en åtgärd som öppnar Apple Kartor med vägbeskrivning. Ärenden utan koordinater visar fortfarande all registrerad textinformation.
+- Nya tester kontrollerar koordinatpersistens samt avkodning när koordinatfälten saknas.
+- Kodändringar ligger på `feature/health-foundation`; CI behöver köras innan dessa ändringar betraktas som verifierade. Fysisk iPhone-testning av MapKit-sökning och kartöppning återstår.

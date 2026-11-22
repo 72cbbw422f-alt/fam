@@ -121,3 +121,17 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Eftersom schemaläggaren hanterar kalender- och hälsopåminnelser gemensamt och tar bort hanterade aviseringar som inte ingår i önskad mängd, kunde öppning av inställningarna eller aktivering av påminnelser rensa redan schemalagda hälsoaviseringar.
 - Båda anropen skickar nu med `store.healthReminders`, så hela påminnelsemängden bevaras vid omplanering.
 - Ändringen är kodad på `feature/health-foundation`. CI för denna senaste ändring inväntas; ingen fysisk iPhone-verifiering är gjord.
+
+
+## Säker städning vid misslyckad schemaläggning (2026-11-22)
+- Schemaläggaren tar nu bort gamla hanterade aviseringar först när samtliga önskade aviseringar har kunnat läggas till/uppdateras.
+- Om ett enskilt UNUserNotificationCenter.add misslyckas behålls tidigare aviseringar. Nästa schemaläggning kan försöka igen utan att först ha raderat fungerande påminnelser.
+- Ett regressionstest täcker beslutet att behålla gamla aviseringar vid misslyckat tillägg och tillåta städning när alla tillägg lyckats.
+- Inställningens rubrik och statusmeddelande benämner nu lokala påminnelser generellt, eftersom reglaget styr både kalender- och hälsopåminnelser.
+- Kodändringarna ligger på feature/health-foundation. Test och byggresultat inväntas för den nya commitserien.
+
+## CI-status (2026-11-22, uppföljning)
+- GitHub Actions run 45037091902 för commit af8bfe010b44e76343c3ff5789bf033ed55d78a3:
+  - Osignerad iPhone-byggnad, IPA-paketering och artifact-uppladdning: success.
+  - iOS Simulator-jobbets enhetstester: failure; simulatorbygget hoppades över.
+- Felet har inte kunnat isoleras från tillgänglig check-run-information. Den körningen verifierar därför inte testsviten trots att iPhone-paketet byggdes.

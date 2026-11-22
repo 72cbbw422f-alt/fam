@@ -999,7 +999,7 @@ final class LocalFamilyStoreTests: XCTestCase {
           "list_id": "\\(familyID.uuidString)",
           "title": "Mjölk",
           "is_checked": false,
-          "created_at": "2026-01-01T10:00:00Z"
+          "created_at": 1767261600
         }
         """
         let legacyItem = try JSONDecoder().decode(ShoppingItem.self, from: Data(legacyJSON.utf8))

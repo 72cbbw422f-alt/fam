@@ -145,11 +145,11 @@ final class HealthStoreTests: XCTestCase {
 
         XCTAssertTrue(store.healthRecords.isEmpty)
         XCTAssertTrue(store.items.isEmpty)
-        XCTAssertEqual(store.healthReminders.map(\\.id), [unrelatedReminder.id])
+        XCTAssertEqual(store.healthReminders.map(\.id), [unrelatedReminder.id])
         let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
         XCTAssertTrue(reloaded.healthRecords.isEmpty)
         XCTAssertTrue(reloaded.items.isEmpty)
-        XCTAssertEqual(reloaded.healthReminders.map(\\.id), [unrelatedReminder.id])
+        XCTAssertEqual(reloaded.healthReminders.map(\.id), [unrelatedReminder.id])
     }
 
     func testDeletingPrescriptionDetachesPickupHistoryAndRemovesRenewalReminder() throws {

@@ -142,3 +142,12 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Raden är korrigerad till en giltig Swift-key-path (\\.offset). Felet låg i testkoden, inte i appens produktionskod.
 - iPhone-bygget i samma körning lyckades; simulatorns tester stoppades vid kompilering av testmålet.
 - Korrigeringen ligger i commit 94a52454cf3c4d41bc1f15b33ad4556962fa5339. Ny CI-verifiering krävs.
+
+
+## Senaste CI-verifiering (2026-11-22, commit e391dad)
+- GitHub Actions run `45039481846` slutfördes med success för båda jobben på `feature/health-foundation`.
+- iOS Simulator: 74 enhetstester körda, 0 fel; simulatorbygget avslutades med `BUILD SUCCEEDED`.
+- iPhone: fysisk enhetskonfiguration byggdes utan signering; IPA paketerades och artifact laddades upp utan fel.
+- Artifact: `Familjen-unsigned-IPA`, ID `14760514981`, SHA-256 `fc6f73c9821ce8614aa71940831f33edccee3d2edc68034c994d43a688b0385a`, tillgängligt till 2026-12-06.
+- Kvarvarande varningar: tre explicita Swift-varningar om tvetydig `.none` i `HealthReminderSchedulerTests.swift`; Xcode hoppar även över App Intents-metadata eftersom `AppIntents.framework` inte används. Dessa är varningar, inte test- eller byggfel.
+- Detta verifierar CI på commit `e391dadbec15b93d363caf7843f26524ba3bef88`. Signering, FlareStore-installation, faktisk iPhone-körning, MapKit i enheten och leverans av lokala notiser är fortfarande inte verifierade.

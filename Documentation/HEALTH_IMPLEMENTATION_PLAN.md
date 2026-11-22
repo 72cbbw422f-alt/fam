@@ -158,3 +158,12 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Testfixturerna använder nu den explicita typen `FamilyRecurrenceFrequency.none` på samtliga tre ställen.
 - Ändringen är enbart testkod och ändrar inte appens körbeteende.
 - Commit: `a9874970cad7e91995f2eb13568119c44cf11df6`. CI för denna kodversion inväntas.
+
+
+## Städning av påminnelser vid borttagning av vårdärende (2026-11-22)
+- Granskning av borttagningsflödet visade att ett manuellt skapat hälso-påminnelseobjekt med måltypen `record` kunde ligga kvar när motsvarande vårdärende togs bort.
+- `LocalFamilyStore.deleteHealthRecord` tar nu bort påminnelser som är direkt kopplade till vårdärendets ID. Fristående/custom-påminnelser påverkas inte.
+- Om lokal persistens misslyckas återställs även påminnelselistan tillsammans med vårdposter och kalenderposter.
+- Regressionstestet `testDeletingHealthRecordRemovesLinkedCalendarItemAndRecordReminder` kontrollerar borttagning av vårdpost, kopplad kalenderpost och riktad påminnelse, bevarande av fristående påminnelse samt resultat efter omladdning.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthStoreTests.swift`.
+- Ändringen ligger på `feature/health-foundation`; CI för den senaste testcommitten måste slutföras innan den betraktas som verifierad.

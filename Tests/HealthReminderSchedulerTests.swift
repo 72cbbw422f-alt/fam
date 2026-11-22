@@ -3,6 +3,52 @@ import XCTest
 
 @MainActor
 final class HealthReminderSchedulerTests: XCTestCase {
+    func testCalendarReminderIdentityChangesWhenAppointmentTimeChanges() {
+        let familyID = UUID()
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let itemID = UUID()
+        let original = FamilyItem(
+            id: itemID, familyID: familyID, title: "Vårdbesök",
+            details: nil, startsAt: now.addingTimeInterval(7_200),
+            endsAt: nil, kind: .healthVisit, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3_600],
+            recurrenceFrequency: .none
+        )
+        let moved = FamilyItem(
+            id: itemID, familyID: familyID, title: "Vårdbesök",
+            details: nil, startsAt: now.addingTimeInterval(10_800),
+            endsAt: nil, kind: .healthVisit, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3_600],
+            recurrenceFrequency: .none
+        )
+
+        let originalCandidate = LocalReminderScheduler.makeCandidates(for: [original], now: now).first
+        let movedCandidate = LocalReminderScheduler.makeCandidates(for: [moved], now: now).first
+
+        XCTAssertNotNil(originalCandidate)
+        XCTAssertNotNil(movedCandidate)
+        XCTAssertNotEqual(originalCandidate?.id, movedCandidate?.id)
+        XCTAssertEqual(originalCandidate?.fireDate, original.startsAt.addingTimeInterval(-3_600))
+        XCTAssertEqual(movedCandidate?.fireDate, moved.startsAt.addingTimeInterval(-3_600))
+    }
+
+    func testCalendarReminderCandidatesExcludePastFireDates() {
+        let familyID = UUID()
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let item = FamilyItem(
+            id: UUID(), familyID: familyID, title: "Snart besök",
+            details: nil, startsAt: now.addingTimeInterval(1_800),
+            endsAt: nil, kind: .healthVisit, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3_600, 900],
+            recurrenceFrequency: .none
+        )
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
+
+        XCTAssertEqual(candidates.map(\\.offset), [900])
+        XCTAssertTrue(candidates.allSatisfy { $0.fireDate > now })
+    }
+
     func testOnlyEnabledFutureHealthRemindersBecomeCandidates() {
         let familyID = UUID()
         let memberID = UUID()

@@ -191,3 +191,9 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Adressen finns kvar i datamodellen och detaljvyerna för bakåtkompatibilitet och navigering, men användaren behöver inte fylla i den separat. Äldre mottagningsuppgifter lämnas i lagringen men redigeras inte längre via det förenklade formuläret.
 - Berörda filer: `Sources/HealthEditors.swift`, `Sources/HealthPlaceSearch.swift`.
 - Ändringen behöver verifieras i CI och på fysisk iPhone, särskilt MapKit-sökning och val av plats.
+
+## Rensa inaktuell adress vid ändrat platsval (2026-11-22)
+- När användaren börjar ändra ett tidigare valt platsnamn rensas nu både adress och koordinater. Därmed kan en gammal adress inte följa med till kalenderposten när användaren skriver in en ny plats.
+- När användaren väljer ett nytt MapKit-förslag hålls adress och koordinater intakta under programmatiska uppdateringar av platsfältet.
+- Berörd fil: `Sources/HealthPlaceSearch.swift`.
+- Ändringen behöver verifieras i CI och på fysisk iPhone.

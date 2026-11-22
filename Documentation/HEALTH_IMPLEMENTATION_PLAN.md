@@ -77,3 +77,15 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Om koordinater finns visas en kartförhandsvisning och en åtgärd som öppnar Apple Kartor med vägbeskrivning. Ärenden utan koordinater visar fortfarande all registrerad textinformation.
 - Nya tester kontrollerar koordinatpersistens samt avkodning när koordinatfälten saknas.
 - Kodändringar ligger på `feature/health-foundation`; CI behöver köras innan dessa ändringar betraktas som verifierade. Fysisk iPhone-testning av MapKit-sökning och kartöppning återstår.
+
+
+## Slutverifiering av kart- och detaljvyn (2026-11-22)
+- Verifierad arbetsgren: `feature/health-foundation`.
+- Verifierad kodcommit: `fd0bedc98581466e529c7e8178ad3f3bfa50d8f4`.
+- GitHub Actions run `45006223243`: både `Build unsigned IPA (iPhone)` och `Build Familjen (iOS Simulator)` slutfördes med success.
+- Simulatorns enhetstester: 69 tester körda, 0 fel. Simulatorbygget avslutades med `BUILD SUCCEEDED`.
+- iPhone-bygget, IPA-paketeringen och artefaktuppladdningen slutfördes med success.
+- Artefakt: `Familjen-unsigned-IPA`, ID `14747828456`, run `45006223243`. Paketets app-ID är `se.familjen.app` och minsta iOS-version är 17.0.
+- Kvarvarande byggvarningar: tre befintliga varningar om tvetydig `Optional<FamilyRecurrenceFrequency>.none` i `OccurrenceOverrideRestorationTests.swift` och `OccurrenceOverrideTests.swift`; Xcode rapporterar även att App Intents-metadata hoppas över eftersom appen saknar `AppIntents.framework`. Inga byggfel eller testfel rapporterades.
+- Detta verifierar CI-byggnad och automatiska tester. FlareStore-signering, installation och faktisk användning på fysisk iPhone, inklusive MapKit-sökning, kartöppning och notisleverans, är fortfarande inte verifierade.
+- PR #2 är fortsatt öppen mot `local-first-beta`; ingen sammanslagning har gjorts.

@@ -64,6 +64,36 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertTrue(reloaded.healthReminders.contains { $0.targetID == prescription.id && $0.targetType == .prescriptionRenewal })
     }
 
+    func testHealthRecordRejectsIncompleteOrOutOfRangeCoordinates() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let member = try XCTUnwrap(store.members.first)
+        let familyID = try XCTUnwrap(store.family?.id)
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+
+        let incomplete = HealthRecord(
+            familyID: familyID, memberID: member.id, type: .appointment,
+            title: "Ofullständig plats", startsAt: date, latitude: 61.7
+        )
+        let outOfRange = HealthRecord(
+            familyID: familyID, memberID: member.id, type: .appointment,
+            title: "Ogiltig plats", startsAt: date, latitude: 120, longitude: 17
+        )
+        let nonFinite = HealthRecord(
+            familyID: familyID, memberID: member.id, type: .appointment,
+            title: "Icke ändligt värde", startsAt: date, latitude: .nan, longitude: 17
+        )
+
+        store.saveHealthRecord(incomplete)
+        store.saveHealthRecord(outOfRange)
+        store.saveHealthRecord(nonFinite)
+
+        XCTAssertTrue(store.healthRecords.isEmpty)
+        XCTAssertTrue(store.items.isEmpty)
+        XCTAssertNil(store.persistenceError)
+    }
+
     func testPrescriptionRenewalAndMedicationPickupHaveIndependentStatuses() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

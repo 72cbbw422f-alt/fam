@@ -89,3 +89,12 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Kvarvarande byggvarningar: tre befintliga varningar om tvetydig `Optional<FamilyRecurrenceFrequency>.none` i `OccurrenceOverrideRestorationTests.swift` och `OccurrenceOverrideTests.swift`; Xcode rapporterar även att App Intents-metadata hoppas över eftersom appen saknar `AppIntents.framework`. Inga byggfel eller testfel rapporterades.
 - Detta verifierar CI-byggnad och automatiska tester. FlareStore-signering, installation och faktisk användning på fysisk iPhone, inklusive MapKit-sökning, kartöppning och notisleverans, är fortfarande inte verifierade.
 - PR #2 är fortsatt öppen mot `local-first-beta`; ingen sammanslagning har gjorts.
+
+
+## Kvalitetssäkring av kartkoordinater (2026-11-22)
+- Hälsoposter avvisar nu koordinater om endast latitud eller longitud anges, om värdena inte är ändliga eller om de ligger utanför giltiga geografiska intervall.
+- Detaljvyn visar kartan endast när båda koordinaterna är giltiga. Äldre eller felaktiga sparade koordinater kan därmed inte skickas vidare till MapKit som kartposition.
+- Ett nytt lagringstest täcker ofullständiga koordinatpar, koordinater utanför intervallet och NaN.
+- Tre tvetydiga .none-uttryck i återkommande kalenderhändelsers tester har skrivits om till den explicita enum-typen FamilyRecurrenceFrequency.none.
+- Ändringarna ligger på feature/health-foundation. CI för den nya kodversionen måste passera innan ändringarna betraktas som verifierade.
+- Fysisk iPhone-testning av platsval, kartvisning, Apple Kartor och notisleverans återstår.

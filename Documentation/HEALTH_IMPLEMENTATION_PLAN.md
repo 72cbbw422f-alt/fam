@@ -176,3 +176,11 @@ Utöka Hälsa till fem områden: Översikt, Vårdbesök, Recept och läkemedel, 
 - Regressionstestet för borttagning av vårdärende och tillhörande påminnelse ingår i de 75 godkända testerna.
 - Kvarvarande Xcode-varning: App Intents-metadata hoppas över eftersom målet inte länkar `AppIntents.framework`; detta är inte ett bygg- eller testfel.
 - Verifieringen omfattar CI, inte installation eller körning på fysisk iPhone. IPA-filen är osignerad och måste signeras via användarens sideload-flöde.
+
+## Validering av kopplade hälsopåminnelser (2026-11-22)
+- Lokal lagring av en påminnelse med måltypen `record`, `prescriptionRenewal` eller `medicationPickup` kräver nu att målobjektet finns och tillhör samma familjemedlem som påminnelsen.
+- Påminnelser av typen `custom` är fortsatt fristående och får sakna mål-ID.
+- Syftet är att förhindra att felkopplade eller föräldralösa påminnelser sparas genom generiska CRUD-anrop. Systemgenererade påminnelser fortsätter att skapas via den befintliga interna kopplingen.
+- Regressionstestet `testHealthReminderRequiresMatchingLinkedTarget` täcker saknat vårdärende, fel familjemedlem, saknat receptmål och att en fristående påminnelse fortfarande sparas.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthStoreTests.swift`.
+- Kodändringen ligger på `feature/health-foundation`. CI-verifiering inväntas; inga fysiska iPhone-tester är utförda.

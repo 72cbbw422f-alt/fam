@@ -44,7 +44,7 @@ final class FamilyCalendarViewModel: ObservableObject {
 
     func save(id: UUID?, title: String, details: String?, startsAt: Date, kind: FamilyItemKind,
               memberIDs: [UUID], isForEveryone: Bool, responsibleMemberID: UUID?,
-              isRecurringYearly: Bool, reminderOffsets: [Int], location: String?, recurrenceFrequency: FamilyRecurrenceFrequency = .none) async -> Bool {
+              isRecurringYearly: Bool, reminderOffsets: [Int], location: String?, latitude: Double? = nil, longitude: Double? = nil, recurrenceFrequency: FamilyRecurrenceFrequency = .none) async -> Bool {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 160 else {
             errorMessage = "Ange en rubrik på 1–160 tecken."
@@ -58,6 +58,7 @@ final class FamilyCalendarViewModel: ObservableObject {
                                kind: kind, memberIDs: memberIDs, isForEveryone: isForEveryone,
                                responsibleMemberID: responsibleMemberID, recurring: isRecurringYearly,
                                reminderOffsets: reminderOffsets, location: location,
+                               latitude: latitude, longitude: longitude,
                                recurrenceFrequency: recurrenceFrequency == FamilyRecurrenceFrequency.none && isRecurringYearly ? .yearly : recurrenceFrequency)
         await load()
         if let persistenceError = store.persistenceError {
@@ -69,7 +70,7 @@ final class FamilyCalendarViewModel: ObservableObject {
     }
 
     func saveOccurrenceOverride(seriesID: UUID, occurrenceDate: Date, title: String,
-                                 details: String?, location: String?, startsAt: Date,
+                                 details: String?, location: String?, latitude: Double? = nil, longitude: Double? = nil, startsAt: Date,
                                  kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
                                  responsibleMemberID: UUID?, reminderOffsets: [Int]) async -> Bool {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -85,6 +86,7 @@ final class FamilyCalendarViewModel: ObservableObject {
             memberID: nil, isRecurringYearly: false, reminderOffsets: reminderOffsets,
             memberIDs: isForEveryone ? [] : validIDs, isForEveryone: isForEveryone,
             responsibleMemberID: responsibleMemberID, location: location,
+            latitude: latitude, longitude: longitude,
             recurrenceFrequency: FamilyRecurrenceFrequency.none
         )
         store.saveOccurrenceOverride(seriesID: seriesID, occurrenceDate: occurrenceDate, item: override)

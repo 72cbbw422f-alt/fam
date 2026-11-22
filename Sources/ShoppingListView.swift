@@ -4,73 +4,87 @@ struct ShoppingListView: View {
     @StateObject private var model = ShoppingListViewModel()
     @State private var completedItemMessage: String?
 
+    private var categoriesWithItems: [ShoppingCategory] {
+        ShoppingCategory.allCases.filter { category in
+            model.activeItems.contains { ($0.category ?? .other) == category }
+        }
+    }
+
     var body: some View {
         List {
             Section {
-                HStack(spacing: 10) {
-                    TextField("Lägg till vara …", text: $model.newItemTitle)
-                        .textInputAutocapitalization(.sentences)
-                        .submitLabel(.done)
-                        .onSubmit { Task { await model.addItem() } }
-                    Button {
-                        Task { await model.addItem() }
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(FamiljenTheme.navy)
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 10) {
+                        TextField("Lägg till vara …", text: $model.newItemTitle)
+                            .textInputAutocapitalization(.sentences)
+                            .submitLabel(.done)
+                            .onSubmit { Task { await model.addItem() } }
+                        Button {
+                            Task { await model.addItem() }
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title2)
+                                .foregroundStyle(FamiljenTheme.navy)
+                        }
+                        .disabled(model.newItemTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isSaving)
+                        .accessibilityLabel("Lägg till vara")
                     }
-                    .disabled(model.newItemTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isSaving)
-                    .accessibilityLabel("Lägg till vara")
+                    Menu {
+                        Picker("Kategori", selection: $model.selectedCategory) {
+                            ForEach(ShoppingCategory.allCases) { category in
+                                Label(category.title, systemImage: category.symbol).tag(category)
+                            }
+                        }
+                    } label: {
+                        Label(model.selectedCategory.title, systemImage: model.selectedCategory.symbol)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(FamiljenTheme.navy)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(FamiljenTheme.sand.opacity(0.45), in: Capsule())
+                    }
+                    .accessibilityLabel("Välj kategori för ny vara")
                 }
                 .padding(.vertical, 4)
             }
 
-            if model.items.isEmpty && !model.isLoading {
+            if model.activeItems.isEmpty && model.completedItems.isEmpty && !model.isLoading {
                 ContentUnavailableView(
                     "Listan är tom",
                     systemImage: "basket",
-                    description: Text("Lägg till det ni behöver handla. Listan sparas bara på den här iPhone-enheten tills iCloud-delning är aktiverad.")
+                    description: Text("Lägg till det ni behöver handla. Listan sparas på den här iPhone-enheten tills iCloud-delning är aktiverad.")
                 )
                 .listRowBackground(Color.clear)
-            } else {
+            }
+
+            ForEach(categoriesWithItems) { category in
                 Section {
-                    ForEach(model.items) { item in
-                        HStack(spacing: 12) {
-                            Button {
-                                Task {
-                                    completedItemMessage = "✓  \(item.title) avbockad och borttagen"
-                                    await model.setChecked(item, checked: true)
-                                }
-                            } label: {
-                                Image(systemName: "circle")
-                                    .font(.title3)
-                                    .foregroundStyle(FamiljenTheme.muted)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Markera \(item.title) som handlad")
-
-                            Text(item.title)
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(FamiljenTheme.ink)
-                                .lineLimit(2)
-
-                            Spacer(minLength: 4)
-                        }
-                        .swipeActions {
-                            Button(role: .destructive) {
-                                Task { await model.delete(item) }
-                            } label: {
-                                Label("Ta bort", systemImage: "trash")
-                            }
-                        }
+                    ForEach(model.activeItems.filter { ($0.category ?? .other) == category }) { item in
+                        itemRow(item)
                     }
                 } header: {
-                    Text("Att handla")
+                    Label(category.title, systemImage: category.symbol)
                         .font(.system(size: 14, weight: .semibold))
                 }
             }
 
-            if let error = model.errorMessage {
+            if !model.completedItems.isEmpty {
+                Section {
+                    ForEach(model.completedItems) { item in
+                        itemRow(item)
+                    }
+                } header: {
+                    HStack {
+                        Label("Handlat", systemImage: "checkmark.circle")
+                        Spacer()
+                        Text("\(model.completedItems.count)")
+                            .foregroundStyle(FamiljenTheme.muted)
+                    }
+                    .font(.system(size: 14, weight: .semibold))
+                }
+            }
+
+            if let error = model.errorMessage ?? FamilyStore.shared.persistenceError {
                 Section {
                     Text(error)
                         .font(.system(size: 14))
@@ -114,5 +128,39 @@ struct ShoppingListView: View {
         .refreshable { await model.load() }
         .task { await model.load() }
         .onDisappear { Task { await model.stopRealtime() } }
+    }
+
+    @ViewBuilder
+    private func itemRow(_ item: ShoppingItem) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                Task {
+                    completedItemMessage = item.isChecked
+                        ? "\(item.title) tillbaka på listan"
+                        : "✓  \(item.title) markerad som handlad"
+                    await model.setChecked(item, checked: !item.isChecked)
+                }
+            } label: {
+                Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(item.isChecked ? FamiljenTheme.navy : FamiljenTheme.muted)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(item.isChecked ? "Lägg tillbaka \(item.title)" : "Markera \(item.title) som handlad")
+
+            Text(item.title)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(item.isChecked ? FamiljenTheme.muted : FamiljenTheme.ink)
+                .strikethrough(item.isChecked)
+                .lineLimit(2)
+            Spacer(minLength: 4)
+        }
+        .swipeActions {
+            Button(role: .destructive) {
+                Task { await model.delete(item) }
+            } label: {
+                Label("Ta bort", systemImage: "trash")
+            }
+        }
     }
 }

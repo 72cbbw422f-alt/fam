@@ -72,6 +72,7 @@ struct HealthPlaceSearchField: View {
                 .onChange(of: location) { _, value in
                     // Typing a new place invalidates the old pin; choosing a result does not.
                     if !isApplyingSelection {
+                        address = ""
                         latitude = nil
                         longitude = nil
                     }

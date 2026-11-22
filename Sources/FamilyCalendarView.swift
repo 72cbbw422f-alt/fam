@@ -1070,7 +1070,7 @@ private struct FamilyItemEditor: View {
         let cleanLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
         let responsibleMemberID = UUID(uuidString: responsibleSelection)
         let saved = await onSave(title, cleanDetails.isEmpty ? nil : cleanDetails,
-                                 cleanLocation.isEmpty ? nil : cleanLocation, startsAt,
+                                 cleanLocation.isEmpty ? nil : cleanLocation, latitude, longitude, startsAt,
                                  kind, Array(selectedMemberIDs), isForEveryone, responsibleMemberID,
                                  recurrenceFrequency, Array(selectedReminderOffsets).sorted(by: >))
         if saved { dismiss() }

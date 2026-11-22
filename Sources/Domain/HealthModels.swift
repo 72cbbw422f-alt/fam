@@ -43,6 +43,15 @@ enum HealthRecordStatus: String, Codable, CaseIterable, Identifiable {
     case cancelled
 
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .planned: return "Planerat"
+        case .awaiting: return "Inväntar svar"
+        case .completed: return "Genomfört"
+        case .cancelled: return "Avbokat"
+        }
+    }
 }
 
 struct HealthRecord: Identifiable, Codable, Equatable {
@@ -56,6 +65,8 @@ struct HealthRecord: Identifiable, Codable, Equatable {
     var clinic: String?
     var location: String?
     var address: String?
+    var latitude: Double?
+    var longitude: Double?
     var notes: String?
     var status: HealthRecordStatus
     var visibility: HealthVisibility
@@ -75,6 +86,8 @@ struct HealthRecord: Identifiable, Codable, Equatable {
         clinic: String? = nil,
         location: String? = nil,
         address: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
         notes: String? = nil,
         status: HealthRecordStatus = .planned,
         visibility: HealthVisibility = .personal,
@@ -93,6 +106,8 @@ struct HealthRecord: Identifiable, Codable, Equatable {
         self.clinic = clinic
         self.location = location
         self.address = address
+        self.latitude = latitude
+        self.longitude = longitude
         self.notes = notes
         self.status = status
         self.visibility = visibility

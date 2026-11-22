@@ -123,9 +123,6 @@ struct HealthPlaceSearchField: View {
                 .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10))
             }
 
-            TextField("Adress", text: $address, axis: .vertical)
-                .textInputAutocapitalization(.words)
-
             if model.isResolving {
                 ProgressView("Hämtar plats …")
                     .font(.caption)

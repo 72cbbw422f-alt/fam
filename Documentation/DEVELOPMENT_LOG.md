@@ -660,3 +660,32 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 
 **Kvarstår**
 - Fortsatt UX-arbete med Bring-inspirerad inköpslista. Datamodell, lokal persistens, äldre snapshots och regressionstester ska granskas innan kategorier och övriga listfunktioner implementeras.
+
+
+## 2026-11-22 – Bring-inspirerad inköpslista: kategorier och handlat-status
+
+**Ändringar**
+- Lade till sju inköpskategorier med svenska namn och symboler: Frukt & grönt, Mejeri, Kött & fisk, Skafferi, Frys, Hushåll och Övrigt.
+- Kategorin sparas per vara i den befintliga lokala JSON-snapshoten. Äldre varor utan kategorifält avkodas fortsatt och visas under Övrigt.
+- Snabbtillägg behålls med ett separat kategorival. Aktiva varor grupperas per kategori.
+- Att bocka av en vara raderar den inte längre. Den flyttas till Handlat och kan återställas med ett tryck. Manuell borttagning via svep finns kvar.
+- Repository-kontraktet har en kompatibel standardimplementation för kategoriserat tillägg, så alternativa repository-adaptrar som ännu inte stöder kategorier fortsätter att kompilera.
+
+**Berörda filer**
+- Sources/Domain/ShoppingModels.swift
+- Sources/Data/FamilyRepository.swift
+- Sources/Data/LocalFamilyStore.swift
+- Sources/Data/FamilyStore.swift
+- Sources/Data/ShoppingListViewModel.swift
+- Sources/ShoppingListView.swift
+- Tests/LocalFamilyStoreTests.swift
+
+**Tester**
+- Tillagt regressionstest för avkodning av äldre inköpsvaror utan kategori.
+- Tillagt persistensprov för kategori och avbockad status efter omladdning.
+- Testerna är incheckade men ännu inte körda. CI-resultat inväntas.
+
+**Begränsningar**
+- Kvantitet och anteckning per vara ingår inte i denna iteration.
+- Ingen synk mellan flera enheter; listan använder fortsatt lokal lagring.
+- Ingen IPA har verifierats från denna arbetsgren.

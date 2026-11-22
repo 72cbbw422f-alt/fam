@@ -8,6 +8,7 @@ final class ShoppingListViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var isSaving = false
     @Published var newItemTitle = ""
+    @Published var selectedCategory: ShoppingCategory = .other
     @Published var errorMessage: String?
     private let store: any FamilyRepository
 
@@ -23,23 +24,22 @@ final class ShoppingListViewModel: ObservableObject {
         }
         isLoading = false
     }
+    var activeItems: [ShoppingItem] { items.filter { !$0.isChecked } }
+    var completedItems: [ShoppingItem] { items.filter(\.isChecked) }
+
     func startRealtimeIfNeeded() async {}
     func stopRealtime() async {}
     func addItem() async {
         let title = newItemTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty, title.count <= 160, !isSaving else { return }
         isSaving = true
-        store.addShoppingItem(title)
+        store.addShoppingItem(title, category: selectedCategory)
         newItemTitle = ""
         await load()
         isSaving = false
     }
     func setChecked(_ item: ShoppingItem, checked: Bool) async {
-        if checked {
-            store.deleteShoppingItem(item.id)
-        } else {
-            store.setShoppingItem(item.id, checked: false)
-        }
+        store.setShoppingItem(item.id, checked: checked)
         await load()
     }
     func delete(_ item: ShoppingItem) async {

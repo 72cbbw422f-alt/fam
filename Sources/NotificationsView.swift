@@ -101,8 +101,8 @@ struct NotificationsView: View {
         }
         .refreshable { await model.load() }
         .sheet(item: $selectedHealthEntry) { entry in
-            HealthCenterEntryDetail(entry: entry)
-                .presentationDetents([.medium])
+            HealthRecordNotificationDetailView(store: FamilyStore.shared, entry: entry)
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
         .task { await model.startListening() }

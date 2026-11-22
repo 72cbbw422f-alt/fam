@@ -37,7 +37,7 @@ protocol FamilyRepository: AnyObject {
     func saveCalendarItem(id: UUID?, title: String, details: String?, startsAt: Date,
                          kind: FamilyItemKind, memberIDs: [UUID], isForEveryone: Bool,
                          responsibleMemberID: UUID?, recurring: Bool, reminderOffsets: [Int],
-                         location: String?, recurrenceFrequency: FamilyRecurrenceFrequency)
+                         location: String?, latitude: Double?, longitude: Double?, recurrenceFrequency: FamilyRecurrenceFrequency)
     func deleteItem(_ item: FamilyItem)
     func saveOccurrenceOverride(seriesID: UUID, occurrenceDate: Date, item: FamilyItem)
     func skipOccurrence(of item: FamilyItem)

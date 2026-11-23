@@ -807,3 +807,30 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Installera senaste IPA via FlareStore och testa funktionerna på fysisk iPhone.
 - Kontrollera notisikon visuellt på enheten.
 - PR #4 lämnas öppen som draft.
+
+
+## 2026-11-23 – Fullständig CI-verifiering efter varningsfix
+
+**CI-resultat**
+- GitHub Actions-körning: [45163360241](https://github.com/72cbbw422f-alt/fam/actions/runs/45163360241).
+- Verifierad kodcommit: `821161440687b98eb388e8cedc3d89eda259b8e2` på `feature/ux-navigation-shopping`.
+- Simulatorjobbet passerade ikonrendering, XcodeGen, Swift package resolution, enhetstester och simulatorbygge.
+- Testresultat: 79 tester, 0 fel. Xcode-loggen avslutades med `TEST SUCCEEDED`.
+- iPhone-jobbet passerade Release-build, paketering och uppladdning av osignerad IPA.
+- Den tidigare tvetydiga `.none`-varningen i `Tests/LocalFamilyStoreTests.swift` återfinns inte i den nya testloggen efter att värdet kvalificerats som `FamilyRecurrenceFrequency.none`.
+- Xcode rapporterar fortfarande en icke-blockerande App Intents-metadata-varning eftersom appen inte har någon `AppIntents.framework`-dependency.
+
+**IPA**
+- Artifact: `Familjen-unsigned-IPA`, ID `14814400977`.
+- Byggd från verifierad kodcommit `821161440687b98eb388e8cedc3d89eda259b8e2`.
+- Storlek: 2 646 272 byte.
+- Artifact-länk: [GitHub Actions 45163360241](https://github.com/72cbbw422f-alt/fam/actions/runs/45163360241).
+- Artefakten är osignerad och behöver installeras/signeras via FlareStore eller motsvarande. Fysisk iPhone-installation är inte verifierad.
+
+**Berörda filer i denna dokumentationsuppdatering**
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Kvarstår**
+- Fysisk iPhone-testning av appstart, översiktsnavigation, svensk kalender och inköpslistans kategorier/Handlat-flöde.
+- Verifiera appikonens och notisikonens visuella utseende på enheten.
+- PR #4 hålls öppen som draft; ingen merge har gjorts.

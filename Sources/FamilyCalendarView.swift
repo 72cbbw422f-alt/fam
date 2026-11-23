@@ -1086,6 +1086,8 @@ private struct FamilyCalendarItemDetailView: View {
     let members: [FamilyMember]
     @Environment(\.dismiss) private var dismiss
 
+    private var swedishLocale: Locale { Locale(identifier: "sv_SE") }
+
     private var peopleText: String {
         if item.isForEveryone { return "Hela familjen" }
         let names = members.filter { item.memberIDs.contains($0.id) }.map(\.displayName)

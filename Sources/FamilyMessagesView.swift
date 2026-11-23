@@ -121,6 +121,7 @@ struct FamilyMessagesView: View {
 private struct FamilyChatView: View {
     @StateObject private var store = FamilyStore.shared
     @State private var draft = ""
+    @State private var messagePendingDeletion: FamilyMessage?
     @FocusState private var composerFocused: Bool
 
     let title: String
@@ -158,6 +159,25 @@ private struct FamilyChatView: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) { composer }
+        .confirmationDialog(
+            "Radera meddelandet?",
+            isPresented: Binding(
+                get: { messagePendingDeletion != nil },
+                set: { if !$0 { messagePendingDeletion = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Radera", role: .destructive) {
+                guard let message = messagePendingDeletion else { return }
+                store.deleteMessage(message.id)
+                messagePendingDeletion = nil
+            }
+            Button("Avbryt", role: .cancel) {
+                messagePendingDeletion = nil
+            }
+        } message: {
+            Text("Meddelandet tas bort från den här enheten.")
+        }
         .onAppear { store.markConversationRead(conversationID) }
     }
 
@@ -224,7 +244,7 @@ private struct FamilyChatView: View {
         .contextMenu {
             if isMine {
                 Button(role: .destructive) {
-                    store.deleteMessage(message.id)
+                    messagePendingDeletion = message
                 } label: {
                     Label("Radera meddelande", systemImage: "trash")
                 }

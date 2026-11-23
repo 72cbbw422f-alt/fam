@@ -710,3 +710,21 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Kodändringen är incheckad. Ny CI-körning inväntas.
 - Appikonens asset catalog och renderingssteget finns, men visning av ikonen i en installerad iOS-notis är ännu inte verifierad på fysisk enhet.
 - Ingen ny IPA är tillgänglig från denna commit ännu.
+
+
+## 2026-11-23 – CI: iPhone-paketering passerar, regressionstest korrigerat
+
+**Resultat från körning 45128667578**
+- Ikonrendering och XcodeGen-projektgenerering passerade.
+- Byggsteget för fysisk iPhone passerade och skapade ett unsigned IPA-artifact (run 45128667578, artifact 14797345612).
+- Simulatorns testjobb stoppades före testkörning på ett syntaxfel i slutet av `Tests/LocalFamilyStoreTests.swift`: en bokstavlig `\\n` hade råkat hamna efter klassens avslutande klammer.
+
+**Åtgärd**
+- Tog bort den felaktiga escape-sekvensen så testfilen avslutas korrekt.
+- Fil: `Tests/LocalFamilyStoreTests.swift`.
+- Commit: `533e9d376d5a9c26057dd3773dae770be201c5dd`.
+
+**Verifiering / kvarstår**
+- En ny CI-körning startas automatiskt av committen. Simulatorns testresultat måste inväntas.
+- IPA-artifactet från föregående körning byggdes från commit `344d0cef1180e19bd9ea16e64047e15986d8495d`, alltså före denna testfix. Det distribueras inte som verifierad version.
+- Notisikonens utseende behöver fortfarande kontrolleras på fysisk iPhone efter en fullständigt godkänd bygg- och testkörning.

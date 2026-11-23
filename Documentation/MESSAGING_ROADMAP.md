@@ -1,97 +1,110 @@
-# Familjen – meddelanden och privat familjechatt
+# Familjen – meddelanden och Apple-baserad familjedelning
 
-Status: beslutad produktinriktning, implementation ej påbörjad.
+Status: produktbeslut fastställt; CloudKit-implementation avvaktar Apple Developer-konto.
 Arbetsgren: feature/family-messenger.
-Utgångspunkt: feature/ux-navigation-shopping @ 17aae832f4982f49c39c80e37cb907fd1e9a83f6.
 
-## Mål
+## Fastställt produktbeslut
 
-Familjen ska kunna fungera som Niklas och Villemos primära privata kommunikationskanal. Meddelanden och bilder ska vara gemensamma mellan deras iPhones, inte enhetslokala testdata.
+Familjen ska vara en Apple-fokuserad app. Ingen Supabase, egen server, extern databas eller annan serverberoende tjänst ska införas som tillfällig lösning.
 
-## Nuläge – verifierat i källkoden
+- Nuvarande beta förblir local-first.
+- Meddelanden på respektive telefon är lokala och ska inte beskrivas som synkroniserade.
+- Gemensamma meddelanden, bilder och familjedata aktiveras först när Apple-baserad delning är konfigurerad och verifierad.
+- CloudKit och CKShare är den avsedda tekniska riktningen.
+- Pushnotiser via APNs planeras efter att Apple Developer-konfiguration finns.
+- Barn fortsätter att kunna finnas som familjeprofiler utan egna konton.
 
-- FamilyMessagesView nås från Mer > Meddelanden.
-- Domänmodellen FamilyMessage innehåller conversationID, kind, senderID, text, sentAt och readAt.
-- FamilyRepository/FamilyStore exponerar sendMessage och markConversationRead.
+## Nuläge – verifierat i projektets dokumentation och domänkontrakt
+
+- Meddelandevyn nås via Mer > Meddelanden.
+- FamilyMessage innehåller conversationID, kind, senderID, text, sentAt och readAt.
+- FamilyRepository/FamilyStore exponerar sändning av textmeddelanden och markering som läst.
 - LocalFamilyStore sparar meddelanden i den lokala JSON-snapshoten.
-- Varje iPhone har en separat datamängd. Meddelanden, läskvitton och familjedata synkroniseras inte mellan enheter.
-- Meddelandemodellen saknar bilagor och uppladdningsmetadata.
-- README och ARCHITECTURE anger uttryckligen local-first beta utan konto, backend eller synk. Denna feature är därför ett separat, avgränsat steg mot molnbaserad kommunikation.
+- Varje installation har en egen datamängd. Meddelanden, lässtatus och övrig familjedata synkroniseras inte mellan telefoner.
+- Meddelandemodellen har ännu inget färdigt stöd för bildbilagor.
+- Nuvarande beta kräver varken konto eller backend.
 
-## Föreslagen teknisk riktning – beslut krävs
+## Målbild för Apple-integrationen
 
-Delad backend krävs för att två telefoner ska kunna kommunicera. Den aktuella local-first-arkitekturen anger CloudKit som framtida riktning, medan en tidigare lösningsdiskussion även omfattade Supabase. Val av leverantör ska därför fastställas innan backend-kod eller hemligheter läggs till.
-
-**Rekommendation för meddelandefunktionen: Supabase**, isolerat bakom repository-/servicegränser så att SwiftUI-vyerna inte blir beroende av SDK-detaljer. Det ger en tydlig modell för Postgres, Realtime och privat objektlagring för bilder. CloudKit är fortsatt ett möjligt alternativ om målet är att hålla hela familjedatan inom Apples ekosystem.
-
-- Supabase Auth: separata vuxenkonton, med Sign in with Apple som avsedd inloggning.
-- Familjeinbjudan: engångs-/tidsbegränsad kod för att koppla Villemos konto till rätt familj.
-- PostgreSQL: familjer, medlemskap, konversationer, meddelanden, läskvitton och bilagornas metadata.
-- Row Level Security: en användare får endast läsa/skriva konversationer och filer som hör till familjer där användaren är aktiv medlem.
-- Supabase Realtime: nya meddelanden och lässtatus uppdateras medan appen är öppen.
-- Privat Supabase Storage-bucket: foton är privata; använd tidsbegränsade signerade URL:er för hämtning. Service-role-nyckel får aldrig finnas i iOS-appen.
-- APNs/push: fjärrnotiser för nya meddelanden när appen ligger i bakgrunden eller är stängd. Kräver separat Apple Developer-/APNs-konfiguration. Utan den kan appen erbjuda realtid medan den är öppen men inte lova tillförlitliga pushnotiser.
-- Lokal cache: behåll en begränsad lokal cache för snabb visning och tillfällig nätverksfrånvaro. Servern är auktoritativ för delade meddelanden.
-
-## Funktionell omfattning
+### Familjedelning och identitet
+- Använd CloudKit private database för användarens privata data.
+- Använd CloudKit shared database och CKShare för data som familjen delar.
+- Definiera en stabil familjeidentitet och mappa befintliga lokala profiler till deltagare i den delade familjen.
+- Behåll separata Apple-konton för Niklas och Villemo; familjedelning ska ske via Apples delningsmekanism.
+- Barnprofiler ska inte automatiskt kräva egna Apple-konton.
+- Behörigheter ska kontrolleras i CloudKit och inte enbart döljas i gränssnittet.
 
 ### Meddelanden
-- Familjechatt och privata en-till-en-samtal.
-- Avsändare, tidsstämpel och tydliga meddelandebubblor.
-- Skicka, ta emot och uppdatera meddelanden i realtid.
-- Leverans-/synkstatus och felhantering med möjlighet att försöka igen.
-- Olästa markeringar och läskvitton per mottagare.
+- Familjechatt och privata vuxensamtal.
+- Avsändare, tidsstämpel, kronologisk ordning och tydlig lässtatus.
+- Skicka och ta emot meddelanden mellan två riktiga iPhones.
+- Beständig lokal cache med synkstatus och återhämtning efter offlineperiod.
+- Definierad hantering av konflikter, dubbla försök och borttagna poster.
 - Notisinställningar per konversation.
-- Robust tomt läge, laddning, offline- och återanslutningsläge.
 
 ### Bildbilagor
-- Välj flera bilder via PhotosPicker och ta foto med kamera.
+- Välj bilder via PhotosPicker och ta foto med kamera.
 - Förhandsvisning innan sändning.
-- Komprimering och storleks-/formatkontroll på enheten.
-- Uppladdningsindikator, avbryt och försök igen.
-- Bildminiatyr i chatten och tryck för fullskärmsvisning.
-- Bildmetadata kopplas till meddelandet; filerna ligger i privat lagring.
-- Radera meddelande/bilaga med definierad policy för både databaspost och lagrad fil.
-- Hantera behörighetsavslag, avbruten uppladdning, nätverksfel och utgångna signerade URL:er.
+- Komprimering och format-/storlekskontroll på enheten.
+- Uppladdnings-/synkstatus, avbryt och försök igen.
+- Bildminiatyr i chatten och fullskärmsvisning.
+- Lagra filinnehåll med en Apple-stödd CloudKit-lösning och koppla metadata till meddelandet.
+- Hantera radering, saknade filer, låg lagring och avbruten synk.
+- Börja med bilder; andra filtyper ingår inte i första versionen.
 
-### Identitet och säkerhet
-- Familjemedlemsprofil (t.ex. Niklas/Villemo) hålls separat från inloggningskontot.
-- Endast vuxna med aktivt medlemskap får använda privata vuxensamtal.
-- Barnprofiler ska inte automatiskt få inloggningskonton.
-- RLS-policyer och negativa behörighetstester krävs innan delning aktiveras.
-- Transport- och lagringsskydd ska användas. End-to-end-kryptering ingår inte i första leveransen och får inte påstås finnas.
+## Arkitekturregler innan implementation
 
-## Leveransordning och kvalitetsgrindar
+1. Behåll domänmodeller och SwiftUI-vyer oberoende av CloudKit-typer.
+2. Använd repository-/servicegränsen som enda väg mellan vyer och datalager.
+3. Definiera explicita synkstatusar: lokal, väntar på synk, synkroniserad och fel.
+4. Bevara lokala data tills delning och serverbekräftelse har verifierats.
+5. Skapa en idempotent export/import-migrering med stabila ID:n.
+6. Hantera konfliktlösning och tidszoner uttryckligen.
+7. Lägg aldrig in privata nycklar eller hemligheter i appen.
+8. Ingen CloudKit-funktion markeras färdig innan den testats med två separata Apple-konton och två fysiska enheter.
 
-1. Datamodell, SQL-migrationer, RLS och säkerhets-/åtkomsttester.
-2. Konfiguration och autentisering för två separata vuxenkonton.
-3. Familjekoppling/inbjudningsflöde och verifierad medlemsbehörighet.
-4. Textmeddelanden mellan två riktiga enheter med Realtime och serverbaserade läskvitton.
-5. Bildbilagor med privat lagring, komprimering och robust felhantering.
-6. Pushnotiser via APNs när Apple Developer-konfiguration finns.
-7. Testa omstart, offline/online, dubbeltryck, återförsök, borttagning och åtkomst mellan två olika familjer.
-8. Först efter godkända tester: skapa en ny signerad distributionsversion.
+## Leveransordning efter att Apple Developer-kontot finns
 
-## Blockerare och externa beroenden
+1. Konfigurera App ID, iCloud capability, CloudKit container och miljöer.
+2. Fastställ schema, record types, relationer och delningsmodell.
+3. Implementera privat och delad CloudKit-repository bakom befintliga kontrakt.
+4. Implementera familjeskapande, inbjudan och accepterande av CKShare.
+5. Migrera och verifiera kalender, familjeprofiler och inköpslista.
+6. Implementera meddelanden, lässtatus och återanslutning.
+7. Implementera bildbilagor och lagrings-/raderingspolicy.
+8. Lägg till APNs-notiser där plattformen och konfigurationen stöder det.
+9. Testa två Apple-konton, två iPhones, offline/online, ominstallation, konfliktfall och återställning.
+10. Skapa signerad distributionsversion först efter godkända tester.
 
-- Ett Supabase-projekt behöver skapas eller väljas och dess project URL samt anon/publishable key behöver konfigureras som säkra build-inställningar. Service-role key får endast användas server-side och får aldrig checkas in.
-- Sign in with Apple kräver korrekt Apple-konfiguration.
-- APNs-push kräver Apple Developer-medlemskap, identifierare och nyckel/certifikatkonfiguration.
-- Fysisk testning kräver två separata iPhones och två olika användarkonton. En lokal simulator eller en enda enhet bevisar inte synk mellan användare.
+## Arbete som kan göras före Developer-kontot
+
+- Förbättra meddelandegränssnittet och den lokala interaktionen utan att påstå att meddelanden delas.
+- Förbereda domänmodeller och repository-kontrakt för bilagor och synkstatus när det kan göras bakåtkompatibelt.
+- Skriva tester för lokal persistens, bilage-metadata och migreringsformat.
+- Dokumentera CloudKit-schema, CKShare-flöden, behörigheter och testmatris.
+- Fortsätta förbättra kalender, hälsa, födelsedagar, inköpslista och säsongsupplevelsen lokalt.
+
+## Blockerare och kvalitetsgrindar
+
+- Apple Developer Program och korrekt App ID/iCloud capability-konfiguration krävs för den avsedda delade CloudKit-distributionen.
+- CloudKit schema och sharing-flöde måste verifieras i utvecklingsmiljö innan produktionsschema används.
+- Två separata Apple-konton och två fysiska iPhones krävs för godkännande av delning och meddelanden.
+- FlareStore-installation är inte bevis på att CloudKit-sharing eller APNs fungerar.
+- Pushnotiser ska redovisas separat från synkronisering; fungerande CloudKit-synk innebär inte automatiskt fungerande pushnotiser.
 
 ## Godkännandekriterier
 
-- Niklas skickar ett textmeddelande på sin iPhone och Villemo ser det på sin iPhone utan manuell uppdatering.
-- Villemo kan svara och båda ser korrekt avsändare, tidsordning och lässtatus.
-- Båda kan bifoga och öppna bilder; obehöriga familjer kan inte hämta dem.
-- Meddelanden och bilagor finns kvar efter appomstart och återanslutning.
-- Fel vid uppladdning eller nätverksavbrott leder inte till falsk status som skickat.
-- RLS- och åtkomsttester visar att en tredje användare utanför familjen inte kan läsa meddelanden eller bilder.
-- Pushnotiser redovisas separat som ej tillgängliga tills APNs är konfigurerat och verifierat.
+- Niklas och Villemo kan dela en familj via sina egna Apple-konton.
+- Ändringar i delad kalender och inköpslista blir synliga på båda enheterna och överlever omstart.
+- Meddelanden levereras korrekt med avsändare, tidsordning och lässtatus.
+- Bilder kan skickas, öppnas och raderas enligt beslutad policy.
+- Offlineändringar synkroniseras efter återanslutning utan dataförlust eller oavsiktliga dubbletter.
+- En användare utanför familjedelningen kan inte läsa familjens data.
+- Migrering från lokala snapshots bevarar poster, ID-kopplingar, datum, tidszoner och status.
+- Eventuella pushnotiser verifieras separat på fysiska enheter.
 
 ## Öppna produktbeslut
 
-- **Backendval:** godkänn Supabase för meddelanden och bildbilagor, eller välj att hålla fast vid CloudKit som gemensam plattform.
-- Ska meddelanden kunna redigeras och raderas efter sändning, och i så fall inom vilken tidsgräns?
-- Ska en konversation stödja andra filtyper än bilder i första versionen? Rekommendation: nej, börja med bilder.
-- Ska notisförhandsvisning visa meddelandetext eller endast avsändare? Standard bör vara avsändare + text, med möjlighet att dölja text i inställningar.
+- Ska meddelanden kunna redigeras och raderas efter sändning? Rekommendation: radering först, redigering senare.
+- Ska notisförhandsvisning visa meddelandetext eller endast avsändare? Rekommendation: valbart i inställningar.
+- Ska privata samtal mellan vuxna finnas i första delade versionen eller efter familjechatten? Rekommendation: börja med familjechatten och lägg till privata samtal när delningsmodellen är stabil.

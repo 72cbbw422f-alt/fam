@@ -925,3 +925,32 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Fortsätt med lokala förbättringar som inte kräver server.
 - Verifiera senaste CI på den separata UX-grenen och undvik att slå ihop PR:er utan godkännande.
 - När Developer-kontot finns: konfigurera CloudKit och genomför två-enhets-testning med separata Apple-konton.
+
+
+## 2026-11-23 – Meddelanden: säker lokal radering av egna meddelanden
+
+**Ändringar**
+- Lade till `deleteMessage(_ id: UUID)` i repository-kontraktet och den observerbara `FamilyStore)-fasaden.
+- `LocalFamilyStore` tillåter endast radering av meddelanden vars avsändar-ID är den lokala ägarprofilen.
+- Om JSON-skrivningen misslyckas återställs den tidigare meddelandelistan; raderingen lämnar då inte ett falskt lyckat resultat i minnet.
+- Lade till en destruktiv kontextmeny på användarens egna meddelandebubblor. Andras meddelanden får ingen raderingsåtgärd.
+- Lade till regressionstest för persistens efter radering och skydd mot att radera en annan avsändares meddelande.
+
+**Berörda filer**
+- Sources/Data/FamilyRepository.swift
+- Sources/Data/FamilyStore.swift
+- Sources/Data/LocalFamilyStore.swift
+- Sources/FamilyMessagesView.swift
+- Tests/LocalFamilyStoreTests.swift
+- Documentation/DEVELOPMENT_LOG.md
+
+**Verifiering**
+- Kod och test är incheckade på `feature/family-messenger`.
+- CI har ännu inte verifierat den nya commitserien.
+- Ingen lokal Xcode-miljö finns tillgänglig här; testerna har inte körts lokalt.
+- Funktionen gäller endast lokalt sparade meddelanden på aktuell enhet. Den ger inte synk mellan Niklas och Villemo.
+
+**Kvarstår**
+- Bekräfta simulatorns bygg- och testresultat i GitHub Actions.
+- Testa kontextmenyn och raderingsflödet på fysisk iPhone.
+- Därefter fortsätta med lokal bildbilagehantering och dess lagrings-/raderingspolicy.

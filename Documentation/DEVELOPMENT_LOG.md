@@ -894,3 +894,5 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - PR #4 förblir öppen som draft; ingen merge.
 
 - Efter kodgranskning lades UIKit-import till för den explicita UIApplication-tidsändringsnotisen och SeasonalScene deklarerades uttryckligen Equatable för stabila tester.
+
+- Utökade datumtester med flera kalenderår där första advent infaller 1 december (2024) respektive 30 november (2025), och bytte scenassertions till direkt Equatable-jämförelse.

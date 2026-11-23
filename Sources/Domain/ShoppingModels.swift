@@ -98,3 +98,84 @@ struct ChristmasGift: Identifiable, Codable, Equatable {
         self.createdAt = createdAt
     }
 }
+
+
+struct ShoppingItemSuggestion: Identifiable, Equatable {
+    let title: String
+    let category: ShoppingCategory
+
+    var id: String { title.lowercased() }
+
+    static let catalog: [ShoppingItemSuggestion] = [
+        .init(title: "Äpplen", category: .fruitVegetables),
+        .init(title: "Bananer", category: .fruitVegetables),
+        .init(title: "Apelsiner", category: .fruitVegetables),
+        .init(title: "Avokado", category: .fruitVegetables),
+        .init(title: "Gurka", category: .fruitVegetables),
+        .init(title: "Tomater", category: .fruitVegetables),
+        .init(title: "Potatis", category: .fruitVegetables),
+        .init(title: "Morötter", category: .fruitVegetables),
+        .init(title: "Paprika", category: .fruitVegetables),
+        .init(title: "Sallad", category: .fruitVegetables),
+        .init(title: "Mjölk", category: .dairy),
+        .init(title: "Mellanmjölk", category: .dairy),
+        .init(title: "Lättmjölk", category: .dairy),
+        .init(title: "Yoghurt", category: .dairy),
+        .init(title: "Fil", category: .dairy),
+        .init(title: "Smör", category: .dairy),
+        .init(title: "Ost", category: .dairy),
+        .init(title: "Grädde", category: .dairy),
+        .init(title: "Crème fraiche", category: .dairy),
+        .init(title: "Ägg", category: .dairy),
+        .init(title: "Köttfärs", category: .meatFish),
+        .init(title: "Kyckling", category: .meatFish),
+        .init(title: "Bacon", category: .meatFish),
+        .init(title: "Lax", category: .meatFish),
+        .init(title: "Falukorv", category: .meatFish),
+        .init(title: "Korv", category: .meatFish),
+        .init(title: "Fiskpinnar", category: .frozen),
+        .init(title: "Glass", category: .frozen),
+        .init(title: "Frysta grönsaker", category: .frozen),
+        .init(title: "Bröd", category: .pantry),
+        .init(title: "Knäckebröd", category: .pantry),
+        .init(title: "Pasta", category: .pantry),
+        .init(title: "Ris", category: .pantry),
+        .init(title: "Mjöl", category: .pantry),
+        .init(title: "Socker", category: .pantry),
+        .init(title: "Kaffe", category: .pantry),
+        .init(title: "Te", category: .pantry),
+        .init(title: "Krossade tomater", category: .pantry),
+        .init(title: "Havregryn", category: .pantry),
+        .init(title: "Toalettpapper", category: .household),
+        .init(title: "Hushållspapper", category: .household),
+        .init(title: "Diskmedel", category: .household),
+        .init(title: "Tvättmedel", category: .household),
+        .init(title: "Diskmaskinstabletter", category: .household),
+        .init(title: "Tandkräm", category: .household),
+        .init(title: "Schampo", category: .household),
+        .init(title: "Soppåsar", category: .household)
+    ]
+
+    static func matching(_ query: String, excluding existingTitles: [String] = []) -> [ShoppingItemSuggestion] {
+        let cleaned = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard cleaned.count >= 2 else { return [] }
+        let options: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive]
+        let existing = Set(existingTitles.map { $0.folding(options: options, locale: Locale(identifier: "sv_SE")) })
+        return catalog
+            .filter { suggestion in
+                let candidate = suggestion.title.folding(options: options, locale: Locale(identifier: "sv_SE"))
+                return !existing.contains(candidate) && candidate.localizedStandardContains(cleaned.folding(options: options, locale: Locale(identifier: "sv_SE")))
+            }
+            .sorted { lhs, rhs in
+                let query = cleaned.folding(options: options, locale: Locale(identifier: "sv_SE"))
+                let left = lhs.title.folding(options: options, locale: Locale(identifier: "sv_SE"))
+                let right = rhs.title.folding(options: options, locale: Locale(identifier: "sv_SE"))
+                let leftPrefix = left.hasPrefix(query)
+                let rightPrefix = right.hasPrefix(query)
+                if leftPrefix != rightPrefix { return leftPrefix }
+                return lhs.title.localizedStandardCompare(rhs.title) == .orderedAscending
+            }
+            .prefix(6)
+            .map { $0 }
+    }
+}

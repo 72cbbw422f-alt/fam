@@ -1073,3 +1073,28 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Kvarstår**
 - Kontrollera CI och att utkastet ligger kvar vid ett simulerat persistensfel.
 - Fortsätt därefter med bildbilagehantering först när lagringsdesign och tester är färdiga.
+
+## 2026-11-23 – Meddelanden: återställ lässtatus vid persistensfel
+
+**Fynd**
+- `markConversationRead` uppdaterade lässtatus i minnet men ignorerade ett misslyckat snapshot-sparande.
+- Vid skrivfel kunde chatten därför visa meddelanden som lästa trots att ändringen inte hade sparats.
+
+**Åtgärd**
+- Metoden sparar nu den tidigare meddelandelistan och återställer den om `saveToDisk()` misslyckas.
+- Lade till regressionstest som blockerar snapshot-sökvägen, försöker markera konversationen som läst och verifierar att tidigare lässtatus återställs.
+
+**Berörda filer**
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Föregående commit `56962c795f3cf7331492353c389bcff91843cd69` verifierades av GitHub Actions-körning [45255737582](https://github.com/72cbbw422f-alt/fam/actions/runs/45255737582): 85 tester passerade utan fel, simulatorbygget lyckades och unsigned iPhone Release-IPA skapades.
+- Denna nya ändring är ännu inte verifierad av CI.
+- Ingen lokal Xcode-miljö eller fysisk iPhone-testning finns tillgänglig här.
+
+**Kvarstår**
+- Verifiera ny CI-körning för återställning av lässtatus.
+- Testa chattens lässtatus och sänd-/raderingsflöden på fysisk iPhone.
+- Fortsätt därefter med lokal bildbilagehantering enligt `Documentation/MESSAGING_ROADMAP.md`.

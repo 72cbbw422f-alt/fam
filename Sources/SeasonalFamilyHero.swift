@@ -28,7 +28,7 @@ struct SeasonalFamilyHero: View {
         if (month == 12 && day >= 24) || (month == 1 && day <= 6) { return .christmas }
 
         switch month {
-        case 12, 1, 2: return .winter
+        case 11, 12, 1, 2: return .winter
         case 3, 4, 5: return .spring
         case 6, 7, 8: return .summer
         default: return .autumn
@@ -276,14 +276,28 @@ private struct WinterArtwork: View {
     var body: some View {
         ZStack {
             Image(systemName: "moon.stars.fill")
-                .font(.system(size: 82, weight: .light))
-                .foregroundStyle(Color.white.opacity(0.83))
-                .offset(x: 15, y: -18)
-            ForEach(0..<9, id: \.self) { index in
+                .font(.system(size: 70, weight: .ultraLight))
+                .foregroundStyle(Color.white.opacity(0.82))
+                .offset(x: 43, y: -37)
+
+            HStack(alignment: .bottom, spacing: -12) {
+                Image(systemName: "tree.fill")
+                    .font(.system(size: 76, weight: .ultraLight))
+                    .foregroundStyle(Color(red: 0.76, green: 0.84, blue: 0.83).opacity(0.78))
+                Image(systemName: "tree.fill")
+                    .font(.system(size: 112, weight: .ultraLight))
+                    .foregroundStyle(Color(red: 0.91, green: 0.94, blue: 0.91).opacity(0.92))
+                Image(systemName: "tree.fill")
+                    .font(.system(size: 86, weight: .ultraLight))
+                    .foregroundStyle(Color(red: 0.70, green: 0.80, blue: 0.81).opacity(0.82))
+            }
+            .offset(x: 8, y: 38)
+
+            ForEach(0..<8, id: \.self) { index in
                 Image(systemName: "snowflake")
                     .font(.system(size: CGFloat(8 + index % 3 * 3), weight: .light))
-                    .foregroundStyle(.white.opacity(0.72))
-                    .offset(x: CGFloat((index % 3) * 48 - 48), y: CGFloat((index / 3) * 35 - 35))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .offset(x: CGFloat((index % 4) * 42 - 66), y: CGFloat((index / 4) * 54 - 46))
             }
         }
     }

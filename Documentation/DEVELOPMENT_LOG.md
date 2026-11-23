@@ -892,3 +892,5 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Granska CI-loggarna och korrigera eventuella kompilerings-/testfel.
 - Därefter ta fram separata säsongs- och högtidsbilder som riktiga assets, med offline-fallback.
 - PR #4 förblir öppen som draft; ingen merge.
+
+- Efter kodgranskning lades UIKit-import till för den explicita UIApplication-tidsändringsnotisen och SeasonalScene deklarerades uttryckligen Equatable för stabila tester.

@@ -1018,4 +1018,4 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.shoppingItems.first?.category, .fruitVegetables)
         XCTAssertEqual(reloaded.shoppingItems.first?.isChecked, true)
     }
-}}
+}

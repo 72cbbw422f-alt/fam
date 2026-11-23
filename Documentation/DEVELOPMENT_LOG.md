@@ -784,3 +784,26 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Kontrollera notisikonens utseende på enheten.
 - Åtgärda den icke-blockerande Swift-varningen i ett separat litet underhållsarbete.
 - PR #4 hålls fortsatt öppen som draft; ingen merge har gjorts.
+
+
+## 2026-11-23 – Städa Swift-varning efter grön CI
+
+**Fynd**
+- Senaste CI-körningen `45159145961` passerade med 79 tester utan fel samt simulator- och iPhone Release-bygge.
+- Kompilatorn rapporterade en icke-blockerande varning i `Tests/LocalFamilyStoreTests.swift:518`: `.none` tolkades som `Optional.none` i stället för enumvärdet.
+
+**Åtgärd**
+- Kvalificerade värdet med den explicita typen `FamilyRecurrenceFrequency.none` för att undanröja tvetydigheten.
+
+**Berörda filer**
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Ändringen är incheckad och ny CI-körning startar automatiskt.
+- Föregående kodcommit har 79/79 godkända tester och en godkänd unsigned iPhone-build. Denna lilla varningsfix måste också passera CI innan den betraktas som verifierad.
+
+**Kvarstår**
+- Installera senaste IPA via FlareStore och testa funktionerna på fysisk iPhone.
+- Kontrollera notisikon visuellt på enheten.
+- PR #4 lämnas öppen som draft.

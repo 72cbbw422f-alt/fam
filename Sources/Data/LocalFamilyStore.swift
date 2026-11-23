@@ -405,13 +405,17 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     func markConversationRead(_ conversationID: String) {
+        let previousMessages = messages
         var changed = false
         for index in messages.indices where messages[index].conversationID == conversationID
             && messages[index].readAt == nil {
             messages[index].readAt = .now
             changed = true
         }
-        if changed { saveToDisk() }
+        guard changed else { return }
+        if !saveToDisk() {
+            messages = previousMessages
+        }
     }
 
     func markNotificationRead(_ id: UUID) {

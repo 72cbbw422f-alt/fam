@@ -1017,3 +1017,28 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Kvarstår**
 - Kontrollera GitHub Actions för den nya committen och granska både simulatorjobbet och unsigned iPhone-bygget.
 - Fysisk iPhone-testning återstår.
+
+
+## 2026-11-23 – CI-fel: korrigera månadssymbol i aktivitetsdetaljer
+
+**Fynd**
+- GitHub Actions-körning 45236229763 på commit 35e114fec8a7f0ad8ec9b4dc0aacadccf1115240 misslyckades i båda jobben.
+- Simulatorns testkompilering och iPhone Release-bygget pekade på samma Swift-fel i `Sources/DashboardView.swift:597`: `Date.FormatStyle.Symbol.Month` saknar medlemmen `.long`.
+- Testerna hann inte starta eftersom appmålet inte kompilerade. iPhone-bygget avbröts före IPA-paketering.
+
+**Åtgärd**
+- Ersatte den ogiltiga månadsstilen `.month(.long)` med Swift Date.FormatStyle-symbolen `.month(.wide)`, som ger utskriven månadsbenämning på svenska.
+- Ändringen är begränsad till datumformatet i aktivitetsdetaljvyn.
+
+**Berörda filer**
+- `Sources/DashboardView.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Källändringen är incheckad på `feature/family-messenger`.
+- Ny GitHub Actions-körning måste verifiera kompilering, tester och unsigned IPA-bygge; inget grönt resultat är ännu bekräftat.
+- Ingen fysisk iPhone-testning är genomförd.
+
+**Kvarstår**
+- Granska CI-resultatet för den nya committen och åtgärda eventuella ytterligare fel innan bildbilagor påbörjas.
+- PR #4 och #5 hålls öppna som draft; ingen merge.

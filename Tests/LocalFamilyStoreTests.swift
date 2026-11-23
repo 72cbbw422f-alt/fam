@@ -633,6 +633,24 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertNotNil(store.persistenceError)
     }
 
+    func testMarkingConversationReadRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        XCTAssertTrue(store.sendMessage("Hej", conversationID: "family", kind: .family))
+        let originalReadAt = store.messages.first?.readAt
+        XCTAssertNil(originalReadAt)
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        store.markConversationRead("family")
+
+        XCTAssertNil(store.messages.first?.readAt,
+                     "Read state must roll back when it cannot be persisted.")
+        XCTAssertNotNil(store.persistenceError)
+    }
+
     func testLegacySnapshotWithoutMessagesLoadsAsEmptyConversationHistory() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("FamiljenLegacyTests-\(UUID().uuidString)", isDirectory: true)

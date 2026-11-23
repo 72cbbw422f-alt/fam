@@ -390,6 +390,14 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         saveToDisk()
     }
 
+    func deleteMessage(_ id: UUID) {
+        guard let ownerID = members.first(where: { $0.role == .owner })?.id,
+              let index = messages.firstIndex(where: { $0.id == id && $0.senderID == ownerID }) else { return }
+        let previousMessages = messages
+        messages.remove(at: index)
+        if !saveToDisk() { messages = previousMessages }
+    }
+
     func markConversationRead(_ conversationID: String) {
         var changed = false
         for index in messages.indices where messages[index].conversationID == conversationID

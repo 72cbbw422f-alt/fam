@@ -515,7 +515,7 @@ final class LocalFamilyStoreTests: XCTestCase {
             id: series.id, familyID: series.familyID, title: "Veckomöte – flyttat",
             details: "Gäller bara detta tillfälle", startsAt: anchor.addingTimeInterval(2 * 60 * 60),
             endsAt: nil, kind: .event, memberID: nil, isRecurringYearly: false,
-            reminderOffsets: [], recurrenceFrequency: .none
+            reminderOffsets: [], recurrenceFrequency: FamilyRecurrenceFrequency.none
         )
         let override = FamilyOccurrenceOverride(
             seriesID: series.id, occurrenceDate: anchor, item: changedOccurrence

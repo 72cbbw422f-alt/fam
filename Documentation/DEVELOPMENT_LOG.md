@@ -867,3 +867,28 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Den genererade fotorealistiska vinterbilden användes som visuellt inspirationsunderlag men är inte incheckad som bildasset. Bannerbytet är därför en uppdaterad inbyggd illustration, inte ett foto.
 - Fil: `Sources/SeasonalFamilyHero.swift`.
 - Ändringen inväntar CI-verifiering.
+
+
+## 2026-11-23 – Säsongsbanner: datumuppdatering och regressionstester
+
+**Ändringar**
+- Flyttade datumlogiken till den testbara SeasonalSceneResolver, med explicita gränser för årstider, advent, Lucia och jul.
+- Startsidan uppdaterar nu sitt datum när kalenderdagen ändras, vid betydande tidsändring och när appen återgår till aktivt läge.
+- Adventsberäkningen är separerad och hanterar datum före första advent som noll tända ljus.
+- Säkerställde att advent kan börja redan i november; Lucia har fortsatt företräde den 13 december och julscenen gäller 24 december–6 januari.
+- Lade till regressionstester för säsongs-/högtidsgränser och de fyra adventssöndagarna.
+
+**Berörda filer**
+- Sources/SeasonalFamilyHero.swift
+- Tests/LocalFamilyStoreTests.swift
+- Documentation/DEVELOPMENT_LOG.md
+
+**Verifiering**
+- Källkod och tester är incheckade på feature/ux-navigation-shopping.
+- CI-verifiering inväntas. Inga nya testresultat eller IPA är ännu godkända från dessa ändringar.
+- Fotorealistiska säsongsbilder är fortfarande inte integrerade; befintliga SwiftUI-illustrationer används tills riktiga bildassets har lagts in.
+
+**Nästa steg**
+- Granska CI-loggarna och korrigera eventuella kompilerings-/testfel.
+- Därefter ta fram separata säsongs- och högtidsbilder som riktiga assets, med offline-fallback.
+- PR #4 förblir öppen som draft; ingen merge.

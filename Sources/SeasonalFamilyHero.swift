@@ -5,41 +5,18 @@ import SwiftUI
 struct SeasonalFamilyHero: View {
     let familyName: String
 
-    private enum SeasonScene {
-        case autumn, advent, lucia, christmas, winter, spring, summer
-    }
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var currentDate = Date.now
 
-    private var scene: SeasonScene {
-        let calendar = Calendar(identifier: .gregorian)
-        let month = calendar.component(.month, from: .now)
-        let day = calendar.component(.day, from: .now)
-        let year = calendar.component(.year, from: .now)
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var currentDate = Date.now
 
-        let firstAdvent = calendar.startOfDay(for: firstSundayOnOrAfterNovember27(year: year, calendar: calendar))
-        let today = calendar.startOfDay(for: .now)
-        var christmasEveComponents = DateComponents()
-        christmasEveComponents.year = year
-        christmasEveComponents.month = 12
-        christmasEveComponents.day = 24
-        let christmasEve = calendar.date(from: christmasEveComponents) ?? firstAdvent
-
-        if month == 12 && day == 13 { return .lucia }
-        if today >= firstAdvent && today < christmasEve { return .advent }
-        if (month == 12 && day >= 24) || (month == 1 && day <= 6) { return .christmas }
-
-        switch month {
-        case 11, 12, 1, 2: return .winter
-        case 3, 4, 5: return .spring
-        case 6, 7, 8: return .summer
-        default: return .autumn
-        }
+    private var scene: SeasonalScene {
+        SeasonalSceneResolver.scene(for: currentDate)
     }
 
     private var adventLitCount: Int {
-        let calendar = Calendar(identifier: .gregorian)
-        let first = firstSundayOnOrAfterNovember27(year: calendar.component(.year, from: .now), calendar: calendar)
-        let days = calendar.dateComponents([.day], from: first, to: .now).day ?? 0
-        return min(4, max(1, days / 7 + 1))
+        SeasonalSceneResolver.adventLitCount(for: currentDate)
     }
 
     private var sceneTitle: String {
@@ -101,9 +78,9 @@ struct SeasonalFamilyHero: View {
 
             VStack(alignment: .leading, spacing: 7) {
                 HStack(alignment: .firstTextBaseline, spacing: 7) {
-                    Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "sv_SE"))).capitalized)
+                    Text(currentDate.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "sv_SE"))).capitalized)
                     Text("·").foregroundStyle(.white.opacity(0.7))
-                    Text("v. \(Calendar(identifier: .iso8601).component(.weekOfYear, from: .now))")
+                    Text("v. \(Calendar(identifier: .iso8601).component(.weekOfYear, from: currentDate))")
                 }
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.88))
@@ -130,6 +107,21 @@ struct SeasonalFamilyHero: View {
         }
         .shadow(color: FamiljenTheme.navy.opacity(0.10), radius: 13, x: 0, y: 7)
         .accessibilityElement(children: .combine)
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+            refreshSeasonalDate()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
+            refreshSeasonalDate()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                refreshSeasonalDate()
+            }
+        }
+    }
+
+    private func refreshSeasonalDate() {
+        currentDate = .now
     }
 
     @ViewBuilder
@@ -152,15 +144,56 @@ struct SeasonalFamilyHero: View {
         }
     }
 
-    private func firstSundayOnOrAfterNovember27(year: Int, calendar: Calendar) -> Date {
-        var components = DateComponents()
-        components.year = year
-        components.month = 11
-        components.day = 27
-        let start = calendar.date(from: components) ?? .now
+
+}
+
+enum SeasonalScene {
+    case autumn, advent, lucia, christmas, winter, spring, summer
+}
+
+enum SeasonalSceneResolver {
+    static func scene(for date: Date, calendar: Calendar = Calendar(identifier: .gregorian)) -> SeasonalScene {
+        let month = calendar.component(.month, from: date)
+        let day = calendar.component(.day, from: date)
+        let year = calendar.component(.year, from: date)
+        let today = calendar.startOfDay(for: date)
+        let firstAdvent = calendar.startOfDay(for: firstSundayOnOrAfterNovember27(year: year, calendar: calendar))
+        let christmasEve = makeDate(year: year, month: 12, day: 24, calendar: calendar) ?? firstAdvent
+
+        if month == 12 && day == 13 { return .lucia }
+        if month == 12 && today >= firstAdvent && today < christmasEve { return .advent }
+        if (month == 12 && day >= 24) || (month == 1 && day <= 6) { return .christmas }
+
+        switch month {
+        case 11, 12, 1, 2: return .winter
+        case 3, 4, 5: return .spring
+        case 6, 7, 8: return .summer
+        default: return .autumn
+        }
+    }
+
+    static func adventLitCount(for date: Date, calendar: Calendar = Calendar(identifier: .gregorian)) -> Int {
+        let year = calendar.component(.year, from: date)
+        let first = calendar.startOfDay(for: firstSundayOnOrAfterNovember27(year: year, calendar: calendar))
+        let today = calendar.startOfDay(for: date)
+        guard today >= first else { return 0 }
+        let days = calendar.dateComponents([.day], from: first, to: today).day ?? 0
+        return min(4, max(1, days / 7 + 1))
+    }
+
+    private static func firstSundayOnOrAfterNovember27(year: Int, calendar: Calendar) -> Date {
+        let start = makeDate(year: year, month: 11, day: 27, calendar: calendar) ?? .now
         let weekday = calendar.component(.weekday, from: start)
         let daysUntilSunday = (8 - weekday) % 7
         return calendar.date(byAdding: .day, value: daysUntilSunday, to: start) ?? start
+    }
+
+    private static func makeDate(year: Int, month: Int, day: Int, calendar: Calendar) -> Date? {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        return calendar.date(from: components)
     }
 }
 

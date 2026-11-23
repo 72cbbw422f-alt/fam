@@ -29,6 +29,42 @@ struct ShoppingListView: View {
                         .disabled(model.newItemTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isSaving)
                         .accessibilityLabel("Lägg till vara")
                     }
+                    if !model.suggestions.isEmpty {
+                        VStack(spacing: 0) {
+                            ForEach(model.suggestions) { suggestion in
+                                Button {
+                                    Task { await model.addSuggestion(suggestion) }
+                                } label: {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: suggestion.category.symbol)
+                                            .foregroundStyle(FamiljenTheme.champagneDeep)
+                                            .frame(width: 22)
+                                        Text(suggestion.title)
+                                            .foregroundStyle(FamiljenTheme.ink)
+                                        Spacer()
+                                        Text(suggestion.category.title)
+                                            .font(.caption)
+                                            .foregroundStyle(FamiljenTheme.muted)
+                                        Image(systemName: "plus")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(FamiljenTheme.navy)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 11)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(model.isSaving)
+                                if suggestion.id != model.suggestions.last?.id {
+                                    Divider().overlay(FamiljenTheme.sand)
+                                }
+                            }
+                        }
+                        .background(.white, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(FamiljenTheme.sand, lineWidth: 1))
+                        .accessibilityLabel("Varuförslag")
+                    }
+
                     Menu {
                         Picker("Kategori", selection: $model.selectedCategory) {
                             ForEach(ShoppingCategory.allCases) { category in

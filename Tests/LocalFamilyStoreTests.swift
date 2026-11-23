@@ -1030,4 +1030,38 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertFalse(suggestions.contains { $0.title == "Mjölk" })
         XCTAssertTrue(suggestions.contains { $0.title == "Mjöl" })
     }
+
+    func testSeasonalSceneResolverCoversSeasonAndHolidayBoundaries() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
+            calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12))!
+        }
+
+        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2026, 11, 28), calendar: calendar) == .winter)
+        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2026, 11, 29), calendar: calendar) == .advent)
+        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2026, 12, 13), calendar: calendar) == .lucia)
+        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2026, 12, 24), calendar: calendar) == .christmas)
+        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2027, 1, 6), calendar: calendar) == .christmas)
+        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2027, 1, 7), calendar: calendar) == .winter)
+        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2027, 3, 1), calendar: calendar) == .spring)
+        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2027, 6, 1), calendar: calendar) == .summer)
+        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2027, 9, 1), calendar: calendar) == .autumn)
+    }
+
+    func testAdventCandleCountAdvancesOnEachSunday() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
+            calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12))!
+        }
+
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 11, 28), calendar: calendar), 0)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 11, 29), calendar: calendar), 1)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 12, 5), calendar: calendar), 1)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 12, 6), calendar: calendar), 2)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 12, 13), calendar: calendar), 3)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 12, 20), calendar: calendar), 4)
+    }
+
 }

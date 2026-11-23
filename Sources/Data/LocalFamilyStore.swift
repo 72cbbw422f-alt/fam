@@ -384,10 +384,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         guard let senderID = members.first(where: { $0.role == .owner })?.id else { return }
         let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 4000 else { return }
+        let previousMessages = messages
         messages.append(FamilyMessage(id: UUID(), conversationID: conversationID,
                                       kind: kind, senderID: senderID, text: clean,
                                       sentAt: .now, readAt: nil))
-        saveToDisk()
+        if !saveToDisk() { messages = previousMessages }
     }
 
     func deleteMessage(_ id: UUID) {

@@ -755,3 +755,32 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Bekräfta gröna simulatorstester och unsigned iPhone-build.
 - Kontrollera att appikonen finns i den paketerade appen.
 - Installera och testa navigering, kalender och inköpslista på fysisk iPhone.
+
+
+## 2026-11-23 – Fullständig CI-verifiering och IPA-inspektion
+
+**CI-resultat**
+- GitHub Actions-körning: [45138536295](https://github.com/72cbbw422f-alt/fam/actions/runs/45138536295).
+- Simulatorjobbet passerade: ikonrendering, XcodeGen, Swift package resolution, samtliga 79 enhetstester och simulatorbygget.
+- Testresultat: 79 tester, 0 fel.
+- iPhone-jobbet passerade: Release-build för `iphoneos`, paketering och uppladdning av unsigned IPA.
+- En varning kvarstår i `Tests/LocalFamilyStoreTests.swift:518` om tvetydig `Optional<FamilyRecurrenceFrequency>.none`. Den blockerar inte bygget eller testerna och bör städas separat.
+
+**IPA-inspektion**
+- Artifact: `Familjen-unsigned-IPA`, ID `14801676082`.
+- Byggd från commit `90cf866028dd93a9dae714f8c0c1d9f4169b2a85`.
+- Arkivet innehåller `Payload/Familjen.app`, körbar binär, `Assets.car`, appikonfiler och `Info.plist`.
+- Bundle ID: `se.familjen.app`.
+- Minimum iOS: `17.0`.
+- Plattform: `iPhoneOS`.
+- Info.plist deklarerar `AppIcon` som primär appikon. Att ikonen finns i appbundle är verifierat; visuellt utseende i iOS-notiser är inte verifierat på fysisk iPhone.
+- IPA är osignerad. Den behöver signeras/installationshanteras av FlareStore eller motsvarande innan enheten kan installera den.
+
+**Berörda filer**
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Kvarstår**
+- Installera via FlareStore och kontrollera appstart, navigation, kalender och inköpslista på fysisk iPhone.
+- Kontrollera notisikonens utseende på enheten.
+- Åtgärda den icke-blockerande Swift-varningen i ett separat litet underhållsarbete.
+- PR #4 hålls fortsatt öppen som draft; ingen merge har gjorts.

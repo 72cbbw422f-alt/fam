@@ -728,3 +728,30 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - En ny CI-körning startas automatiskt av committen. Simulatorns testresultat måste inväntas.
 - IPA-artifactet från föregående körning byggdes från commit `344d0cef1180e19bd9ea16e64047e15986d8495d`, alltså före denna testfix. Det distribueras inte som verifierad version.
 - Notisikonens utseende behöver fortfarande kontrolleras på fysisk iPhone efter en fullständigt godkänd bygg- och testkörning.
+
+
+## 2026-11-23 – CI-stabilisering för parallella pushar
+
+**Fynd**
+- CI-körning 45137385951 avbröts under installationen av byggverktyg innan ikonrendering, projektgenerering, test eller byggen hann starta.
+- Workflow-konfigurationen hade `cancel-in-progress: true`. En efterföljande dokumentationscommit på samma gren kunde därför avbryta den pågående verifieringen.
+- Granskning av testfilen visade att testmetoden och testklassen avslutades med två klamrar på samma rad. Det var giltig Swift-syntax, men avslutningen har nu formaterats tydligare.
+
+**Åtgärder**
+- Ändrade CI-concurrency till `cancel-in-progress: false` så att en ny push inte avbryter en pågående bygg- och testkörning. Senare körningar köas i stället.
+- Formaterade avslutningen av shoppinglistans regressionstest.
+
+**Berörda filer**
+- `.github/workflows/ios-build.yml`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Ändringarna är incheckade på `feature/ux-navigation-shopping`.
+- Ny CI-verifiering inväntas. Inga nya testresultat eller IPA-artifact har ännu verifierats efter ändringarna.
+- PR #4 är fortsatt öppen som draft och har inte slagits ihop.
+
+**Kvarstår**
+- Bekräfta gröna simulatorstester och unsigned iPhone-build.
+- Kontrollera att appikonen finns i den paketerade appen.
+- Installera och testa navigering, kalender och inköpslista på fysisk iPhone.

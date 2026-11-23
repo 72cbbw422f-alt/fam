@@ -617,6 +617,21 @@ final class LocalFamilyStoreTests: XCTestCase {
     }
 
 
+    func testSendingMessageRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        XCTAssertTrue(store.messages.isEmpty)
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        store.sendMessage("Hej", conversationID: "family", kind: .family)
+
+        XCTAssertTrue(store.messages.isEmpty, "A message must not remain visible when it was not persisted.")
+        XCTAssertNotNil(store.persistenceError)
+    }
+
     func testLegacySnapshotWithoutMessagesLoadsAsEmptyConversationHistory() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("FamiljenLegacyTests-\(UUID().uuidString)", isDirectory: true)

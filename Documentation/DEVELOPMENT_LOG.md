@@ -954,3 +954,21 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Bekräfta simulatorns bygg- och testresultat i GitHub Actions.
 - Testa kontextmenyn och raderingsflödet på fysisk iPhone.
 - Därefter fortsätta med lokal bildbilagehantering och dess lagrings-/raderingspolicy.
+
+
+## 2026-11-23 – CI: aktivera verifiering för pull requests
+
+**Ändring**
+- Lade till `pull_request`-trigger för PR:er riktade mot `feature/health-foundation` och `feature/ux-navigation-shopping`.
+- Detta omfattar PR #4 och PR #5:s basgren och gör att simulatorns tester/build samt unsigned iPhone-build kan köras på PR-uppdateringar.
+- Befintliga push- och manuella `workflow_dispatch`-triggers behålls.
+- Fil: `.github/workflows/ios-build.yml`.
+
+**Verifiering**
+- Workflow-filen är uppdaterad på `feature/family-messenger`.
+- GitHub ska starta en PR-körning efter uppdateringen; resultatet är ännu inte verifierat.
+- Inga lokala Xcode-tester har körts.
+
+**Kvarstår**
+- Kontrollera att PR #5 får en ny workflow-körning och granska båda jobben, inklusive testlogg och unsigned IPA-paketering.
+- PR #4 och #5 hålls öppna som draft; ingen merge har gjorts.

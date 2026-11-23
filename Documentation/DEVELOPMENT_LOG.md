@@ -834,3 +834,28 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Fysisk iPhone-testning av appstart, översiktsnavigation, svensk kalender och inköpslistans kategorier/Handlat-flöde.
 - Verifiera appikonens och notisikonens visuella utseende på enheten.
 - PR #4 hålls öppen som draft; ingen merge har gjorts.
+
+
+## 2026-11-23 – Inköpslista: helradstryck och svenska tidsformat
+
+**Ändringar**
+- Hela inköpsvarans rad är nu en tryckyta. Tryck var som helst på raden markerar varan som handlad; ett nytt tryck i Handlat återställer den. Svep för manuell borttagning finns kvar.
+- Startsidan använder nu explicit `sv_SE` för klockslag, datum, veckodagar och relativa tidsangivelser. Detta åtgärdar engelska värden som "Tuesday" och "13 seconds ago" när telefonens språkregion inte är svenska.
+- Varuförslag har lagts till för en första svensk katalog med vanliga livsmedel och hushållsvaror. Matchning ignorerar skiftläge/diakritiska skillnader, prioriterar prefix och filtrerar bort redan aktiva varor. Val av förslag lägger till varan i föreslagen kategori.
+- Regressionstester tillagda för sökträffar, kategori och filtrering av redan tillagda varor.
+
+**Berörda filer**
+- `Sources/Domain/ShoppingModels.swift`
+- `Sources/Data/ShoppingListViewModel.swift`
+- `Sources/ShoppingListView.swift`
+- `Sources/DashboardView.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+
+**Verifiering**
+- Kod incheckad på `feature/ux-navigation-shopping`.
+- CI-körning `45167892315` för commit `1bc3edecc2943aa28cac29457678cb524bc8eb6d` startade men är ännu inte avslutad vid dokumentationstillfället. Den täcker varuförslag och svensk datumformatering.
+- Helradstryck lades till i efterföljande commit och behöver ingå i nästa gröna CI-körning.
+- Fysisk iPhone-testning krävs fortfarande för att kontrollera känslan i interaktionen och datumvisningen.
+
+**Vintrig toppbild**
+- En ny vinterbild har genererats som designunderlag. Den har ännu inte lagts in i appens asset catalog eller kopplats till `SeasonalFamilyHero`. Ingen bildväxling i appen ska betraktas som färdig innan asseten är incheckad och CI-byggd.

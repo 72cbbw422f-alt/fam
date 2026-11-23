@@ -18,9 +18,11 @@ Familjen ska kunna fungera som Niklas och Villemos primära privata kommunikatio
 - Meddelandemodellen saknar bilagor och uppladdningsmetadata.
 - README och ARCHITECTURE anger uttryckligen local-first beta utan konto, backend eller synk. Denna feature är därför ett separat, avgränsat steg mot molnbaserad kommunikation.
 
-## Föreslagen teknisk riktning
+## Föreslagen teknisk riktning – beslut krävs
 
-Använd Supabase som delad backend för den här funktionen, i enlighet med den tidigare diskuterade backend-riktningen. Införandet ska vara isolerat bakom repository-/servicegränser så att SwiftUI-vyerna inte blir beroende av Supabase SDK-detaljer.
+Delad backend krävs för att två telefoner ska kunna kommunicera. Den aktuella local-first-arkitekturen anger CloudKit som framtida riktning, medan en tidigare lösningsdiskussion även omfattade Supabase. Val av leverantör ska därför fastställas innan backend-kod eller hemligheter läggs till.
+
+**Rekommendation för meddelandefunktionen: Supabase**, isolerat bakom repository-/servicegränser så att SwiftUI-vyerna inte blir beroende av SDK-detaljer. Det ger en tydlig modell för Postgres, Realtime och privat objektlagring för bilder. CloudKit är fortsatt ett möjligt alternativ om målet är att hålla hela familjedatan inom Apples ekosystem.
 
 - Supabase Auth: separata vuxenkonton, med Sign in with Apple som avsedd inloggning.
 - Familjeinbjudan: engångs-/tidsbegränsad kod för att koppla Villemos konto till rätt familj.
@@ -89,6 +91,7 @@ Använd Supabase som delad backend för den här funktionen, i enlighet med den 
 
 ## Öppna produktbeslut
 
+- **Backendval:** godkänn Supabase för meddelanden och bildbilagor, eller välj att hålla fast vid CloudKit som gemensam plattform.
 - Ska meddelanden kunna redigeras och raderas efter sändning, och i så fall inom vilken tidsgräns?
 - Ska en konversation stödja andra filtyper än bilder i första versionen? Rekommendation: nej, börja med bilder.
 - Ska notisförhandsvisning visa meddelandetext eller endast avsändare? Standard bör vara avsändare + text, med möjlighet att dölja text i inställningar.

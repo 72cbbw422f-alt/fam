@@ -1018,4 +1018,16 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.shoppingItems.first?.category, .fruitVegetables)
         XCTAssertEqual(reloaded.shoppingItems.first?.isChecked, true)
     }
+
+    func testShoppingSuggestionsMatchSwedishTextAndAssignCategory() {
+        let suggestions = ShoppingItemSuggestion.matching("mjöl")
+        XCTAssertTrue(suggestions.contains { $0.title == "Mjölk" && $0.category == .dairy })
+        XCTAssertTrue(suggestions.contains { $0.title == "Mjöl" && $0.category == .pantry })
+    }
+
+    func testShoppingSuggestionsExcludeExistingItemsAndIgnoreCase() {
+        let suggestions = ShoppingItemSuggestion.matching("MJÖL", excluding: ["mjölk"])
+        XCTAssertFalse(suggestions.contains { $0.title == "Mjölk" })
+        XCTAssertTrue(suggestions.contains { $0.title == "Mjöl" })
+    }
 }

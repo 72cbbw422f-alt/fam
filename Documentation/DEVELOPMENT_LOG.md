@@ -689,3 +689,24 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Kvantitet och anteckning per vara ingår inte i denna iteration.
 - Ingen synk mellan flera enheter; listan använder fortsatt lokal lagring.
 - Ingen IPA har verifierats från denna arbetsgren.
+
+
+## 2026-11-23 – CI-fel: svensk locale i kalenderdetaljer
+
+**Fynd**
+- GitHub Actions visade att simulatorns testjobb stoppades under kompilering och att iPhone-bygget föll på tre fel i `FamilyCalendarView.swift`: `swedishLocale` användes i `FamilyCalendarItemDetailView`, men egenskapen var privat i en annan vytyp.
+- Enhetstesterna hann därför inte köras; teststeget avbröts på grund av kompileringsfelet. Ikonrenderingen och XcodeGen-projektgenereringen passerade.
+
+**Åtgärd**
+- Lade till en egen lokal `swedishLocale`-egenskap i `FamilyCalendarItemDetailView`. Det behåller svensk datum- och tidsformatering utan att ändra den andra vytypens åtkomstnivå.
+
+**Berörd fil**
+- `Sources/FamilyCalendarView.swift`
+
+**Commit**
+- `5a4a17c6fa7f13570e47a2ddb511757128c8280c` på `feature/ux-navigation-shopping`.
+
+**Verifiering**
+- Kodändringen är incheckad. Ny CI-körning inväntas.
+- Appikonens asset catalog och renderingssteget finns, men visning av ikonen i en installerad iOS-notis är ännu inte verifierad på fysisk enhet.
+- Ingen ny IPA är tillgänglig från denna commit ännu.

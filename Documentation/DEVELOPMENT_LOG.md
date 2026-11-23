@@ -859,3 +859,11 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 
 **Vintrig toppbild**
 - En ny vinterbild har genererats som designunderlag. Den har ännu inte lagts in i appens asset catalog eller kopplats till `SeasonalFamilyHero`. Ingen bildväxling i appen ska betraktas som färdig innan asseten är incheckad och CI-byggd.
+
+
+**Säsongsbanner – vinter**
+- Ändrade säsongslogiken så att november också använder vinterscenen, med fortsatt prioritet för advent, Lucia och jul.
+- Uppdaterade vinterscenen med snötäckta granar, måne och snöflingor i den befintliga vektorbaserade SwiftUI-illustrationen.
+- Den genererade fotorealistiska vinterbilden användes som visuellt inspirationsunderlag men är inte incheckad som bildasset. Bannerbytet är därför en uppdaterad inbyggd illustration, inte ett foto.
+- Fil: `Sources/SeasonalFamilyHero.swift`.
+- Ändringen inväntar CI-verifiering.

@@ -972,3 +972,23 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Kvarstår**
 - Kontrollera att PR #5 får en ny workflow-körning och granska båda jobben, inklusive testlogg och unsigned IPA-paketering.
 - PR #4 och #5 hålls öppna som draft; ingen merge har gjorts.
+
+
+## 2026-11-23 – Meddelanden: bekräfta lokal radering
+
+**Ändring**
+- Kontextmenyn på egna meddelanden öppnar nu en destruktiv bekräftelsedialog i stället för att radera direkt.
+- Dialogen förklarar att meddelandet tas bort från den här enheten, vilket tydliggör local-first-begränsningen.
+- Bekräftelse anropar befintlig ägarskyddad raderingsmetod; avbryt lämnar meddelandet orört.
+- Fil: `Sources/FamilyMessagesView.swift`.
+- Commit: `1fe5675982b17e1c7e93528eb0b866500697bc10`.
+
+**Verifiering**
+- Ändringen är incheckad på `feature/family-messenger`.
+- Ingen lokal Xcode-miljö finns tillgänglig; simulatorbygge och tester är inte körda här.
+- PR-CI behöver bekräftas i GitHub Actions innan ändringen räknas som verifierad.
+- Fysisk iPhone-testning av bekräftelse och avbryt återstår.
+
+**Kvarstår**
+- Kontrollera att CI körs på uppdaterad PR.
+- Fortsätt därefter med bilagearkitektur efter separat granskning av lagring, bakåtkompatibilitet och filstädning.

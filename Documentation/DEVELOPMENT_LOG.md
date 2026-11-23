@@ -896,3 +896,32 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Efter kodgranskning lades UIKit-import till för den explicita UIApplication-tidsändringsnotisen och SeasonalScene deklarerades uttryckligen Equatable för stabila tester.
 
 - Utökade datumtester med flera kalenderår där första advent infaller 1 december (2024) respektive 30 november (2025), och bytte scenassertions till direkt Equatable-jämförelse.
+
+
+## 2026-11-23 – Apple-first-beslut för Familjens synk och meddelanden
+
+**Beslut**
+- Produktmålet är en Apple-baserad app. Supabase och andra externa serverlösningar används inte som tillfällig backend.
+- Beta fortsätter local-first. Gemensam synk, delade meddelanden och bildbilagor väntar på CloudKit/CKShare och Apple Developer-konfiguration.
+- Meddelandegränssnitt och lokal interaktion får utvecklas före kontot, men får inte presenteras som synkroniserade mellan telefoner.
+
+**Dokumentation**
+- Uppdaterade `Documentation/MESSAGING_ROADMAP.md` med CloudKit/CKShare som beslutad riktning, säkerhetskrav, migreringsordning och godkännandekriterier.
+- Uppdaterade `Documentation/ROADMAP.md` med det övergripande Apple-first-beslutet.
+- `Documentation/ARCHITECTURE.md` behåller local-first nu och CloudKit som framtida Apple-baserad synkplattform.
+
+**Berörda filer**
+- Documentation/MESSAGING_ROADMAP.md
+- Documentation/ROADMAP.md
+- Documentation/DEVELOPMENT_LOG.md
+
+**Verifiering**
+- Dokumentationsändringar är incheckade på `feature/family-messenger`.
+- Inga källkodsfiler har ändrats i denna dokumentationsinsats.
+- Inga bygg- eller enhetstester har körts; dokumentationsändringarna ändrar inte körbar kod.
+- CloudKit-delning, meddelanden och bilagehantering är inte implementerade eller verifierade.
+
+**Kvarstår**
+- Fortsätt med lokala förbättringar som inte kräver server.
+- Verifiera senaste CI på den separata UX-grenen och undvik att slå ihop PR:er utan godkännande.
+- När Developer-kontot finns: konfigurera CloudKit och genomför två-enhets-testning med separata Apple-konton.

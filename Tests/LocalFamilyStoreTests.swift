@@ -1038,15 +1038,15 @@ final class LocalFamilyStoreTests: XCTestCase {
             calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12))!
         }
 
-        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2026, 11, 28), calendar: calendar) == .winter)
-        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2026, 11, 29), calendar: calendar) == .advent)
-        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2026, 12, 13), calendar: calendar) == .lucia)
-        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2026, 12, 24), calendar: calendar) == .christmas)
-        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2027, 1, 6), calendar: calendar) == .christmas)
-        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2027, 1, 7), calendar: calendar) == .winter)
-        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2027, 3, 1), calendar: calendar) == .spring)
-        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2027, 6, 1), calendar: calendar) == .summer)
-        XCTAssertTrue(SeasonalSceneResolver.scene(for: date(2027, 9, 1), calendar: calendar) == .autumn)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2026, 11, 28), calendar: calendar), .winter)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2026, 11, 29), calendar: calendar), .advent)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2026, 12, 13), calendar: calendar), .lucia)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2026, 12, 24), calendar: calendar), .christmas)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2027, 1, 6), calendar: calendar), .christmas)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2027, 1, 7), calendar: calendar), .winter)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2027, 3, 1), calendar: calendar), .spring)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2027, 6, 1), calendar: calendar), .summer)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2027, 9, 1), calendar: calendar), .autumn)
     }
 
     func testAdventCandleCountAdvancesOnEachSunday() {
@@ -1062,6 +1062,13 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 12, 6), calendar: calendar), 2)
         XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 12, 13), calendar: calendar), 3)
         XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 12, 20), calendar: calendar), 4)
+
+        // First Advent falls on different November/December dates depending on year.
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2024, 11, 30), calendar: calendar), .winter)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2024, 12, 1), calendar: calendar), .advent)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2025, 11, 29), calendar: calendar), .winter)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2025, 11, 30), calendar: calendar), .advent)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2025, 11, 30), calendar: calendar), 1)
     }
 
 }

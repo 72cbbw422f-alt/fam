@@ -626,8 +626,9 @@ final class LocalFamilyStoreTests: XCTestCase {
         try FileManager.default.removeItem(at: directory)
         try Data("block directory".utf8).write(to: directory)
 
-        store.sendMessage("Hej", conversationID: "family", kind: .family)
+        let saved = store.sendMessage("Hej", conversationID: "family", kind: .family)
 
+        XCTAssertFalse(saved, "The caller must be told that persistence failed.")
         XCTAssertTrue(store.messages.isEmpty, "A message must not remain visible when it was not persisted.")
         XCTAssertNotNil(store.persistenceError)
     }

@@ -221,6 +221,15 @@ private struct FamilyChatView: View {
             }
             if !isMine { Spacer(minLength: 48) }
         }
+        .contextMenu {
+            if isMine {
+                Button(role: .destructive) {
+                    store.deleteMessage(message.id)
+                } label: {
+                    Label("Radera meddelande", systemImage: "trash")
+                }
+            }
+        }
     }
 
     private var composer: some View {

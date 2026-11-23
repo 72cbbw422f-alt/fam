@@ -282,7 +282,8 @@ private struct FamilyChatView: View {
     private func send() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        store.sendMessage(text, conversationID: conversationID, kind: kind)
-        draft = ""
+        if store.sendMessage(text, conversationID: conversationID, kind: kind) {
+            draft = ""
+        }
     }
 }

@@ -8,9 +8,6 @@ struct SeasonalFamilyHero: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var currentDate = Date.now
 
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var currentDate = Date.now
-
     private var scene: SeasonalScene {
         SeasonalSceneResolver.scene(for: currentDate)
     }
@@ -161,7 +158,7 @@ enum SeasonalSceneResolver {
         let christmasEve = makeDate(year: year, month: 12, day: 24, calendar: calendar) ?? firstAdvent
 
         if month == 12 && day == 13 { return .lucia }
-        if month == 12 && today >= firstAdvent && today < christmasEve { return .advent }
+        if today >= firstAdvent && today < christmasEve { return .advent }
         if (month == 12 && day >= 24) || (month == 1 && day <= 6) { return .christmas }
 
         switch month {

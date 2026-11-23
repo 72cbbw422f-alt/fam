@@ -151,7 +151,7 @@ struct DashboardView: View {
                 if let item = model.upcomingItems.first {
                     Button { selectedDashboardItem = item } label: {
                     VStack(alignment: .leading, spacing: 7) {
-                    Text(item.startsAt.formatted(.dateTime.hour().minute()))
+                    Text(item.startsAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).hour().minute()))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(FamiljenTheme.champagneDeep)
                     Text(item.title)
@@ -171,7 +171,7 @@ struct DashboardView: View {
                                 .lineLimit(1)
                         }
                     }
-                    Text(item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.abbreviated)))
+                    Text(item.startsAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).weekday(.wide).day().month(.abbreviated)))
                         .font(.system(size: 14))
                         .foregroundStyle(FamiljenTheme.muted)
                     }
@@ -244,7 +244,7 @@ struct DashboardView: View {
                                     .foregroundStyle(FamiljenTheme.ink)
                                     .lineLimit(2)
                                 HStack(spacing: 5) {
-                                    Text(item.startsAt.formatted(.dateTime.hour().minute()))
+                                    Text(item.startsAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).hour().minute()))
                                     if item.isForEveryone {
                                         Text("· Hela familjen")
                                     } else {
@@ -317,7 +317,7 @@ struct DashboardView: View {
                                         Text(item.title)
                                             .font(.system(size: 14, weight: .semibold))
                                             .foregroundStyle(FamiljenTheme.ink)
-                                        Text(item.createdAt.formatted(.relative(presentation: .named)))
+                                        Text(item.createdAt.formatted(.relative(presentation: .named).locale(Locale(identifier: "sv_SE"))))
                                             .font(.system(size: 13))
                                             .foregroundStyle(FamiljenTheme.muted)
                                     }
@@ -359,7 +359,7 @@ struct DashboardView: View {
                             Text("Födelsedag snart")
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(FamiljenTheme.ink)
-                            Text("\(birthday.title) · \(birthday.startsAt.formatted(.dateTime.day().month(.abbreviated)))")
+                            Text("\(birthday.title) · \(birthday.startsAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).day().month(.abbreviated)))")
                                 .font(.system(size: 12))
                                 .foregroundStyle(FamiljenTheme.muted)
                         }
@@ -499,9 +499,9 @@ struct DashboardView: View {
     private func appointmentRow(_ item: FamilyItem) -> some View {
         HStack(spacing: 11) {
             VStack(spacing: 1) {
-                Text(item.startsAt.formatted(.dateTime.day()))
+                Text(item.startsAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).day()))
                     .font(.system(size: 18, weight: .semibold, design: .serif))
-                Text(item.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased())
+                Text(item.startsAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).month(.abbreviated)).uppercased())
                     .font(.system(size: 12, weight: .bold))
                     .tracking(0.6)
             }
@@ -513,7 +513,7 @@ struct DashboardView: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(FamiljenTheme.ink)
                     .lineLimit(1)
-                Text(item.kind.displayName + " · " + item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
+                Text(item.kind.displayName + " · " + item.startsAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).weekday(.wide).hour().minute()))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(FamiljenTheme.muted)
                 if item.isForEveryone {
@@ -594,7 +594,7 @@ private struct DashboardItemDetailView: View {
                                 .foregroundStyle(FamiljenTheme.ink)
                         }
                     }
-                    detailRow("Datum och tid", value: item.startsAt.formatted(date: .long, time: .shortened), symbol: "calendar")
+                    detailRow("Datum och tid", value: item.startsAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).year().month(.long).day().hour().minute()), symbol: "calendar")
                     detailRow("Gäller", value: item.isForEveryone ? "Hela familjen" : (participantNames.isEmpty ? "Inte tilldelad" : participantNames.joined(separator: ", ")), symbol: "person.2")
                     if let id = item.responsibleMemberID,
                        let responsible = members.first(where: { $0.id == id }) {

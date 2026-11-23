@@ -992,3 +992,28 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Kvarstår**
 - Kontrollera att CI körs på uppdaterad PR.
 - Fortsätt därefter med bilagearkitektur efter separat granskning av lagring, bakåtkompatibilitet och filstädning.
+
+
+## 2026-11-23 – Meddelanden: återställ vid misslyckad sparning
+
+**Fynd**
+- Granskning av lokal meddelandepersistens visade att radering redan återställde föregående meddelandelista om JSON-skrivningen misslyckades.
+- Skicka-flödet lade däremot till meddelandet i minnet och ignorerade ett misslyckat sparresultat. Det kunde visa ett meddelande som försvann efter omstart.
+
+**Åtgärd**
+- `sendMessage` sparar nu föregående meddelandelista och återställer den om `saveToDisk()` returnerar fel.
+- Lade till regressionstest som blockerar snapshot-katalogen efter initiering och verifierar att ett osparat meddelande inte blir kvar i minnet samt att persistensfelet exponeras.
+
+**Berörda filer**
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Ändringarna är incheckade på `feature/family-messenger`.
+- Testet är tillagt men ännu inte kört. CI-resultat inväntas.
+- Ingen IPA har byggts från denna ändring.
+
+**Kvarstår**
+- Kontrollera GitHub Actions för den nya committen och granska både simulatorjobbet och unsigned iPhone-bygget.
+- Fysisk iPhone-testning återstår.

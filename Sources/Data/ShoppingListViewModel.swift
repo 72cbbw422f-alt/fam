@@ -26,6 +26,9 @@ final class ShoppingListViewModel: ObservableObject {
     }
     var activeItems: [ShoppingItem] { items.filter { !$0.isChecked } }
     var completedItems: [ShoppingItem] { items.filter(\.isChecked) }
+    var suggestions: [ShoppingItemSuggestion] {
+        ShoppingItemSuggestion.matching(newItemTitle, excluding: items.map(\.title))
+    }
 
     func startRealtimeIfNeeded() async {}
     func stopRealtime() async {}
@@ -38,6 +41,16 @@ final class ShoppingListViewModel: ObservableObject {
         await load()
         isSaving = false
     }
+    func addSuggestion(_ suggestion: ShoppingItemSuggestion) async {
+        guard !isSaving else { return }
+        isSaving = true
+        store.addShoppingItem(suggestion.title, category: suggestion.category)
+        selectedCategory = suggestion.category
+        newItemTitle = ""
+        await load()
+        isSaving = false
+    }
+
     func setChecked(_ item: ShoppingItem, checked: Bool) async {
         store.setShoppingItem(item.id, checked: checked)
         await load()

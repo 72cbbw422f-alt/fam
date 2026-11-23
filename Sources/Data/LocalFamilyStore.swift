@@ -419,9 +419,13 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     func markNotificationRead(_ id: UUID) {
-        guard let index = notifications.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = notifications.firstIndex(where: { $0.id == id }),
+              notifications[index].readAt == nil else { return }
+        let previousNotifications = notifications
         notifications[index].readAt = .now
-        saveToDisk()
+        if !saveToDisk() {
+            notifications = previousNotifications
+        }
     }
 
 

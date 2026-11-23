@@ -380,15 +380,20 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         if !saveToDisk() { christmasGifts = previous }
     }
 
-    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) {
-        guard let senderID = members.first(where: { $0.role == .owner })?.id else { return }
+    @discardableResult
+    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) -> Bool {
+        guard let senderID = members.first(where: { $0.role == .owner })?.id else { return false }
         let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !clean.isEmpty, clean.count <= 4000 else { return }
+        guard !clean.isEmpty, clean.count <= 4000 else { return false }
         let previousMessages = messages
         messages.append(FamilyMessage(id: UUID(), conversationID: conversationID,
                                       kind: kind, senderID: senderID, text: clean,
                                       sentAt: .now, readAt: nil))
-        if !saveToDisk() { messages = previousMessages }
+        guard saveToDisk() else {
+            messages = previousMessages
+            return false
+        }
+        return true
     }
 
     func deleteMessage(_ id: UUID) {

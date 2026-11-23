@@ -166,31 +166,32 @@ struct ShoppingListView: View {
         .onDisappear { Task { await model.stopRealtime() } }
     }
 
-    @ViewBuilder
     private func itemRow(_ item: ShoppingItem) -> some View {
-        HStack(spacing: 12) {
-            Button {
-                Task {
-                    completedItemMessage = item.isChecked
-                        ? "\(item.title) tillbaka på listan"
-                        : "✓  \(item.title) markerad som handlad"
-                    await model.setChecked(item, checked: !item.isChecked)
-                }
-            } label: {
+        Button {
+            Task {
+                completedItemMessage = item.isChecked
+                    ? "\(item.title) tillbaka på listan"
+                    : "✓  \(item.title) markerad som handlad"
+                await model.setChecked(item, checked: !item.isChecked)
+            }
+        } label: {
+            HStack(spacing: 12) {
                 Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
                     .foregroundStyle(item.isChecked ? FamiljenTheme.navy : FamiljenTheme.muted)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(item.isChecked ? "Lägg tillbaka \(item.title)" : "Markera \(item.title) som handlad")
 
-            Text(item.title)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(item.isChecked ? FamiljenTheme.muted : FamiljenTheme.ink)
-                .strikethrough(item.isChecked)
-                .lineLimit(2)
-            Spacer(minLength: 4)
+                Text(item.title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(item.isChecked ? FamiljenTheme.muted : FamiljenTheme.ink)
+                    .strikethrough(item.isChecked)
+                    .lineLimit(2)
+                Spacer(minLength: 4)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(item.isChecked ? "Lägg tillbaka \(item.title)" : "Markera \(item.title) som handlad")
         .swipeActions {
             Button(role: .destructive) {
                 Task { await model.delete(item) }

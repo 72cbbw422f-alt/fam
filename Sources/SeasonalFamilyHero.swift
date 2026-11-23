@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// A locally rendered seasonal illustration. It changes automatically with the
 /// device calendar and remains available offline.
@@ -144,7 +145,7 @@ struct SeasonalFamilyHero: View {
 
 }
 
-enum SeasonalScene {
+enum SeasonalScene: Equatable {
     case autumn, advent, lucia, christmas, winter, spring, summer
 }
 

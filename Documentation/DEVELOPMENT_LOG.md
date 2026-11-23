@@ -1124,3 +1124,6 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Kvarstår**
 - Kontrollera CI innan ändringen räknas som verifierad.
 - Därefter granska övriga lokala mutationer för samma mönster av ignorerade persistensfel.
+
+
+- CI-körning #645 startades av den första kodcommitten i denna ändringsserie. Test- och dokumentationscommits följde därefter; en ny körning på slutlig gren-head krävs för att verifiera hela ändringsserien.

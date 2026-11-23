@@ -52,6 +52,45 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(decoded.resolvedSymbolName, "heart.fill")
     }
 
+    func testDeletingOwnMessagePersistsAndCannotDeleteAnotherSendersMessage() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let ownerID = try XCTUnwrap(store.members.first(where: { $0.role == .owner })?.id)
+        let otherSenderID = UUID()
+
+        store.sendMessage("Mitt meddelande", conversationID: "family", kind: .family)
+        let ownMessage = try XCTUnwrap(store.messages.first)
+        XCTAssertEqual(ownMessage.senderID, ownerID)
+
+        store.deleteMessage(ownMessage.id)
+        XCTAssertTrue(store.messages.isEmpty)
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.messages.isEmpty)
+
+        let foreignMessage = FamilyMessage(
+            id: UUID(), conversationID: "family", kind: .family,
+            senderID: otherSenderID, text: "Annans meddelande",
+            sentAt: .now, readAt: nil
+        )
+        // Seed a foreign-authored record through a snapshot fixture to verify
+        // that the local owner cannot delete a message they did not author.
+        let snapshotURL = directory.appendingPathComponent("snapshot.json")
+        var snapshot = try JSONSerialization.jsonObject(with: Data(contentsOf: snapshotURL)) as! [String: Any]
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .deferredToDate
+        let encodedMessage = try encoder.encode(foreignMessage)
+        let messageObject = try JSONSerialization.jsonObject(with: encodedMessage) as! [String: Any]
+        snapshot["messages"] = [messageObject]
+        let snapshotData = try JSONSerialization.data(withJSONObject: snapshot)
+        try snapshotData.write(to: snapshotURL, options: .atomic)
+
+        let withForeignMessage = LocalFamilyStore(fileURL: snapshotURL)
+        withForeignMessage.deleteMessage(foreignMessage.id)
+        XCTAssertEqual(withForeignMessage.messages.map(\.id), [foreignMessage.id])
+    }
+
     func testFamilyProfilesAndShoppingItemsSurviveReload() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

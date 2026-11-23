@@ -651,6 +651,36 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertNotNil(store.persistenceError)
     }
 
+    func testMarkingNotificationReadRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+
+        let notification = FamilyNotification(
+            id: UUID(), eventType: "calendar", title: "Läkarbesök",
+            body: "Tid för besöket", createdAt: .now, readAt: nil
+        )
+        let snapshotURL = directory.appendingPathComponent("snapshot.json")
+        var snapshot = try JSONSerialization.jsonObject(with: Data(contentsOf: snapshotURL)) as! [String: Any]
+        let encodedNotification = try JSONEncoder().encode(notification)
+        let notificationObject = try JSONSerialization.jsonObject(with: encodedNotification) as! [String: Any]
+        snapshot["notifications"] = [notificationObject]
+        try JSONSerialization.data(withJSONObject: snapshot).write(to: snapshotURL, options: .atomic)
+
+        let storeWithNotification = LocalFamilyStore(fileURL: snapshotURL)
+        XCTAssertEqual(storeWithNotification.notifications.first?.id, notification.id)
+        XCTAssertNil(storeWithNotification.notifications.first?.readAt)
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        storeWithNotification.markNotificationRead(notification.id)
+
+        XCTAssertNil(storeWithNotification.notifications.first?.readAt,
+                     "Notification read state must roll back when persistence fails.")
+        XCTAssertNotNil(storeWithNotification.persistenceError)
+    }
+
     func testLegacySnapshotWithoutMessagesLoadsAsEmptyConversationHistory() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("FamiljenLegacyTests-\(UUID().uuidString)", isDirectory: true)

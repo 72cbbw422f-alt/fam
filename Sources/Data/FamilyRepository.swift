@@ -51,7 +51,7 @@ protocol FamilyRepository: AnyObject {
     func updateChristmasGift(_ gift: ChristmasGift)
     func deleteChristmasGift(_ id: UUID)
     func deleteGiftIdea(_ id: UUID)
-    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind)
+    @discardableResult func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) -> Bool
     func deleteMessage(_ id: UUID)
     func markConversationRead(_ conversationID: String)
     func saveHealthRecord(_ record: HealthRecord)

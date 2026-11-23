@@ -1042,3 +1042,34 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Kvarstår**
 - Granska CI-resultatet för den nya committen och åtgärda eventuella ytterligare fel innan bildbilagor påbörjas.
 - PR #4 och #5 hålls öppna som draft; ingen merge.
+
+
+## 2026-11-23 – Meddelanden: behåll utkast när sparning misslyckas
+
+**Fynd**
+- Efter att lokal persistens återställts vid skrivfel rensade chattens composer ändå textfältet ovillkorligt efter varje sändförsök.
+- Vid diskfel kunde användaren därför förlora sitt osparade meddelande trots att inget meddelande lagrats.
+
+**Åtgärd**
+- Ändrade repository-kontraktet så att `sendMessage` returnerar en Bool som bekräftar om meddelandet faktiskt sparades.
+- `LocalFamilyStore` returnerar false vid saknad ägare, tom/ogiltig text eller misslyckad persistens och true först efter lyckad atomisk snapshot-skrivning.
+- `FamilyStore` förmedlar resultatet efter refresh.
+- Chattvyn rensar nu utkastet endast när sparningen lyckas; vid fel ligger texten kvar så användaren kan försöka igen.
+- Uppdaterade regressionstestet för skrivfel att kontrollera det returnerade misslyckanderesultatet.
+
+**Berörda filer**
+- `Sources/Data/FamilyRepository.swift`
+- `Sources/Data/LocalFamilyStore.swift`
+- `Sources/Data/FamilyStore.swift`
+- `Sources/FamilyMessagesView.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Ändringen är förberedd för incheckning på `feature/family-messenger`.
+- CI behöver verifiera alla repository-konformiteter, kompilering och tester.
+- Ingen fysisk iPhone-testning har genomförts.
+
+**Kvarstår**
+- Kontrollera CI och att utkastet ligger kvar vid ett simulerat persistensfel.
+- Fortsätt därefter med bildbilagehantering först när lagringsdesign och tester är färdiga.

@@ -1388,3 +1388,24 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Metoden kastar nu `applicationSupportUnavailable` om systemkatalogen inte kan erhållas; felet kan hanteras i befintliga `try`-baserade anropspunkter.
 - Uppdaterade `Documentation/MESSAGE_ATTACHMENTS.md`.
 - CI-verifiering inväntas.
+
+
+## 2026-11-24 – Frikoppla och testa miniatyravkodning
+
+**Ändringar**
+- Flyttade ImageIO-avkodningen från den privata SwiftUI-vyn till `FamilyMessageThumbnailRenderer`.
+- Rotkatalogen injiceras, vilket gör filhanteringen deterministisk och möjlig att testa.
+- Cache-nyckeln inkluderar både rotkatalog och relativ sökväg.
+- Behöll bakgrundsavkodning, 640 px maxdimension och orienteringstransformering.
+- Lade till tester för saknad fil och korrupt bilddata.
+
+**Berörda filer**
+- `Sources/FamilyMessagesView.swift`
+- `Sources/Data/FamilyMessageThumbnailRenderer.swift` (ny)
+- `Tests/FamilyMessageAttachmentStoreTests.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+
+**Verifiering**
+- Föregående commit `ab22ead977734fa3a777f14a3b8a7c08537008d3` passerade simulatorbygge, 102 tester och unsigned iPhone-IPA i GitHub Actions-körning 45382968870.
+- Denna kodändring kräver en ny CI-körning. Den är inte verifierad förrän den körningen passerat.
+- Fysisk iPhone-testning återstår.

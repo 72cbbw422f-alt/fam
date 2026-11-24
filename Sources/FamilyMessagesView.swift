@@ -446,7 +446,6 @@ private struct FamilyMessageImageViewer: View {
 /// Decodes a bounded thumbnail instead of allocating a full-resolution UIImage
 /// every time SwiftUI reevaluates a chat bubble.
 private struct FamilyMessageThumbnail: View {
-    nonisolated(unsafe) private static let cache = NSCache<NSString, UIImage>()
     @State private var thumbnail: UIImage?
     let attachment: FamilyMessageAttachment
 
@@ -470,38 +469,17 @@ private struct FamilyMessageThumbnail: View {
         }
         .task(id: attachment.relativePath) {
             let item = attachment
+            guard let root = FileManager.default.urls(
+                for: .applicationSupportDirectory, in: .userDomainMask
+            ).first else {
+                thumbnail = nil
+                return
+            }
             let decoded = await Task.detached(priority: .utility) {
-                Self.thumbnail(for: item)
+                FamilyMessageThumbnailRenderer.thumbnail(for: item, rootDirectory: root)
             }.value
             guard !Task.isCancelled else { return }
             thumbnail = decoded
         }
-    }
-
-    /// ImageIO decoding runs off the main actor. The cache is thread-safe and
-    /// keyed by the stable, validated relative attachment path.
-    nonisolated private static func thumbnail(for attachment: FamilyMessageAttachment) -> UIImage? {
-        let key = attachment.relativePath as NSString
-        if let cached = cache.object(forKey: key) { return cached }
-        guard attachment.isValid,
-              let directory = FileManager.default.urls(
-                for: .applicationSupportDirectory, in: .userDomainMask
-              ).first else { return nil }
-        let root = directory.standardizedFileURL
-        let url = root.appendingPathComponent(attachment.relativePath).standardizedFileURL
-        let rootPath = root.path.hasSuffix("/") ? root.path : root.path + "/"
-        guard url.path.hasPrefix(rootPath),
-              let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-              let cgImage = CGImageSourceCreateThumbnailAtIndex(
-                source, 0,
-                [
-                    kCGImageSourceCreateThumbnailFromImageAlways: true,
-                    kCGImageSourceThumbnailMaxPixelSize: 640,
-                    kCGImageSourceCreateThumbnailWithTransform: true
-                ] as CFDictionary
-              ) else { return nil }
-        let image = UIImage(cgImage: cgImage)
-        cache.setObject(image, forKey: key, cost: cgImage.bytesPerRow * cgImage.height)
-        return image
     }
 }

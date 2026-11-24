@@ -68,3 +68,12 @@ Lagringsgränsen är avsiktligt fristående från SwiftUI och CloudKit. Vid fram
 - `applicationStore()` använder nu en kastad, typad `applicationSupportUnavailable`-error om Foundation inte returnerar någon Application Support-katalog.
 - Den tidigare force unwrap (`first!`) är borttagen. Befintliga läs-/skrivflöden hanterar felet via `try` respektive `try?` och kan visa/behålla sitt befintliga felbeteende i stället för att krascha.
 - Enhetstester och CI för denna ändring inväntas.
+
+
+## Miniatyravkodning – testbar filhantering
+
+- ImageIO-avkodningen ligger i `FamilyMessageThumbnailRenderer`, frikopplad från SwiftUI-vyn.
+- Rotkatalogen injiceras så att saknade och korrupta bildfiler kan testas utan att använda appens riktiga Application Support-katalog.
+- Cachen använder både rotkatalog och relativ sökväg som nyckel för att undvika kollisioner mellan testmiljöer och appmiljön.
+- Miniatyrens maxdimension är fortsatt 640 pixlar och orienteringstransformering är aktiverad.
+- Nya tester täcker saknad fil och korrupt bilddata. Positiv avkodning/orientering och faktisk scrollprestanda kräver fortsatt testning.

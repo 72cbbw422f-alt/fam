@@ -105,6 +105,40 @@ final class FamilyMessageAttachmentStoreTests: XCTestCase {
         XCTAssertThrowsError(try store.data(for: orphan))
     }
 
+    func testThumbnailRendererReturnsNilForMissingImage() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenThumbnail-\\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let attachment = FamilyMessageAttachment(
+            id: UUID(), kind: .image, filename: "missing.png",
+            contentType: "public.png", byteCount: 8,
+            relativePath: "MessageAttachments/\\(UUID().uuidString)/missing.png",
+            createdAt: .now
+        )
+
+        XCTAssertNil(FamilyMessageThumbnailRenderer.thumbnail(for: attachment, rootDirectory: root))
+    }
+
+    func testThumbnailRendererReturnsNilForCorruptImageData() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenThumbnail-\\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let messageID = UUID()
+        let attachment = FamilyMessageAttachment(
+            id: UUID(), kind: .image, filename: "broken.png",
+            contentType: "public.png", byteCount: 4,
+            relativePath: "MessageAttachments/\\(messageID.uuidString)/broken.png",
+            createdAt: .now
+        )
+        let fileURL = root.appendingPathComponent(attachment.relativePath)
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+        )
+        try Data([0x00, 0x01, 0x02, 0x03]).write(to: fileURL)
+
+        XCTAssertNil(FamilyMessageThumbnailRenderer.thumbnail(for: attachment, rootDirectory: root))
+    }
+
     func testLegacyMessageDecodesWithoutAttachmentsAndNewMetadataRoundTrips() throws {
         let messageID = UUID()
         let senderID = UUID()

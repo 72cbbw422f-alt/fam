@@ -1374,3 +1374,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Uppföljande CI på commit `8a1fa9d` verifierade 102/102 tester samt simulator- och unsigned iPhone-bygge.
 - CI visade att även den statiska `NSCache`-egenskapen är Main Actor-isolerad genom sin placering i SwiftUI-vyn. Avkodningsmetoden var nu nonisolated, men cacheåtkomsten gav därför två kvarvarande Swift 6-varningar.
 - Markerade den trådsäkra `NSCache`-instansen `nonisolated(unsafe)` för att tillåta åtkomst från bakgrundsavkodningen. NSCache är avsedd för trådsäker cacheåtkomst; ändringen måste bekräftas i ny CI.
+
+## 2026-11-24 – Isolerat test för orphan cleanup
+
+- Korrigerade UUID-interpoleringen i `FamilyMessageAttachmentStoreTests.testOrphanCleanupKeepsReferencedFilesAndRemovesUnreferencedFiles`.
+- Testets temporära rotkatalog får nu ett faktiskt unikt UUID i stället för en bokstavlig interpoleringssträng. Det förhindrar att parallella eller upprepade testkörningar delar samma katalog.
+- Ändringen är kodgranskad via GitHub men ännu inte CI-verifierad.
+- Kodcommit: `52956a1a1acfe41ef4f6681ca8ad68afc8e7c874`.

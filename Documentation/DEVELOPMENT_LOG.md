@@ -915,3 +915,19 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Ingen workflow-run har ännu rapporterats för commit `8db0b213addc057cf5fae2d0d29cb91ba8a7f824`; testresultat och byggstatus är därför ej verifierade.
 - Nästa steg är att invänta/utlösa CI och granska resultatet innan funktionen markeras verifierad.
 - Fysisk iPhone-testning av autocomplete, radtryck och säsongsillustration återstår.
+
+
+## 2026-11-24 – korrigera CI-kompileringsfel i dashboardens datumformat
+
+**CI-fynd**
+- Workflow run `45441598539` på commit `3f611236699e4ae6983f54a5a03306bbd15533d4` misslyckades i unsigned iPhone-bygget. Simulatorjobbet avbröts innan det kunde ge testresultat.
+- Kompilatorfelet var i `Sources/DashboardView.swift`: `Date.FormatStyle.Symbol.Month` saknar medlemmen `.long` i uttrycket `month(.long)`.
+- Det här var ett befintligt kompileringsfel i den aktiva utvecklingsgrenen, inte ett fel i autocomplete-testernas logik.
+
+**Åtgärd**
+- Bytte till det giltiga formatalternativet `.month(.wide)`, vilket behåller avsikten att visa månadens fullständiga namn.
+- Fil: `Sources/DashboardView.swift`.
+- Commit: `130841df113291459fc8b8390a6a7df01eb531c5`.
+
+**Verifiering**
+- Korrigeringen är incheckad. Ny CI-körning för denna commit inväntas; bygget och de sex nya autocomplete-testerna är ännu inte verifierade.

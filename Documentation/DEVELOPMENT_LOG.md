@@ -896,3 +896,22 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Efter kodgranskning lades UIKit-import till för den explicita UIApplication-tidsändringsnotisen och SeasonalScene deklarerades uttryckligen Equatable för stabila tester.
 
 - Utökade datumtester med flera kalenderår där första advent infaller 1 december (2024) respektive 30 november (2025), och bytte scenassertions till direkt Equatable-jämförelse.
+
+
+## 2026-11-24 – regressionstester för inköpslistans autocomplete
+
+**Granskning**
+- Bring-liknande förslag finns redan i `ShoppingItemSuggestion`: minst två tecken, svensk case-/diakritikokänslig matchning, prefixprioritering, exkludering av redan listade varor och högst sex förslag.
+- Hela inköpsraden är redan en knapp som växlar mellan aktiv och handlad; handlade varor visas separat under **Handlat**.
+- Dashboardens `SeasonalFamilyHero` är en lokalt renderad säsongsillustration som växlar automatiskt; november använder vinter/advent-logik enligt datum.
+
+**Ändrat**
+- Lade till `Tests/ShoppingItemSuggestionTests.swift` med regressionstäckning för minsta söklängd, svensk accent-/skiftlägesmatchning, prefixsortering, dubblettexkludering, resultatgräns och kategorimappning.
+- Förfinade testerna för att använda verkliga svenska katalogposter, bland annat `Crème fraiche`.
+- Commits: `674c5c5b1d477d29275c05044cc6ef717020d662` (första testfilen), `8db0b213addc057cf5fae2d0d29cb91ba8a7f824` (slutlig testversion).
+
+**Verifiering**
+- Testerna är incheckade på `feature/ux-navigation-shopping`.
+- Ingen workflow-run har ännu rapporterats för commit `8db0b213addc057cf5fae2d0d29cb91ba8a7f824`; testresultat och byggstatus är därför ej verifierade.
+- Nästa steg är att invänta/utlösa CI och granska resultatet innan funktionen markeras verifierad.
+- Fysisk iPhone-testning av autocomplete, radtryck och säsongsillustration återstår.

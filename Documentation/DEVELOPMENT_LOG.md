@@ -1368,3 +1368,9 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Simulatorns teststeg rapporterade 102 tester, 0 fel. iPhone Release-bygget skapade en unsigned IPA-artifact.
 - CI-loggen identifierade en Swift 6-kompatibilitetsvarning: statisk miniatyravkodning anropades från detached task trots implicit Main Actor-isolering. Nästa ändring markerar avkodningsfunktionen `nonisolated`; den ändringen måste verifieras i ny CI innan varningen kan betraktas som löst.
 - Fysisk iPhone-testning av PhotosPicker, bildvisning och scrollprestanda återstår. Ingen CloudKit-synk eller APNs-push ingår i denna lokala chattgrund.
+
+
+## 2026-11-24 – Säker cacheåtkomst från bakgrundsuppgift
+- Uppföljande CI på commit `8a1fa9d` verifierade 102/102 tester samt simulator- och unsigned iPhone-bygge.
+- CI visade att även den statiska `NSCache`-egenskapen är Main Actor-isolerad genom sin placering i SwiftUI-vyn. Avkodningsmetoden var nu nonisolated, men cacheåtkomsten gav därför två kvarvarande Swift 6-varningar.
+- Markerade den trådsäkra `NSCache`-instansen `nonisolated(unsafe)` för att tillåta åtkomst från bakgrundsavkodningen. NSCache är avsedd för trådsäker cacheåtkomst; ändringen måste bekräftas i ny CI.

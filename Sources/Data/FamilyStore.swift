@@ -107,6 +107,14 @@ final class FamilyStore: ObservableObject {
         refresh()
         return saved
     }
+    @discardableResult
+    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind,
+                     attachment: FamilyMessageAttachment?) -> Bool {
+        let saved = repository.sendMessage(text, conversationID: conversationID, kind: kind,
+                                            attachment: attachment)
+        refresh()
+        return saved
+    }
     func deleteMessage(_ id: UUID) { repository.deleteMessage(id); refresh() }
     func markConversationRead(_ conversationID: String) { repository.markConversationRead(conversationID); refresh() }
     func saveHealthRecord(_ record: HealthRecord) {

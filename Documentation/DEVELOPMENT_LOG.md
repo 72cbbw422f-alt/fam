@@ -1241,3 +1241,25 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - CloudKit-delning kräver Apple Developer-konfiguration och separat test med två Apple-konton.
 
 **Branch**: `feature/family-messenger`. PR #4 och #5 förblir öppna draft; ingen merge.
+
+
+## 2026-11-24 – Meddelanden: fullskärmsvisning av bildbilagor
+
+**Ändring**
+- Tryck på en bild i en meddelandebubbla öppnar nu en separat fullskärmsvy med svart bakgrund och bildens hela proportioner bevarade.
+- En tydlig stängknapp avslutar visningen. Vyn använder befintlig lokal bilagedata och introducerar ingen nätverks- eller synkfunktion.
+
+**Berörda filer**
+- `Sources/FamilyMessagesView.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Källändringen är incheckad på `feature/family-messenger` i commit `e98fa5105a2d3f2617459bec110ea59205eff64e`.
+- Föregående commit `9881c4656a6f3fca2bd3255c0d4f95552010cfa3` passerade GitHub Actions: 99 tester, 0 fel, simulatorbygge och unsigned iPhone-IPA lyckades.
+- Den nya fullskärmsvyn inväntar en egen CI-körning; den är inte verifierad ännu.
+- Fysisk iPhone-testning återstår.
+
+**Kvarstår**
+- Verifiera fullskärmsvyn i CI och därefter på fysisk iPhone.
+- Fortsätt med säker orphan-fil-städning och tester utan att riskera bilagor som tillhör sparade meddelanden.

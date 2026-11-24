@@ -1381,3 +1381,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Testets temporära rotkatalog får nu ett faktiskt unikt UUID i stället för en bokstavlig interpoleringssträng. Det förhindrar att parallella eller upprepade testkörningar delar samma katalog.
 - Ändringen är kodgranskad via GitHub men ännu inte CI-verifierad.
 - Kodcommit: `52956a1a1acfe41ef4f6681ca8ad68afc8e7c874`.
+
+## 2026-11-24 – Säker Application Support-initiering
+
+- Tog bort force unwrap från `FamilyMessageAttachmentStore.applicationStore()`.
+- Metoden kastar nu `applicationSupportUnavailable` om systemkatalogen inte kan erhållas; felet kan hanteras i befintliga `try`-baserade anropspunkter.
+- Uppdaterade `Documentation/MESSAGE_ATTACHMENTS.md`.
+- CI-verifiering inväntas.

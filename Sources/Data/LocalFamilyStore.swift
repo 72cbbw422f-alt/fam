@@ -31,6 +31,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     private let fileURL: URL
     private let attachmentStore: FamilyMessageAttachmentStore
     private var persistenceBlockedByCorruption = false
+    private var snapshotLoadedSuccessfully = false
 
     private convenience init() {
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -52,6 +53,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             persistenceError = persistenceFailureMessage
         }
         loadFromDisk()
+        if snapshotLoadedSuccessfully {
+            try? attachmentStore.removeOrphanedFiles(
+                referencedAttachments: messages.flatMap { $0.attachments ?? [] }
+            )
+        }
     }
 
     func createFamily(name: String, ownerName: String) {
@@ -802,6 +808,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             shoppingItems = snapshot.shoppingItems
             notifications = snapshot.notifications
             messages = snapshot.messages ?? []
+            snapshotLoadedSuccessfully = true
         } catch {
             // Preserve an unreadable snapshot before any later write can replace it.
             let recoveryURL = fileURL.deletingLastPathComponent()

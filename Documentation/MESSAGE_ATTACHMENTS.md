@@ -62,3 +62,9 @@ Lagringsgränsen är avsiktligt fristående från SwiftUI och CloudKit. Vid fram
 - Decoded thumbnails are cached in an in-memory `NSCache`, keyed by the validated relative attachment path. The cache may evict entries under memory pressure.
 - Opening the full-screen viewer still reads the original attachment data so the preview remains full quality.
 - Physical-device scrolling performance and memory behavior still require manual verification.
+
+## Application Support-fel
+
+- `applicationStore()` använder nu en kastad, typad `applicationSupportUnavailable`-error om Foundation inte returnerar någon Application Support-katalog.
+- Den tidigare force unwrap (`first!`) är borttagen. Befintliga läs-/skrivflöden hanterar felet via `try` respektive `try?` och kan visa/behålla sitt befintliga felbeteende i stället för att krascha.
+- Enhetstester och CI för denna ändring inväntas.

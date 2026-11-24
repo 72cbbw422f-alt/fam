@@ -594,7 +594,7 @@ private struct DashboardItemDetailView: View {
                                 .foregroundStyle(FamiljenTheme.ink)
                         }
                     }
-                    detailRow("Datum och tid", value: item.startsAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).year().month(.long).day().hour().minute()), symbol: "calendar")
+                    detailRow("Datum och tid", value: item.startsAt.formatted(.dateTime.locale(Locale(identifier: "sv_SE")).year().month(.wide).day().hour().minute()), symbol: "calendar")
                     detailRow("Gäller", value: item.isForEveryone ? "Hela familjen" : (participantNames.isEmpty ? "Inte tilldelad" : participantNames.joined(separator: ", ")), symbol: "person.2")
                     if let id = item.responsibleMemberID,
                        let responsible = members.first(where: { $0.id == id }) {

@@ -439,6 +439,33 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertTrue(store.shoppingItems.isEmpty)
     }
 
+    func testMessageImageAttachmentPersistsAndIsRemovedWithMessage() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let attachmentStore = FamilyMessageAttachmentStore(rootDirectory: directory)
+        let attachment = try attachmentStore.save(
+            data: Data([0xFF, 0xD8, 0xFF, 0xD9]),
+            filename: "familj.jpg",
+            contentType: "public.jpeg",
+            messageID: UUID()
+        )
+
+        XCTAssertTrue(store.sendMessage(
+            "", conversationID: "family", kind: .family, attachment: attachment
+        ))
+        let message = try XCTUnwrap(store.messages.first)
+        XCTAssertEqual(message.attachments, [attachment])
+        XCTAssertEqual(try attachmentStore.data(for: attachment), Data([0xFF, 0xD8, 0xFF, 0xD9]))
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.messages.first?.attachments, [attachment])
+
+        reloaded.deleteMessage(message.id)
+        XCTAssertTrue(reloaded.messages.isEmpty)
+        XCTAssertThrowsError(try attachmentStore.data(for: attachment))
+    }
+
     func testMessagesPersistAndConversationReadStateUpdates() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

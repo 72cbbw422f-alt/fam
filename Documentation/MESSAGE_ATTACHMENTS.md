@@ -7,7 +7,7 @@ Status: lokal lagringsgrund, metadata, PhotosPicker och lokal chattvisning är i
 - Endast bildinnehåll: JPEG, PNG, HEIC och HEIF.
 - PhotosPicker används för bildval och en lokal förhandsvisning visas före sändning.
 - Bildmeddelanden utan text stöds.
-- Chattbubblan visar den lokalt lagrade bilden.
+- Chattbubblan visar en nedskalad miniatyr av den lokalt lagrade bilden. Miniatyrer begränsas till 640 pixlar och cachas i minnet så att SwiftUI inte behöver skapa en fullupplöst bild vid varje omritning.
 - Maximal filstorlek: 10 MiB per bild.
 - Bilddata sparas separat från JSON-snapshoten i appens privata Application Support-katalog.
 - Meddelandemetadata innehåller stabilt UUID, filnamn, innehållstyp, byteantal, skapandetid och relativ sökväg.
@@ -53,3 +53,11 @@ Lagringsgränsen är avsiktligt fristående från SwiftUI och CloudKit. Vid fram
 - The cleanup compares files under UUID-named `MessageAttachments` directories against attachment paths referenced by decoded messages.
 - Only unreferenced regular files are removed. Symbolic links and unexpected directory names are ignored; empty attachment directories are removed after their files are processed.
 - Cleanup errors are non-fatal and do not change message metadata or the JSON snapshot.
+
+
+## Thumbnail decoding and cache
+
+- Chat bubbles use ImageIO to create a transformed thumbnail with a maximum pixel dimension of 640 instead of decoding the original full-resolution image for the inline preview.
+- Decoded thumbnails are cached in an in-memory `NSCache`, keyed by the validated relative attachment path. The cache may evict entries under memory pressure.
+- Opening the full-screen viewer still reads the original attachment data so the preview remains full quality.
+- The thumbnail decode currently runs synchronously when the bubble is rendered; moving decoding to a background task remains a possible follow-up if profiling on physical devices shows visible scrolling stalls.

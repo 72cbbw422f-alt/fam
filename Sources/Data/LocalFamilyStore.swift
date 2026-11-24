@@ -56,6 +56,21 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         guard family == nil,
               !cleanFamilyName.isEmpty, cleanFamilyName.count <= 80,
               !cleanOwnerName.isEmpty, cleanOwnerName.count <= 80 else { return }
+        let previousFamily = self.family
+        let previousMembers = members
+        let previousItems = items
+        let previousSkippedOccurrences = skippedOccurrences
+        let previousOccurrenceOverrides = occurrenceOverrides
+        let previousShoppingItems = shoppingItems
+        let previousGiftIdeas = giftIdeas
+        let previousChristmasGifts = christmasGifts
+        let previousNotifications = notifications
+        let previousHealthRecords = healthRecords
+        let previousHealthPrescriptions = healthPrescriptions
+        let previousMedicationPickups = medicationPickups
+        let previousHealthProfileInformation = healthProfileInformation
+        let previousHealthReminders = healthReminders
+        let previousMessages = messages
         let family = Family(id: UUID(), name: cleanFamilyName)
         let owner = FamilyMember(id: UUID(), familyID: family.id,
                                  displayName: cleanOwnerName,
@@ -75,7 +90,23 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         healthProfileInformation = []
         healthReminders = []
         messages = []
-        saveToDisk()
+        if !saveToDisk() {
+            self.family = previousFamily
+            members = previousMembers
+            items = previousItems
+            skippedOccurrences = previousSkippedOccurrences
+            occurrenceOverrides = previousOccurrenceOverrides
+            shoppingItems = previousShoppingItems
+            giftIdeas = previousGiftIdeas
+            christmasGifts = previousChristmasGifts
+            notifications = previousNotifications
+            healthRecords = previousHealthRecords
+            healthPrescriptions = previousHealthPrescriptions
+            medicationPickups = previousMedicationPickups
+            healthProfileInformation = previousHealthProfileInformation
+            healthReminders = previousHealthReminders
+            messages = previousMessages
+        }
     }
 
     func renameFamily(name: String) {
@@ -83,25 +114,27 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 80 else { return }
         self.family = Family(id: family.id, name: clean)
-        saveToDisk()
+        if !saveToDisk() { self.family = family }
     }
 
     func addChild(name: String) {
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let family, !clean.isEmpty, clean.count <= 80 else { return }
+        let previous = members
         members.append(FamilyMember(id: UUID(), familyID: family.id,
                                     displayName: clean,
                                     role: .child, linkedUserID: nil))
-        saveToDisk()
+        if !saveToDisk() { members = previous }
     }
 
     func addMember(name: String, role: MemberRole = .member) {
         guard let family else { return }
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 80, role != .owner else { return }
+        let previous = members
         members.append(FamilyMember(id: UUID(), familyID: family.id,
                                     displayName: clean, role: role, linkedUserID: nil))
-        saveToDisk()
+        if !saveToDisk() { members = previous }
     }
 
     func renameMember(id: UUID, name: String) {
@@ -323,9 +356,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
               items.contains(where: { $0.id == birthdayItemID && $0.kind == .birthday }),
               !clean.isEmpty, clean.count <= 160 else { return }
         let cleanNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previous = giftIdeas
         giftIdeas.append(GiftIdea(memberID: memberID, birthdayItemID: birthdayItemID,
                                   title: clean, note: cleanNote?.isEmpty == true ? nil : cleanNote))
-        saveToDisk()
+        if !saveToDisk() { giftIdeas = previous }
     }
 
     func updateGiftIdea(_ idea: GiftIdea) {
@@ -357,9 +391,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
               !cleanTitle.isEmpty, cleanTitle.count <= 160 else { return }
         let validResponsibleID = members.first(where: { $0.id == responsibleMemberID })?.id
         let cleanNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previous = christmasGifts
         christmasGifts.append(ChristmasGift(recipient: cleanRecipient, title: cleanTitle,
             note: cleanNote?.isEmpty == true ? nil : cleanNote, responsibleMemberID: validResponsibleID))
-        saveToDisk()
+        if !saveToDisk() { christmasGifts = previous }
     }
 
     func updateChristmasGift(_ gift: ChristmasGift) {

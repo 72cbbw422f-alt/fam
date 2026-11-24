@@ -1313,3 +1313,27 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Granska CI för de nya integrationstesterna och kontrollera att IPA-artifact skapas.
 - Fysisk iPhone-testning av PhotosPicker, bilagevisning och radering återstår.
 - CloudKit-synk och delning är inte implementerade.
+
+
+## 2026-11-24 – Chattbilder: nedskalade och cachade miniatyrer
+
+**Ändringar**
+- Chattbubblor använder nu ImageIO för att skapa miniatyrer med maximal dimension 640 pixlar i stället för att avkoda originalbilden i full upplösning för varje visning.
+- Nedskalade bilder cachas i en `NSCache` med bilagans relativa sökväg som nyckel. Cachen kan automatiskt tömmas vid minnestryck.
+- Helskärmsvisning fortsätter att läsa originalbilden för bibehållen kvalitet.
+- En saknad eller oläsbar miniatyr visar en neutral bildplatshållare i stället för att hela bilageraden försvinner.
+
+**Berörda filer**
+- `Sources/FamilyMessagesView.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Senaste föregående commit `c3ed382abb7bd29a016e95e9a558439ba50a3fbb` passerade GitHub Actions: 100 tester, 0 fel; simulatorbygge och unsigned IPA lyckades.
+- Den nya miniatyrkoden är incheckad men ännu inte verifierad av CI.
+- Avkodningen sker för närvarande synkront när chattbubblan renderas. Bakgrundsavkodning och faktisk scrollprestanda kräver fortsatt granskning och fysisk enhetstestning.
+
+**Kvarstår**
+- Verifiera Swift-kompilering, enhetstester och unsigned IPA för miniatyrändringen.
+- Mäta scrollprestanda och minnesanvändning på fysisk iPhone.
+- CloudKit-synk och delning är fortfarande inte implementerade.

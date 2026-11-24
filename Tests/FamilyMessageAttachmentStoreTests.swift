@@ -84,6 +84,27 @@ final class FamilyMessageAttachmentStoreTests: XCTestCase {
         }
     }
 
+
+    func testOrphanCleanupKeepsReferencedFilesAndRemovesUnreferencedFiles() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenAttachments-\\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = FamilyMessageAttachmentStore(rootDirectory: root)
+        let referenced = try store.save(
+            data: Data([0xFF, 0xD8, 0xFF, 0xD9]),
+            filename: "keep.jpg", contentType: "public.jpeg", messageID: UUID()
+        )
+        let orphan = try store.save(
+            data: Data([0xFF, 0xD8, 0xFF, 0xD9]),
+            filename: "orphan.jpg", contentType: "public.jpeg", messageID: UUID()
+        )
+
+        try store.removeOrphanedFiles(referencedAttachments: [referenced])
+
+        XCTAssertEqual(try store.data(for: referenced), Data([0xFF, 0xD8, 0xFF, 0xD9]))
+        XCTAssertThrowsError(try store.data(for: orphan))
+    }
+
     func testLegacyMessageDecodesWithoutAttachmentsAndNewMetadataRoundTrips() throws {
         let messageID = UUID()
         let senderID = UUID()

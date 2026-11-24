@@ -12,8 +12,8 @@ final class ShoppingItemSuggestionTests: XCTestCase {
         let results = ShoppingItemSuggestion.matching("APEL")
         XCTAssertTrue(results.contains { $0.title == "Apelsiner" })
 
-        let umlautQuery = ShoppingItemSuggestion.matching("apple")
-        XCTAssertTrue(umlautQuery.isEmpty)
+        let accentInsensitive = ShoppingItemSuggestion.matching("creme")
+        XCTAssertTrue(accentInsensitive.contains { $0.title == "Crème fraiche" })
     }
 
     func testPrefixMatchesAreRankedBeforePartialMatches() {
@@ -30,8 +30,7 @@ final class ShoppingItemSuggestionTests: XCTestCase {
     }
 
     func testSuggestionResultsAreLimitedToSix() {
-        XCTAssertEqual(ShoppingItemSuggestion.matching("a").count, 0)
-        XCTAssertLessThanOrEqual(ShoppingItemSuggestion.matching("a").count, 6)
+        XCTAssertTrue(ShoppingItemSuggestion.matching("a").isEmpty)
         XCTAssertLessThanOrEqual(ShoppingItemSuggestion.matching("ka").count, 6)
     }
 

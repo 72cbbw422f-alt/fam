@@ -1136,6 +1136,65 @@ final class LocalFamilyStoreTests: XCTestCase {
 
 
 
+
+    func testCreatingFamilyRollsBackAllStateWhenPersistenceFails() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenCreateFailure-\\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let blockingFile = directory.appendingPathComponent("not-a-directory")
+        try Data("block".utf8).write(to: blockingFile)
+        let store = LocalFamilyStore(fileURL: blockingFile.appendingPathComponent("snapshot.json"))
+
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+
+        XCTAssertNil(store.family)
+        XCTAssertTrue(store.members.isEmpty)
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testFamilyRenameAndProfileAdditionsRollBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let originalFamily = try XCTUnwrap(store.family)
+        let originalMembers = store.members
+        try FileManager.default.removeItem(at: directory)
+        try Data("block".utf8).write(to: directory)
+
+        store.renameFamily(name: "Nytt namn")
+        store.addChild(name: "Cleo")
+        store.addMember(name: "Villemo")
+
+        XCTAssertEqual(store.family, originalFamily)
+        XCTAssertEqual(store.members, originalMembers)
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testGiftAdditionsRollBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let owner = try XCTUnwrap(store.members.first)
+        store.saveItem(id: nil, title: "Födelsedag", details: nil,
+                       startsAt: Date(timeIntervalSince1970: 1_800_000_000),
+                       kind: .birthday, memberID: owner.id, recurring: true,
+                       reminderOffsets: [])
+        let birthday = try XCTUnwrap(store.items.first)
+        try FileManager.default.removeItem(at: directory)
+        try Data("block".utf8).write(to: directory)
+
+        store.addGiftIdea(memberID: owner.id, birthdayItemID: birthday.id,
+                          title: "Bok", note: nil)
+        store.addChristmasGift(recipient: "Cleo", title: "Bok", note: nil,
+                               responsibleMemberID: owner.id)
+
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        XCTAssertTrue(store.christmasGifts.isEmpty)
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+
     func testShoppingCategoriesAndCheckedItemsPersistAndLegacyItemsDecode() throws {
         let familyID = UUID()
         let itemID = UUID()

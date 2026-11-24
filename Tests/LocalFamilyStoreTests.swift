@@ -493,7 +493,7 @@ final class LocalFamilyStoreTests: XCTestCase {
 
     func testStartupCleanupPreservesAttachmentsWhenSnapshotIsCorrupt() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FamiljenCorruptSnapshot-\\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("FamiljenCorruptSnapshot-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let attachmentStore = FamilyMessageAttachmentStore(rootDirectory: directory)

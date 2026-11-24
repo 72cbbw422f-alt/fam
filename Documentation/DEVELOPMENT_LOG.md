@@ -896,3 +896,548 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Efter kodgranskning lades UIKit-import till för den explicita UIApplication-tidsändringsnotisen och SeasonalScene deklarerades uttryckligen Equatable för stabila tester.
 
 - Utökade datumtester med flera kalenderår där första advent infaller 1 december (2024) respektive 30 november (2025), och bytte scenassertions till direkt Equatable-jämförelse.
+
+
+## 2026-11-23 – Apple-first-beslut för Familjens synk och meddelanden
+
+**Beslut**
+- Produktmålet är en Apple-baserad app. Supabase och andra externa serverlösningar används inte som tillfällig backend.
+- Beta fortsätter local-first. Gemensam synk, delade meddelanden och bildbilagor väntar på CloudKit/CKShare och Apple Developer-konfiguration.
+- Meddelandegränssnitt och lokal interaktion får utvecklas före kontot, men får inte presenteras som synkroniserade mellan telefoner.
+
+**Dokumentation**
+- Uppdaterade `Documentation/MESSAGING_ROADMAP.md` med CloudKit/CKShare som beslutad riktning, säkerhetskrav, migreringsordning och godkännandekriterier.
+- Uppdaterade `Documentation/ROADMAP.md` med det övergripande Apple-first-beslutet.
+- `Documentation/ARCHITECTURE.md` behåller local-first nu och CloudKit som framtida Apple-baserad synkplattform.
+
+**Berörda filer**
+- Documentation/MESSAGING_ROADMAP.md
+- Documentation/ROADMAP.md
+- Documentation/DEVELOPMENT_LOG.md
+
+**Verifiering**
+- Dokumentationsändringar är incheckade på `feature/family-messenger`.
+- Inga källkodsfiler har ändrats i denna dokumentationsinsats.
+- Inga bygg- eller enhetstester har körts; dokumentationsändringarna ändrar inte körbar kod.
+- CloudKit-delning, meddelanden och bilagehantering är inte implementerade eller verifierade.
+
+**Kvarstår**
+- Fortsätt med lokala förbättringar som inte kräver server.
+- Verifiera senaste CI på den separata UX-grenen och undvik att slå ihop PR:er utan godkännande.
+- När Developer-kontot finns: konfigurera CloudKit och genomför två-enhets-testning med separata Apple-konton.
+
+
+## 2026-11-23 – Meddelanden: säker lokal radering av egna meddelanden
+
+**Ändringar**
+- Lade till `deleteMessage(_ id: UUID)` i repository-kontraktet och den observerbara `FamilyStore)-fasaden.
+- `LocalFamilyStore` tillåter endast radering av meddelanden vars avsändar-ID är den lokala ägarprofilen.
+- Om JSON-skrivningen misslyckas återställs den tidigare meddelandelistan; raderingen lämnar då inte ett falskt lyckat resultat i minnet.
+- Lade till en destruktiv kontextmeny på användarens egna meddelandebubblor. Andras meddelanden får ingen raderingsåtgärd.
+- Lade till regressionstest för persistens efter radering och skydd mot att radera en annan avsändares meddelande.
+
+**Berörda filer**
+- Sources/Data/FamilyRepository.swift
+- Sources/Data/FamilyStore.swift
+- Sources/Data/LocalFamilyStore.swift
+- Sources/FamilyMessagesView.swift
+- Tests/LocalFamilyStoreTests.swift
+- Documentation/DEVELOPMENT_LOG.md
+
+**Verifiering**
+- Kod och test är incheckade på `feature/family-messenger`.
+- CI har ännu inte verifierat den nya commitserien.
+- Ingen lokal Xcode-miljö finns tillgänglig här; testerna har inte körts lokalt.
+- Funktionen gäller endast lokalt sparade meddelanden på aktuell enhet. Den ger inte synk mellan Niklas och Villemo.
+
+**Kvarstår**
+- Bekräfta simulatorns bygg- och testresultat i GitHub Actions.
+- Testa kontextmenyn och raderingsflödet på fysisk iPhone.
+- Därefter fortsätta med lokal bildbilagehantering och dess lagrings-/raderingspolicy.
+
+
+## 2026-11-23 – CI: aktivera verifiering för pull requests
+
+**Ändring**
+- Lade till `pull_request`-trigger för PR:er riktade mot `feature/health-foundation` och `feature/ux-navigation-shopping`.
+- Detta omfattar PR #4 och PR #5:s basgren och gör att simulatorns tester/build samt unsigned iPhone-build kan köras på PR-uppdateringar.
+- Befintliga push- och manuella `workflow_dispatch`-triggers behålls.
+- Fil: `.github/workflows/ios-build.yml`.
+
+**Verifiering**
+- Workflow-filen är uppdaterad på `feature/family-messenger`.
+- GitHub ska starta en PR-körning efter uppdateringen; resultatet är ännu inte verifierat.
+- Inga lokala Xcode-tester har körts.
+
+**Kvarstår**
+- Kontrollera att PR #5 får en ny workflow-körning och granska båda jobben, inklusive testlogg och unsigned IPA-paketering.
+- PR #4 och #5 hålls öppna som draft; ingen merge har gjorts.
+
+
+## 2026-11-23 – Meddelanden: bekräfta lokal radering
+
+**Ändring**
+- Kontextmenyn på egna meddelanden öppnar nu en destruktiv bekräftelsedialog i stället för att radera direkt.
+- Dialogen förklarar att meddelandet tas bort från den här enheten, vilket tydliggör local-first-begränsningen.
+- Bekräftelse anropar befintlig ägarskyddad raderingsmetod; avbryt lämnar meddelandet orört.
+- Fil: `Sources/FamilyMessagesView.swift`.
+- Commit: `1fe5675982b17e1c7e93528eb0b866500697bc10`.
+
+**Verifiering**
+- Ändringen är incheckad på `feature/family-messenger`.
+- Ingen lokal Xcode-miljö finns tillgänglig; simulatorbygge och tester är inte körda här.
+- PR-CI behöver bekräftas i GitHub Actions innan ändringen räknas som verifierad.
+- Fysisk iPhone-testning av bekräftelse och avbryt återstår.
+
+**Kvarstår**
+- Kontrollera att CI körs på uppdaterad PR.
+- Fortsätt därefter med bilagearkitektur efter separat granskning av lagring, bakåtkompatibilitet och filstädning.
+
+
+## 2026-11-23 – Meddelanden: återställ vid misslyckad sparning
+
+**Fynd**
+- Granskning av lokal meddelandepersistens visade att radering redan återställde föregående meddelandelista om JSON-skrivningen misslyckades.
+- Skicka-flödet lade däremot till meddelandet i minnet och ignorerade ett misslyckat sparresultat. Det kunde visa ett meddelande som försvann efter omstart.
+
+**Åtgärd**
+- `sendMessage` sparar nu föregående meddelandelista och återställer den om `saveToDisk()` returnerar fel.
+- Lade till regressionstest som blockerar snapshot-katalogen efter initiering och verifierar att ett osparat meddelande inte blir kvar i minnet samt att persistensfelet exponeras.
+
+**Berörda filer**
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Ändringarna är incheckade på `feature/family-messenger`.
+- Testet är tillagt men ännu inte kört. CI-resultat inväntas.
+- Ingen IPA har byggts från denna ändring.
+
+**Kvarstår**
+- Kontrollera GitHub Actions för den nya committen och granska både simulatorjobbet och unsigned iPhone-bygget.
+- Fysisk iPhone-testning återstår.
+
+
+## 2026-11-23 – CI-fel: korrigera månadssymbol i aktivitetsdetaljer
+
+**Fynd**
+- GitHub Actions-körning 45236229763 på commit 35e114fec8a7f0ad8ec9b4dc0aacadccf1115240 misslyckades i båda jobben.
+- Simulatorns testkompilering och iPhone Release-bygget pekade på samma Swift-fel i `Sources/DashboardView.swift:597`: `Date.FormatStyle.Symbol.Month` saknar medlemmen `.long`.
+- Testerna hann inte starta eftersom appmålet inte kompilerade. iPhone-bygget avbröts före IPA-paketering.
+
+**Åtgärd**
+- Ersatte den ogiltiga månadsstilen `.month(.long)` med Swift Date.FormatStyle-symbolen `.month(.wide)`, som ger utskriven månadsbenämning på svenska.
+- Ändringen är begränsad till datumformatet i aktivitetsdetaljvyn.
+
+**Berörda filer**
+- `Sources/DashboardView.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Källändringen är incheckad på `feature/family-messenger`.
+- Ny GitHub Actions-körning måste verifiera kompilering, tester och unsigned IPA-bygge; inget grönt resultat är ännu bekräftat.
+- Ingen fysisk iPhone-testning är genomförd.
+
+**Kvarstår**
+- Granska CI-resultatet för den nya committen och åtgärda eventuella ytterligare fel innan bildbilagor påbörjas.
+- PR #4 och #5 hålls öppna som draft; ingen merge.
+
+
+## 2026-11-23 – Meddelanden: behåll utkast när sparning misslyckas
+
+**Fynd**
+- Efter att lokal persistens återställts vid skrivfel rensade chattens composer ändå textfältet ovillkorligt efter varje sändförsök.
+- Vid diskfel kunde användaren därför förlora sitt osparade meddelande trots att inget meddelande lagrats.
+
+**Åtgärd**
+- Ändrade repository-kontraktet så att `sendMessage` returnerar en Bool som bekräftar om meddelandet faktiskt sparades.
+- `LocalFamilyStore` returnerar false vid saknad ägare, tom/ogiltig text eller misslyckad persistens och true först efter lyckad atomisk snapshot-skrivning.
+- `FamilyStore` förmedlar resultatet efter refresh.
+- Chattvyn rensar nu utkastet endast när sparningen lyckas; vid fel ligger texten kvar så användaren kan försöka igen.
+- Uppdaterade regressionstestet för skrivfel att kontrollera det returnerade misslyckanderesultatet.
+
+**Berörda filer**
+- `Sources/Data/FamilyRepository.swift`
+- `Sources/Data/LocalFamilyStore.swift`
+- `Sources/Data/FamilyStore.swift`
+- `Sources/FamilyMessagesView.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Ändringen är förberedd för incheckning på `feature/family-messenger`.
+- CI behöver verifiera alla repository-konformiteter, kompilering och tester.
+- Ingen fysisk iPhone-testning har genomförts.
+
+**Kvarstår**
+- Kontrollera CI och att utkastet ligger kvar vid ett simulerat persistensfel.
+- Fortsätt därefter med bildbilagehantering först när lagringsdesign och tester är färdiga.
+
+## 2026-11-23 – Meddelanden: återställ lässtatus vid persistensfel
+
+**Fynd**
+- `markConversationRead` uppdaterade lässtatus i minnet men ignorerade ett misslyckat snapshot-sparande.
+- Vid skrivfel kunde chatten därför visa meddelanden som lästa trots att ändringen inte hade sparats.
+
+**Åtgärd**
+- Metoden sparar nu den tidigare meddelandelistan och återställer den om `saveToDisk()` misslyckas.
+- Lade till regressionstest som blockerar snapshot-sökvägen, försöker markera konversationen som läst och verifierar att tidigare lässtatus återställs.
+
+**Berörda filer**
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Föregående commit `56962c795f3cf7331492353c389bcff91843cd69` verifierades av GitHub Actions-körning [45255737582](https://github.com/72cbbw422f-alt/fam/actions/runs/45255737582): 85 tester passerade utan fel, simulatorbygget lyckades och unsigned iPhone Release-IPA skapades.
+- Denna nya ändring är ännu inte verifierad av CI.
+- Ingen lokal Xcode-miljö eller fysisk iPhone-testning finns tillgänglig här.
+
+**Kvarstår**
+- Verifiera ny CI-körning för återställning av lässtatus.
+- Testa chattens lässtatus och sänd-/raderingsflöden på fysisk iPhone.
+- Fortsätt därefter med lokal bildbilagehantering enligt `Documentation/MESSAGING_ROADMAP.md`.
+
+
+## 2026-11-23 – Notiser: återställ lässtatus vid persistensfel
+
+**Fynd**
+- `markNotificationRead` ändrade lässtatus i minnet och ignorerade resultatet från `saveToDisk()`.
+- Vid skrivfel kunde en notis visas som läst trots att statusen inte sparats.
+
+**Åtgärd**
+- Metoden sparar nu föregående notislista och återställer den om snapshot-skrivningen misslyckas.
+- Upprepade markeringar av en redan läst notis gör ingen onödig skrivning.
+- Lade till regressionstest som seedar en notis i snapshoten, blockerar katalogen och verifierar att lässtatusen återställs samt att persistensfelet exponeras.
+
+**Berörda filer**
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Ändringen är incheckad på `feature/family-messenger`.
+- CI ska verifiera test, simulatorbygge och unsigned iPhone Release-bygge.
+- Ingen lokal Xcode-miljö eller fysisk iPhone-testning finns tillgänglig här.
+
+**Kvarstår**
+- Kontrollera CI innan ändringen räknas som verifierad.
+- Därefter granska övriga lokala mutationer för samma mönster av ignorerade persistensfel.
+
+
+- CI-körning #645 startades av den första kodcommitten i denna ändringsserie. Test- och dokumentationscommits följde därefter; en ny körning på slutlig gren-head krävs för att verifiera hela ändringsserien.
+
+
+## 2026-11-24 – Inköpslista: återställ ändringar vid persistensfel
+
+**Fynd**
+- Granskning av `LocalFamilyStore` visade att lägga till, bocka av och radera inköpsposter ignorerade misslyckad snapshot-skrivning.
+- En användare kunde därför se en inköpsändring som försvann efter omstart.
+
+**Åtgärd**
+- Inköpslistans tre mutationer sparar nu föregående data och återställer den om `saveToDisk()` misslyckas.
+- Radering av en post som inte finns gör ingen onödig skrivning.
+- Tre regressionstester täcker misslyckad tilläggning, avbockning och radering.
+
+**Berörda filer**
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Ändringarna är incheckade på `feature/family-messenger`.
+- CI måste verifiera slutlig gren-head innan de räknas som färdiga.
+- Ingen fysisk iPhone-testning är genomförd.
+
+**Kvarstår**
+- Granska kvarvarande mutationer som fortfarande ignorerar resultatet från `saveToDisk()`.
+- Verifiera shoppinglistans normala flöde och rollback vid diskfel.
+
+
+## 2026-11-24 – CI-fel: korrigera key path i inköpslistans regressionstest
+
+**Fynd**
+- CI-körning [45335781165](https://github.com/72cbbw422f-alt/fam/actions/runs/45335781165) byggde och paketerade unsigned iPhone-IPA utan fel.
+- Simulatorjobbet stoppades under testkompilering i `Tests/LocalFamilyStoreTests.swift:424`: en dubblerad omvänd snedstreckskombination gjorde key path-uttrycket `map(\\.id)` ogiltigt.
+- Testerna startade därför inte. Detta var ett testkällfel, inte ett fel i appens produktionskod.
+
+**Åtgärd**
+- Korrigerade uttrycket till giltig Swift-syntax: `map(\.id)`.
+- Ändringen är incheckad i commit `96f0d95fc064163892daef454d68efa9edb6bfef` på `feature/family-messenger`.
+
+**Berörda filer**
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Föregående iPhone Release-build och unsigned IPA-paketering passerade i körning 45335781165.
+- Simulatorns testkompilering misslyckades före teststart på grund av key path-felet.
+- Den korrigerade committen måste passera en ny GitHub Actions-körning innan shoppinglistans regressionstester räknas som verifierade.
+
+**Kvarstår**
+- Kontrollera ny CI för aktuell gren-head och verifiera samtliga tester.
+- Fortsätt därefter granskningen av återstående mutationer som ignorerar persistensfel.
+
+
+## 2026-11-24 – Persistensskydd för familjeprofiler och presentlistor
+
+**Fynd**
+- Familjeskapande, familjens namn, tillägg av barn/familjemedlem samt nya presentidéer och julklappar ändrade minnesmodellen utan att återställa den vid misslyckad snapshot-skrivning.
+- Det kunde ge en till synes genomförd ändring som inte överlevde omstart.
+
+**Åtgärd**
+- Lade till rollback för samtliga ovanstående mutationer när `saveToDisk()` returnerar false.
+- Familjeskapande återställer hela den tidigare lokala datamodellen, inte bara familjeobjektet.
+- Lade till regressionstester för misslyckat familjeskapande, namn-/profiländringar samt present- och julklappstillägg.
+
+**Berörda filer**
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Källkod och regressionstester är incheckade på `feature/family-messenger`.
+- GitHub Actions för den tidigare key-path-korrigeringen var ännu pending vid kontrollen. Denna ändringsserie inväntar ny CI-verifiering.
+- Ingen lokal Xcode-miljö eller fysisk iPhone-testning finns tillgänglig här.
+
+**Kvarstår**
+- Kontrollera att simulatorns testkompilering och samtliga tester passerar för aktuell gren-head.
+- Granska resterande `saveToDisk()`-anrop och kontrollera att varje mutation har konsekvent rollback.
+- PR #4 och #5 hålls öppna som draft; ingen merge.
+
+
+## 2026-11-24 – Bildbilagor i lokal familjechatt
+
+**Genomfört**
+- Utökat `FamilyMessage` med bakåtkompatibelt, valfritt bilagefält.
+- Lagt till `FamilyMessageAttachmentStore` för separat lokal bildlagring i Application Support med relativa sökvägar.
+- Begränsat stödet till JPEG, PNG, HEIC och HEIF samt 10 MiB per bild.
+- Lagt till PhotosPicker, förhandsvisning före sändning och bildvisning i chattbubblan.
+- Kopplat bilagemetadata till meddelandets lokala snapshot. Vid misslyckad snapshot-skrivning återställs meddelandelistan och nyss sparad bilaga tas bort.
+- Radering av ett eget meddelande tar bort dess bilagefiler först efter att snapshoten har sparats.
+- Lagt till tester för filformat, storleksgräns, path traversal, legacy-avkodning samt meddelandets bilage-livscykel.
+
+**Berörda filer**
+- `Sources/Domain/FamilyModels.swift`
+- `Sources/Data/FamilyMessageAttachmentStore.swift` (ny)
+- `Sources/Data/FamilyRepository.swift`
+- `Sources/Data/FamilyStore.swift`
+- `Sources/Data/LocalFamilyStore.swift`
+- `Sources/FamilyMessagesView.swift`
+- `Tests/FamilyMessageAttachmentStoreTests.swift` (ny)
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+
+**Verifiering**
+- Tidigare bascommit `c7697c324f4db8c25cee0b60234dce0ab3c170ef` har godkänt simulatorns enhetstester och unsigned iPhone-IPA i Actions-körningarna 45339011495 och 45339020078.
+- Den nya bilageimplementationen har ännu inte CI-verifierats. Ny körning inväntas för aktuell branch-head.
+- Ingen fysisk iPhone-verifiering är utförd.
+
+**Kvarstår**
+- Bekräfta kompilering och samtliga tester för bilageimplementationen.
+- Testa PhotosPicker och bildvisning på fysisk iPhone.
+- Förbättra fullskärmsvisning och städning av orphan-filer.
+- CloudKit-delning kräver Apple Developer-konfiguration och separat test med två Apple-konton.
+
+**Branch**: `feature/family-messenger`. PR #4 och #5 förblir öppna draft; ingen merge.
+
+
+## 2026-11-24 – Meddelanden: fullskärmsvisning av bildbilagor
+
+**Ändring**
+- Tryck på en bild i en meddelandebubbla öppnar nu en separat fullskärmsvy med svart bakgrund och bildens hela proportioner bevarade.
+- En tydlig stängknapp avslutar visningen. Vyn använder befintlig lokal bilagedata och introducerar ingen nätverks- eller synkfunktion.
+
+**Berörda filer**
+- `Sources/FamilyMessagesView.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Källändringen är incheckad på `feature/family-messenger` i commit `e98fa5105a2d3f2617459bec110ea59205eff64e`.
+- Föregående commit `9881c4656a6f3fca2bd3255c0d4f95552010cfa3` passerade GitHub Actions: 99 tester, 0 fel, simulatorbygge och unsigned iPhone-IPA lyckades.
+- Den nya fullskärmsvyn inväntar en egen CI-körning; den är inte verifierad ännu.
+- Fysisk iPhone-testning återstår.
+
+**Kvarstår**
+- Verifiera fullskärmsvyn i CI och därefter på fysisk iPhone.
+- Fortsätt med säker orphan-fil-städning och tester utan att riskera bilagor som tillhör sparade meddelanden.
+
+
+## 2026-11-24 – Bildbilagor: säker städning av orphan-filer
+
+**Ändring**
+- Lade till städning av orefererade bildfiler i `FamilyMessageAttachmentStore`.
+- Städningen körs vid uppstart endast efter att JSON-snapshoten har avkodats framgångsrikt. En korrupt snapshot får aldrig utlösa filradering.
+- Endast vanliga filer under UUID-namngivna mappar i appens `MessageAttachments`-katalog jämförs med bilagor som meddelandena faktiskt refererar till.
+- Symboliska länkar och oväntade kataloger lämnas orörda. Tomma bilagemappar tas bort efter städning.
+- Städningen är icke-kritisk: filsystemsfel avbryter städningen men ändrar inte snapshot eller meddelanden.
+
+**Berörda filer**
+- `Sources/Data/FamilyMessageAttachmentStore.swift`
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/FamilyMessageAttachmentStoreTests.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Kod och test är incheckade på `feature/family-messenger`.
+- Nytt test verifierar att refererad bild behålls och orphan-fil tas bort.
+- CI för den här ändringsserien inväntas; inga testresultat på dessa commits redovisas ännu.
+- Städning efter korrupt snapshot är avsiktligt spärrad för att skydda återställningskopian.
+
+**Kvarstår**
+- Verifiera fullskärmsvyn och orphan-städningen i CI.
+- Genomföra fysisk iPhone-testning av val, sändning, öppning och radering av bilder.
+
+
+## 2026-11-24 – Meddelandebilagor: integrationstester för uppstartsstädning
+
+**Ändringar**
+- Lade till integrationstest genom `LocalFamilyStore` som verifierar att en giltig snapshot behåller bildfiler som refereras av meddelanden och tar bort en orefererad fil vid uppstart.
+- Lade till skyddstest för korrupt snapshot: bilagefiler ska bevaras när snapshoten inte kan avkodas, samtidigt som den oläsbara JSON-filen flyttas till en återställningsfil.
+- Uppdaterade bilagedokumentationen med testernas omfattning.
+
+**Berörda filer**
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Tidigare commit `de521cb3ffaea7b9da762fa2cde3c75bbbefd5ac` verifierades i GitHub Actions-körning [45351600010](https://github.com/72cbbw422f-alt/fam/actions/runs/45351600010): 100 tester passerade utan fel; simulatorbygge och unsigned iPhone-IPA lyckades.
+- De två nya integrationstesterna är tillagda men ännu inte CI-verifierade.
+- Ny CI-körning krävs innan de räknas som godkända.
+
+**Kvarstår**
+- Granska CI för de nya integrationstesterna och kontrollera att IPA-artifact skapas.
+- Fysisk iPhone-testning av PhotosPicker, bilagevisning och radering återstår.
+- CloudKit-synk och delning är inte implementerade.
+
+
+## 2026-11-24 – Chattbilder: nedskalade och cachade miniatyrer
+
+**Ändringar**
+- Chattbubblor använder nu ImageIO för att skapa miniatyrer med maximal dimension 640 pixlar i stället för att avkoda originalbilden i full upplösning för varje visning.
+- Nedskalade bilder cachas i en `NSCache` med bilagans relativa sökväg som nyckel. Cachen kan automatiskt tömmas vid minnestryck.
+- Helskärmsvisning fortsätter att läsa originalbilden för bibehållen kvalitet.
+- En saknad eller oläsbar miniatyr visar en neutral bildplatshållare i stället för att hela bilageraden försvinner.
+
+**Berörda filer**
+- `Sources/FamilyMessagesView.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Senaste föregående commit `c3ed382abb7bd29a016e95e9a558439ba50a3fbb` passerade GitHub Actions: 100 tester, 0 fel; simulatorbygge och unsigned IPA lyckades.
+- Den nya miniatyrkoden är incheckad men ännu inte verifierad av CI.
+- Avkodningen sker för närvarande synkront när chattbubblan renderas. Bakgrundsavkodning och faktisk scrollprestanda kräver fortsatt granskning och fysisk enhetstestning.
+
+**Kvarstår**
+- Verifiera Swift-kompilering, enhetstester och unsigned IPA för miniatyrändringen.
+- Mäta scrollprestanda och minnesanvändning på fysisk iPhone.
+- CloudKit-synk och delning är fortfarande inte implementerade.
+
+
+## 2026-11-24 – bakgrundsavkodning av chattminiatyrer
+
+**Utgångsläge och verifiering**
+- Arbetsgren: `feature/family-messenger`.
+- Föregående commit `ed2f2630c756667e1caf176a7c0d0520d485cfed` byggdes grönt i GitHub Actions, både som iOS Simulator och unsigned iPhone IPA.
+- Simulatorn körde **102 tester, 0 fel**.
+- IPA-artefakt: `Familjen-unsigned-IPA`, artifact ID `14907312579`, 2 756 998 byte, SHA-256 `f9c1ea9b2aab5075691c90f30153e08b3329d57f8cf513a529e1c9089abdbf83`. Artefakten löper ut 2026-12-08.
+
+**Ändrat**
+- Flyttade ImageIO-avkodningen av chattminiatyrer från SwiftUI-vyns synkrona renderingsväg till en utility-prioriterad detached task.
+- En neutral platshållare visas medan miniatyren laddas. Resultatet publiceras först när uppgiften är färdig och inte har avbrutits.
+- Behöll 640 px maxdimension, sökvägsvalidering och NSCache. Fullskärmsvisaren använder fortsatt originalbilden.
+- Berörda filer: `Sources/FamilyMessagesView.swift`, `Documentation/MESSAGE_ATTACHMENTS.md`.
+- Kodcommit: `9bd4d987adc68f4a67423c889bac212fc1192d00`.
+- Dokumentationscommit: `0cff5cf5166b090f4a4994e36fe5df51d5148c4f`.
+
+**Verifiering och kvarstående**
+- Föregående commit är verifierad med 102/102 tester och båda byggspåren gröna.
+- Bakgrundsavkodningen är incheckad men väntar på en egen CI-körning. Den ska inte betraktas som verifierad förrän simulatorbygge, tester och unsigned iPhone-bygge passerat på dokumentationscommiten.
+- Ingen fysisk iPhone-testning eller prestandaprofilering har genomförts.
+- PR #5 är fortsatt draft och ska inte mergas utan uttryckligt godkännande.
+
+
+## 2026-11-24 – Bakgrundsavkodning av chattminiatyrer och CI-uppföljning
+- Senaste gren-head: `17e800b20d0d4ed1b3631c8b9290fdfae42c1a48` på `feature/family-messenger`.
+- GitHub Actions run `45371906107` (PR #5) och `45371893075` (push) avslutades med success för både iOS Simulator och unsigned iPhone IPA.
+- Simulatorns teststeg rapporterade 102 tester, 0 fel. iPhone Release-bygget skapade en unsigned IPA-artifact.
+- CI-loggen identifierade en Swift 6-kompatibilitetsvarning: statisk miniatyravkodning anropades från detached task trots implicit Main Actor-isolering. Nästa ändring markerar avkodningsfunktionen `nonisolated`; den ändringen måste verifieras i ny CI innan varningen kan betraktas som löst.
+- Fysisk iPhone-testning av PhotosPicker, bildvisning och scrollprestanda återstår. Ingen CloudKit-synk eller APNs-push ingår i denna lokala chattgrund.
+
+
+## 2026-11-24 – Säker cacheåtkomst från bakgrundsuppgift
+- Uppföljande CI på commit `8a1fa9d` verifierade 102/102 tester samt simulator- och unsigned iPhone-bygge.
+- CI visade att även den statiska `NSCache`-egenskapen är Main Actor-isolerad genom sin placering i SwiftUI-vyn. Avkodningsmetoden var nu nonisolated, men cacheåtkomsten gav därför två kvarvarande Swift 6-varningar.
+- Markerade den trådsäkra `NSCache`-instansen `nonisolated(unsafe)` för att tillåta åtkomst från bakgrundsavkodningen. NSCache är avsedd för trådsäker cacheåtkomst; ändringen måste bekräftas i ny CI.
+
+## 2026-11-24 – Isolerat test för orphan cleanup
+
+- Korrigerade UUID-interpoleringen i `FamilyMessageAttachmentStoreTests.testOrphanCleanupKeepsReferencedFilesAndRemovesUnreferencedFiles`.
+- Testets temporära rotkatalog får nu ett faktiskt unikt UUID i stället för en bokstavlig interpoleringssträng. Det förhindrar att parallella eller upprepade testkörningar delar samma katalog.
+- Ändringen är kodgranskad via GitHub men ännu inte CI-verifierad.
+- Kodcommit: `52956a1a1acfe41ef4f6681ca8ad68afc8e7c874`.
+
+## 2026-11-24 – Säker Application Support-initiering
+
+- Tog bort force unwrap från `FamilyMessageAttachmentStore.applicationStore()`.
+- Metoden kastar nu `applicationSupportUnavailable` om systemkatalogen inte kan erhållas; felet kan hanteras i befintliga `try`-baserade anropspunkter.
+- Uppdaterade `Documentation/MESSAGE_ATTACHMENTS.md`.
+- CI-verifiering inväntas.
+
+
+## 2026-11-24 – Frikoppla och testa miniatyravkodning
+
+**Ändringar**
+- Flyttade ImageIO-avkodningen från den privata SwiftUI-vyn till `FamilyMessageThumbnailRenderer`.
+- Rotkatalogen injiceras, vilket gör filhanteringen deterministisk och möjlig att testa.
+- Cache-nyckeln inkluderar både rotkatalog och relativ sökväg.
+- Behöll bakgrundsavkodning, 640 px maxdimension och orienteringstransformering.
+- Lade till tester för saknad fil och korrupt bilddata.
+
+**Berörda filer**
+- `Sources/FamilyMessagesView.swift`
+- `Sources/Data/FamilyMessageThumbnailRenderer.swift` (ny)
+- `Tests/FamilyMessageAttachmentStoreTests.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+
+**Verifiering**
+- Föregående commit `ab22ead977734fa3a777f14a3b8a7c08537008d3` passerade simulatorbygge, 102 tester och unsigned iPhone-IPA i GitHub Actions-körning 45382968870.
+- Denna kodändring kräver en ny CI-körning. Den är inte verifierad förrän den körningen passerat.
+- Fysisk iPhone-testning återstår.
+
+## 2026-11-24 – Positiv miniatyravkodning och cacheisolering
+
+**Ändringar**
+- Lade till ett positivt ImageIO-test med en genererad 1200 × 800 PNG. Testet verifierar att renderad miniatyr blir 640 × 427 pixlar och därmed håller maxdimensionen 640 px.
+- Lade till cachetest som verifierar återanvändning inom samma rotkatalog och att två olika rotkataloger med identisk relativ sökväg inte delar UIImage-instans.
+- Rättade UUID-interpoleringen i testerna för saknad och korrupt bild så att temporära kataloger verkligen blir unika.
+- Berörda filer: `Tests/FamilyMessageAttachmentStoreTests.swift`, `Documentation/MESSAGE_ATTACHMENTS.md`, `Documentation/DEVELOPMENT_LOG.md`.
+
+**Verifiering av föregående commit**
+- Commit `9385bbf69b324bf745cb1b80843a9b3c5f460d2c` passerade både push- och PR-körningarna: simulator 104 tester, 0 fel; unsigned iPhone IPA byggd och uppladdad.
+- Push run: `45412406572`; PR run: `45412423268`.
+- IPA-artifact ID: `14932443985` (push) och `14936158511` (PR).
+- Varningar: AppIntents-metadata hoppas över eftersom appen inte länkar AppIntents.framework; GitHub Actions rapporterar Node 20-depreciering. Inga byggfel.
+- De nya testerna i denna commit är ännu inte körda. Fysisk iPhone-testning, EXIF-orientering och verklig scroll-/minnesprestanda återstår.
+
+
+## 2026-11-24 – skydd mot symlink-baserad sökvägsflykt i bildbilagor
+
+**Fynd**
+- Den befintliga kontrollen med `standardizedFileURL` stoppade `..`-traversal men kontrollerade inte vart en symbolisk länk i en mellanliggande katalog faktiskt pekade.
+- En manipulerad lokal katalogstruktur kunde därför i teorin få en giltig relativ bilagesökväg att peka utanför appens Application Support-rot.
+
+**Ändrat**
+- `FamilyMessageAttachmentStore.url(for:)` kontrollerar nu både den lexikala sökvägen och den symlink-upplösta destinationen mot den upplösta lagringsroten.
+- `FamilyMessageThumbnailRenderer` gör motsvarande kontroll före ImageIO-avkodning.
+- Lade till regressionstest som skapar en symbolisk länk från en UUID-katalog under `MessageAttachments` till en extern temporärkatalog och verifierar att både filbutiken och miniatyravkodaren nekar åtkomst.
+- Berörda filer: `Sources/Data/FamilyMessageAttachmentStore.swift`, `Sources/Data/FamilyMessageThumbnailRenderer.swift`, `Tests/FamilyMessageAttachmentStoreTests.swift`, `Documentation/MESSAGE_ATTACHMENTS.md`, `Documentation/DEVELOPMENT_LOG.md`.
+
+**Verifiering**
+- Kodgranskad mot nuvarande path-resolution och befintlig metadata-validering.
+- CI körs efter commit; testet och bygget räknas inte som verifierade förrän båda CI-jobben passerat.

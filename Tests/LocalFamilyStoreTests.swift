@@ -52,6 +52,45 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(decoded.resolvedSymbolName, "heart.fill")
     }
 
+    func testDeletingOwnMessagePersistsAndCannotDeleteAnotherSendersMessage() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let ownerID = try XCTUnwrap(store.members.first(where: { $0.role == .owner })?.id)
+        let otherSenderID = UUID()
+
+        store.sendMessage("Mitt meddelande", conversationID: "family", kind: .family)
+        let ownMessage = try XCTUnwrap(store.messages.first)
+        XCTAssertEqual(ownMessage.senderID, ownerID)
+
+        store.deleteMessage(ownMessage.id)
+        XCTAssertTrue(store.messages.isEmpty)
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.messages.isEmpty)
+
+        let foreignMessage = FamilyMessage(
+            id: UUID(), conversationID: "family", kind: .family,
+            senderID: otherSenderID, text: "Annans meddelande",
+            sentAt: .now, readAt: nil
+        )
+        // Seed a foreign-authored record through a snapshot fixture to verify
+        // that the local owner cannot delete a message they did not author.
+        let snapshotURL = directory.appendingPathComponent("snapshot.json")
+        var snapshot = try JSONSerialization.jsonObject(with: Data(contentsOf: snapshotURL)) as! [String: Any]
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .deferredToDate
+        let encodedMessage = try encoder.encode(foreignMessage)
+        let messageObject = try JSONSerialization.jsonObject(with: encodedMessage) as! [String: Any]
+        snapshot["messages"] = [messageObject]
+        let snapshotData = try JSONSerialization.data(withJSONObject: snapshot)
+        try snapshotData.write(to: snapshotURL, options: .atomic)
+
+        let withForeignMessage = LocalFamilyStore(fileURL: snapshotURL)
+        withForeignMessage.deleteMessage(foreignMessage.id)
+        XCTAssertEqual(withForeignMessage.messages.map(\.id), [foreignMessage.id])
+    }
+
     func testFamilyProfilesAndShoppingItemsSurviveReload() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -343,6 +382,49 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(store.members.first?.role, .owner)
     }
 
+    func testAddingShoppingItemRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        store.addShoppingItem("Mjölk", category: .dairy)
+
+        XCTAssertTrue(store.shoppingItems.isEmpty)
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testCheckingShoppingItemRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Mjölk", category: .dairy)
+        let item = try XCTUnwrap(store.shoppingItems.first)
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        store.setShoppingItem(item.id, checked: true)
+
+        XCTAssertEqual(store.shoppingItems.first?.isChecked, false)
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testDeletingShoppingItemRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Mjölk", category: .dairy)
+        let item = try XCTUnwrap(store.shoppingItems.first)
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        store.deleteShoppingItem(item.id)
+
+        XCTAssertEqual(store.shoppingItems.map(\.id), [item.id])
+        XCTAssertNotNil(store.persistenceError)
+    }
+
     func testShoppingItemCanBeCheckedAndDeleted() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -355,6 +437,81 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.shoppingItems.first?.isChecked, true)
         store.deleteShoppingItem(item.id)
         XCTAssertTrue(store.shoppingItems.isEmpty)
+    }
+
+    func testMessageImageAttachmentPersistsAndIsRemovedWithMessage() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let attachmentStore = FamilyMessageAttachmentStore(rootDirectory: directory)
+        let attachment = try attachmentStore.save(
+            data: Data([0xFF, 0xD8, 0xFF, 0xD9]),
+            filename: "familj.jpg",
+            contentType: "public.jpeg",
+            messageID: UUID()
+        )
+
+        XCTAssertTrue(store.sendMessage(
+            "", conversationID: "family", kind: .family, attachment: attachment
+        ))
+        let message = try XCTUnwrap(store.messages.first)
+        XCTAssertEqual(message.attachments, [attachment])
+        XCTAssertEqual(try attachmentStore.data(for: attachment), Data([0xFF, 0xD8, 0xFF, 0xD9]))
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.messages.first?.attachments, [attachment])
+
+        reloaded.deleteMessage(message.id)
+        XCTAssertTrue(reloaded.messages.isEmpty)
+        XCTAssertThrowsError(try attachmentStore.data(for: attachment))
+    }
+
+    func testStartupCleanupRemovesOrphansAfterValidSnapshotLoad() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let attachmentStore = FamilyMessageAttachmentStore(rootDirectory: directory)
+        let imageData = Data([0xFF, 0xD8, 0xFF, 0xD9])
+        let referenced = try attachmentStore.save(
+            data: imageData, filename: "keep.jpg",
+            contentType: "public.jpeg", messageID: UUID()
+        )
+        XCTAssertTrue(store.sendMessage(
+            "", conversationID: "family", kind: .family, attachment: referenced
+        ))
+        let orphan = try attachmentStore.save(
+            data: imageData, filename: "orphan.jpg",
+            contentType: "public.jpeg", messageID: UUID()
+        )
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+
+        XCTAssertEqual(reloaded.messages.first?.attachments, [referenced])
+        XCTAssertEqual(try attachmentStore.data(for: referenced), imageData)
+        XCTAssertThrowsError(try attachmentStore.data(for: orphan))
+    }
+
+    func testStartupCleanupPreservesAttachmentsWhenSnapshotIsCorrupt() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenCorruptSnapshot-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let attachmentStore = FamilyMessageAttachmentStore(rootDirectory: directory)
+        let imageData = Data([0xFF, 0xD8, 0xFF, 0xD9])
+        let orphan = try attachmentStore.save(
+            data: imageData, filename: "recoverable.jpg",
+            contentType: "public.jpeg", messageID: UUID()
+        )
+        let snapshotURL = directory.appendingPathComponent("snapshot.json")
+        try Data("{ invalid json".utf8).write(to: snapshotURL)
+
+        _ = LocalFamilyStore(fileURL: snapshotURL)
+
+        XCTAssertEqual(try attachmentStore.data(for: orphan), imageData)
+        let recoveryFiles = try FileManager.default.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: nil
+        ).filter { $0.lastPathComponent.hasPrefix("snapshot.json.corrupt-") }
+        XCTAssertEqual(recoveryFiles.count, 1)
     }
 
     func testMessagesPersistAndConversationReadStateUpdates() throws {
@@ -577,6 +734,70 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(store.shoppingItems, originalShoppingItems)
     }
 
+
+    func testSendingMessageRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        XCTAssertTrue(store.messages.isEmpty)
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        let saved = store.sendMessage("Hej", conversationID: "family", kind: .family)
+
+        XCTAssertFalse(saved, "The caller must be told that persistence failed.")
+        XCTAssertTrue(store.messages.isEmpty, "A message must not remain visible when it was not persisted.")
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testMarkingConversationReadRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        XCTAssertTrue(store.sendMessage("Hej", conversationID: "family", kind: .family))
+        let originalReadAt = store.messages.first?.readAt
+        XCTAssertNil(originalReadAt)
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        store.markConversationRead("family")
+
+        XCTAssertNil(store.messages.first?.readAt,
+                     "Read state must roll back when it cannot be persisted.")
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testMarkingNotificationReadRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+
+        let notification = FamilyNotification(
+            id: UUID(), eventType: "calendar", title: "Läkarbesök",
+            body: "Tid för besöket", createdAt: .now, readAt: nil
+        )
+        let snapshotURL = directory.appendingPathComponent("snapshot.json")
+        var snapshot = try JSONSerialization.jsonObject(with: Data(contentsOf: snapshotURL)) as! [String: Any]
+        let encodedNotification = try JSONEncoder().encode(notification)
+        let notificationObject = try JSONSerialization.jsonObject(with: encodedNotification) as! [String: Any]
+        snapshot["notifications"] = [notificationObject]
+        try JSONSerialization.data(withJSONObject: snapshot).write(to: snapshotURL, options: .atomic)
+
+        let storeWithNotification = LocalFamilyStore(fileURL: snapshotURL)
+        XCTAssertEqual(storeWithNotification.notifications.first?.id, notification.id)
+        XCTAssertNil(storeWithNotification.notifications.first?.readAt)
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        storeWithNotification.markNotificationRead(notification.id)
+
+        XCTAssertNil(storeWithNotification.notifications.first?.readAt,
+                     "Notification read state must roll back when persistence fails.")
+        XCTAssertNotNil(storeWithNotification.persistenceError)
+    }
 
     func testLegacySnapshotWithoutMessagesLoadsAsEmptyConversationHistory() throws {
         let directory = FileManager.default.temporaryDirectory
@@ -988,6 +1209,65 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertTrue(store.christmasGifts.isEmpty)
     }
 
+
+
+
+    func testCreatingFamilyRollsBackAllStateWhenPersistenceFails() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenCreateFailure-\\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let blockingFile = directory.appendingPathComponent("not-a-directory")
+        try Data("block".utf8).write(to: blockingFile)
+        let store = LocalFamilyStore(fileURL: blockingFile.appendingPathComponent("snapshot.json"))
+
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+
+        XCTAssertNil(store.family)
+        XCTAssertTrue(store.members.isEmpty)
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testFamilyRenameAndProfileAdditionsRollBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let originalFamily = try XCTUnwrap(store.family)
+        let originalMembers = store.members
+        try FileManager.default.removeItem(at: directory)
+        try Data("block".utf8).write(to: directory)
+
+        store.renameFamily(name: "Nytt namn")
+        store.addChild(name: "Cleo")
+        store.addMember(name: "Villemo")
+
+        XCTAssertEqual(store.family, originalFamily)
+        XCTAssertEqual(store.members, originalMembers)
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testGiftAdditionsRollBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let owner = try XCTUnwrap(store.members.first)
+        store.saveItem(id: nil, title: "Födelsedag", details: nil,
+                       startsAt: Date(timeIntervalSince1970: 1_800_000_000),
+                       kind: .birthday, memberID: owner.id, recurring: true,
+                       reminderOffsets: [])
+        let birthday = try XCTUnwrap(store.items.first)
+        try FileManager.default.removeItem(at: directory)
+        try Data("block".utf8).write(to: directory)
+
+        store.addGiftIdea(memberID: owner.id, birthdayItemID: birthday.id,
+                          title: "Bok", note: nil)
+        store.addChristmasGift(recipient: "Cleo", title: "Bok", note: nil,
+                               responsibleMemberID: owner.id)
+
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        XCTAssertTrue(store.christmasGifts.isEmpty)
+        XCTAssertNotNil(store.persistenceError)
+    }
 
 
     func testShoppingCategoriesAndCheckedItemsPersistAndLegacyItemsDecode() throws {

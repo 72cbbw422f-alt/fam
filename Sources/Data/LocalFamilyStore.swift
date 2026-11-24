@@ -29,7 +29,9 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     private let fileURL: URL
+    private let attachmentStore: FamilyMessageAttachmentStore
     private var persistenceBlockedByCorruption = false
+    private var snapshotLoadedSuccessfully = false
 
     private convenience init() {
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -39,6 +41,9 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     /// Injectable file location keeps persistence tests isolated from the user's real app data.
     init(fileURL: URL) {
         self.fileURL = fileURL
+        self.attachmentStore = FamilyMessageAttachmentStore(
+            rootDirectory: fileURL.deletingLastPathComponent()
+        )
         do {
             try FileManager.default.createDirectory(
                 at: fileURL.deletingLastPathComponent(),
@@ -48,6 +53,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             persistenceError = persistenceFailureMessage
         }
         loadFromDisk()
+        if snapshotLoadedSuccessfully {
+            try? attachmentStore.removeOrphanedFiles(
+                referencedAttachments: messages.flatMap { $0.attachments ?? [] }
+            )
+        }
     }
 
     func createFamily(name: String, ownerName: String) {
@@ -56,6 +66,21 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         guard family == nil,
               !cleanFamilyName.isEmpty, cleanFamilyName.count <= 80,
               !cleanOwnerName.isEmpty, cleanOwnerName.count <= 80 else { return }
+        let previousFamily = self.family
+        let previousMembers = members
+        let previousItems = items
+        let previousSkippedOccurrences = skippedOccurrences
+        let previousOccurrenceOverrides = occurrenceOverrides
+        let previousShoppingItems = shoppingItems
+        let previousGiftIdeas = giftIdeas
+        let previousChristmasGifts = christmasGifts
+        let previousNotifications = notifications
+        let previousHealthRecords = healthRecords
+        let previousHealthPrescriptions = healthPrescriptions
+        let previousMedicationPickups = medicationPickups
+        let previousHealthProfileInformation = healthProfileInformation
+        let previousHealthReminders = healthReminders
+        let previousMessages = messages
         let family = Family(id: UUID(), name: cleanFamilyName)
         let owner = FamilyMember(id: UUID(), familyID: family.id,
                                  displayName: cleanOwnerName,
@@ -75,7 +100,23 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         healthProfileInformation = []
         healthReminders = []
         messages = []
-        saveToDisk()
+        if !saveToDisk() {
+            self.family = previousFamily
+            members = previousMembers
+            items = previousItems
+            skippedOccurrences = previousSkippedOccurrences
+            occurrenceOverrides = previousOccurrenceOverrides
+            shoppingItems = previousShoppingItems
+            giftIdeas = previousGiftIdeas
+            christmasGifts = previousChristmasGifts
+            notifications = previousNotifications
+            healthRecords = previousHealthRecords
+            healthPrescriptions = previousHealthPrescriptions
+            medicationPickups = previousMedicationPickups
+            healthProfileInformation = previousHealthProfileInformation
+            healthReminders = previousHealthReminders
+            messages = previousMessages
+        }
     }
 
     func renameFamily(name: String) {
@@ -83,25 +124,27 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 80 else { return }
         self.family = Family(id: family.id, name: clean)
-        saveToDisk()
+        if !saveToDisk() { self.family = family }
     }
 
     func addChild(name: String) {
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let family, !clean.isEmpty, clean.count <= 80 else { return }
+        let previous = members
         members.append(FamilyMember(id: UUID(), familyID: family.id,
                                     displayName: clean,
                                     role: .child, linkedUserID: nil))
-        saveToDisk()
+        if !saveToDisk() { members = previous }
     }
 
     func addMember(name: String, role: MemberRole = .member) {
         guard let family else { return }
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 80, role != .owner else { return }
+        let previous = members
         members.append(FamilyMember(id: UUID(), familyID: family.id,
                                     displayName: clean, role: role, linkedUserID: nil))
-        saveToDisk()
+        if !saveToDisk() { members = previous }
     }
 
     func renameMember(id: UUID, name: String) {
@@ -296,21 +339,25 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func addShoppingItem(_ title: String, category: ShoppingCategory) {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let family, !clean.isEmpty, clean.count <= 160 else { return }
+        let previous = shoppingItems
         shoppingItems.append(ShoppingItem(id: UUID(), listID: family.id,
                                           title: clean, isChecked: false,
                                           createdAt: .now, category: category))
-        saveToDisk()
+        if !saveToDisk() { shoppingItems = previous }
     }
 
     func setShoppingItem(_ id: UUID, checked: Bool) {
         guard let index = shoppingItems.firstIndex(where: { $0.id == id }) else { return }
+        let previous = shoppingItems[index]
         shoppingItems[index].isChecked = checked
-        saveToDisk()
+        if !saveToDisk() { shoppingItems[index] = previous }
     }
 
     func deleteShoppingItem(_ id: UUID) {
+        guard shoppingItems.contains(where: { $0.id == id }) else { return }
+        let previous = shoppingItems
         shoppingItems.removeAll { $0.id == id }
-        saveToDisk()
+        if !saveToDisk() { shoppingItems = previous }
     }
 
     func addGiftIdea(memberID: UUID, birthdayItemID: UUID, title: String, note: String?) {
@@ -319,9 +366,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
               items.contains(where: { $0.id == birthdayItemID && $0.kind == .birthday }),
               !clean.isEmpty, clean.count <= 160 else { return }
         let cleanNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previous = giftIdeas
         giftIdeas.append(GiftIdea(memberID: memberID, birthdayItemID: birthdayItemID,
                                   title: clean, note: cleanNote?.isEmpty == true ? nil : cleanNote))
-        saveToDisk()
+        if !saveToDisk() { giftIdeas = previous }
     }
 
     func updateGiftIdea(_ idea: GiftIdea) {
@@ -353,9 +401,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
               !cleanTitle.isEmpty, cleanTitle.count <= 160 else { return }
         let validResponsibleID = members.first(where: { $0.id == responsibleMemberID })?.id
         let cleanNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previous = christmasGifts
         christmasGifts.append(ChristmasGift(recipient: cleanRecipient, title: cleanTitle,
             note: cleanNote?.isEmpty == true ? nil : cleanNote, responsibleMemberID: validResponsibleID))
-        saveToDisk()
+        if !saveToDisk() { christmasGifts = previous }
     }
 
     func updateChristmasGift(_ gift: ChristmasGift) {
@@ -380,30 +429,76 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         if !saveToDisk() { christmasGifts = previous }
     }
 
-    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) {
-        guard let senderID = members.first(where: { $0.role == .owner })?.id else { return }
+    @discardableResult
+    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) -> Bool {
+        sendMessage(text, conversationID: conversationID, kind: kind, attachment: nil)
+    }
+
+    @discardableResult
+    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind,
+                     attachment: FamilyMessageAttachment?) -> Bool {
+        guard let senderID = members.first(where: { $0.role == .owner })?.id else { return false }
         let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !clean.isEmpty, clean.count <= 4000 else { return }
+        guard clean.count <= 4000, !clean.isEmpty || attachment != nil else { return false }
+        if let attachment {
+            guard attachment.isValid else { return false }
+            do {
+                _ = try attachmentStore.data(for: attachment)
+            } catch {
+                return false
+            }
+        }
+
+        let previousMessages = messages
         messages.append(FamilyMessage(id: UUID(), conversationID: conversationID,
                                       kind: kind, senderID: senderID, text: clean,
-                                      sentAt: .now, readAt: nil))
-        saveToDisk()
+                                      sentAt: .now, readAt: nil,
+                                      attachments: attachment.map { [$0] }))
+        guard saveToDisk() else {
+            messages = previousMessages
+            if let attachment { try? attachmentStore.delete(attachment) }
+            return false
+        }
+        return true
+    }
+
+    func deleteMessage(_ id: UUID) {
+        guard let ownerID = members.first(where: { $0.role == .owner })?.id,
+              let index = messages.firstIndex(where: { $0.id == id && $0.senderID == ownerID }) else { return }
+        let previousMessages = messages
+        let removed = messages[index]
+        messages.remove(at: index)
+        guard saveToDisk() else {
+            messages = previousMessages
+            return
+        }
+        for attachment in removed.attachments ?? [] {
+            try? attachmentStore.delete(attachment)
+        }
     }
 
     func markConversationRead(_ conversationID: String) {
+        let previousMessages = messages
         var changed = false
         for index in messages.indices where messages[index].conversationID == conversationID
             && messages[index].readAt == nil {
             messages[index].readAt = .now
             changed = true
         }
-        if changed { saveToDisk() }
+        guard changed else { return }
+        if !saveToDisk() {
+            messages = previousMessages
+        }
     }
 
     func markNotificationRead(_ id: UUID) {
-        guard let index = notifications.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = notifications.firstIndex(where: { $0.id == id }),
+              notifications[index].readAt == nil else { return }
+        let previousNotifications = notifications
         notifications[index].readAt = .now
-        saveToDisk()
+        if !saveToDisk() {
+            notifications = previousNotifications
+        }
     }
 
 
@@ -713,6 +808,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             shoppingItems = snapshot.shoppingItems
             notifications = snapshot.notifications
             messages = snapshot.messages ?? []
+            snapshotLoadedSuccessfully = true
         } catch {
             // Preserve an unreadable snapshot before any later write can replace it.
             let recoveryURL = fileURL.deletingLastPathComponent()

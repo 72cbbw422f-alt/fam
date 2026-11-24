@@ -101,9 +101,21 @@ final class FamilyStore: ObservableObject {
     func addChristmasGift(recipient: String, title: String, note: String?, responsibleMemberID: UUID?) { repository.addChristmasGift(recipient: recipient, title: title, note: note, responsibleMemberID: responsibleMemberID); refresh() }
     func updateChristmasGift(_ gift: ChristmasGift) { repository.updateChristmasGift(gift); refresh() }
     func deleteChristmasGift(_ id: UUID) { repository.deleteChristmasGift(id); refresh() }
-    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) {
-        repository.sendMessage(text, conversationID: conversationID, kind: kind); refresh()
+    @discardableResult
+    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) -> Bool {
+        let saved = repository.sendMessage(text, conversationID: conversationID, kind: kind)
+        refresh()
+        return saved
     }
+    @discardableResult
+    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind,
+                     attachment: FamilyMessageAttachment?) -> Bool {
+        let saved = repository.sendMessage(text, conversationID: conversationID, kind: kind,
+                                            attachment: attachment)
+        refresh()
+        return saved
+    }
+    func deleteMessage(_ id: UUID) { repository.deleteMessage(id); refresh() }
     func markConversationRead(_ conversationID: String) { repository.markConversationRead(conversationID); refresh() }
     func saveHealthRecord(_ record: HealthRecord) {
         repository.saveHealthRecord(record)

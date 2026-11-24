@@ -446,7 +446,7 @@ private struct FamilyMessageImageViewer: View {
 /// Decodes a bounded thumbnail instead of allocating a full-resolution UIImage
 /// every time SwiftUI reevaluates a chat bubble.
 private struct FamilyMessageThumbnail: View {
-    private static let cache = NSCache<NSString, UIImage>()
+    nonisolated(unsafe) private static let cache = NSCache<NSString, UIImage>()
     @State private var thumbnail: UIImage?
     let attachment: FamilyMessageAttachment
 

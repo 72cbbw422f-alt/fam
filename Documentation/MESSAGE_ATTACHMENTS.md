@@ -77,3 +77,10 @@ Lagringsgränsen är avsiktligt fristående från SwiftUI och CloudKit. Vid fram
 - Cachen använder både rotkatalog och relativ sökväg som nyckel för att undvika kollisioner mellan testmiljöer och appmiljön.
 - Miniatyrens maxdimension är fortsatt 640 pixlar och orienteringstransformering är aktiverad.
 - Nya tester täcker saknad fil och korrupt bilddata. Positiv avkodning/orientering och faktisk scrollprestanda kräver fortsatt testning.
+
+## Thumbnail regression coverage – 2026-11-24
+
+- Added a valid generated PNG fixture to verify ImageIO decoding, orientation-safe thumbnail creation and the 640 px maximum dimension.
+- Added a cache-scope regression test: identical relative paths in two injected roots must not reuse the same cached UIImage; repeated requests within one root should reuse the cached instance.
+- Corrected UUID interpolation in the missing/corrupt-image tests so each test uses a genuinely unique temporary directory and matching message path.
+- CI must pass before treating these tests as verified. Device memory/scroll performance and EXIF orientation remain manual iPhone checks.

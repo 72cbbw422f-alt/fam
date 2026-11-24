@@ -1409,3 +1409,18 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Föregående commit `ab22ead977734fa3a777f14a3b8a7c08537008d3` passerade simulatorbygge, 102 tester och unsigned iPhone-IPA i GitHub Actions-körning 45382968870.
 - Denna kodändring kräver en ny CI-körning. Den är inte verifierad förrän den körningen passerat.
 - Fysisk iPhone-testning återstår.
+
+## 2026-11-24 – Positiv miniatyravkodning och cacheisolering
+
+**Ändringar**
+- Lade till ett positivt ImageIO-test med en genererad 1200 × 800 PNG. Testet verifierar att renderad miniatyr blir 640 × 427 pixlar och därmed håller maxdimensionen 640 px.
+- Lade till cachetest som verifierar återanvändning inom samma rotkatalog och att två olika rotkataloger med identisk relativ sökväg inte delar UIImage-instans.
+- Rättade UUID-interpoleringen i testerna för saknad och korrupt bild så att temporära kataloger verkligen blir unika.
+- Berörda filer: `Tests/FamilyMessageAttachmentStoreTests.swift`, `Documentation/MESSAGE_ATTACHMENTS.md`, `Documentation/DEVELOPMENT_LOG.md`.
+
+**Verifiering av föregående commit**
+- Commit `9385bbf69b324bf745cb1b80843a9b3c5f460d2c` passerade både push- och PR-körningarna: simulator 104 tester, 0 fel; unsigned iPhone IPA byggd och uppladdad.
+- Push run: `45412406572`; PR run: `45412423268`.
+- IPA-artifact ID: `14932443985` (push) och `14936158511` (PR).
+- Varningar: AppIntents-metadata hoppas över eftersom appen inte länkar AppIntents.framework; GitHub Actions rapporterar Node 20-depreciering. Inga byggfel.
+- De nya testerna i denna commit är ännu inte körda. Fysisk iPhone-testning, EXIF-orientering och verklig scroll-/minnesprestanda återstår.

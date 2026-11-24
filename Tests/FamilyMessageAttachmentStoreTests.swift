@@ -1,5 +1,6 @@
 import Foundation
 import XCTest
+import UIKit
 @testable import Familjen
 
 final class FamilyMessageAttachmentStoreTests: XCTestCase {
@@ -107,12 +108,12 @@ final class FamilyMessageAttachmentStoreTests: XCTestCase {
 
     func testThumbnailRendererReturnsNilForMissingImage() throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FamiljenThumbnail-\\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("FamiljenThumbnail-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let attachment = FamilyMessageAttachment(
             id: UUID(), kind: .image, filename: "missing.png",
             contentType: "public.png", byteCount: 8,
-            relativePath: "MessageAttachments/\\(UUID().uuidString)/missing.png",
+            relativePath: "MessageAttachments/\(UUID().uuidString)/missing.png",
             createdAt: .now
         )
 
@@ -121,13 +122,13 @@ final class FamilyMessageAttachmentStoreTests: XCTestCase {
 
     func testThumbnailRendererReturnsNilForCorruptImageData() throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FamiljenThumbnail-\\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("FamiljenThumbnail-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let messageID = UUID()
         let attachment = FamilyMessageAttachment(
             id: UUID(), kind: .image, filename: "broken.png",
             contentType: "public.png", byteCount: 4,
-            relativePath: "MessageAttachments/\\(messageID.uuidString)/broken.png",
+            relativePath: "MessageAttachments/\(messageID.uuidString)/broken.png",
             createdAt: .now
         )
         let fileURL = root.appendingPathComponent(attachment.relativePath)
@@ -137,6 +138,88 @@ final class FamilyMessageAttachmentStoreTests: XCTestCase {
         try Data([0x00, 0x01, 0x02, 0x03]).write(to: fileURL)
 
         XCTAssertNil(FamilyMessageThumbnailRenderer.thumbnail(for: attachment, rootDirectory: root))
+    }
+
+
+    func testThumbnailRendererDecodesValidImageAndBoundsDimensions() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenThumbnail-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let messageID = UUID()
+        let attachment = FamilyMessageAttachment(
+            id: UUID(), kind: .image, filename: "large.png",
+            contentType: "public.png", byteCount: 1,
+            relativePath: "MessageAttachments/\(messageID.uuidString)/large.png",
+            createdAt: .now
+        )
+        let fileURL = root.appendingPathComponent(attachment.relativePath)
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+        )
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1200, height: 800))
+        let imageData = renderer.pngData { context in
+            UIColor.systemBlue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 1200, height: 800))
+        }
+        try imageData.write(to: fileURL)
+
+        let thumbnail = try XCTUnwrap(
+            FamilyMessageThumbnailRenderer.thumbnail(for: attachment, rootDirectory: root)
+        )
+        let cgImage = try XCTUnwrap(thumbnail.cgImage)
+        XCTAssertLessThanOrEqual(cgImage.width, 640)
+        XCTAssertLessThanOrEqual(cgImage.height, 640)
+        XCTAssertEqual(cgImage.width, 640)
+        XCTAssertEqual(cgImage.height, 427)
+    }
+
+    func testThumbnailRendererCacheIsScopedToRootDirectory() throws {
+        let firstRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenThumbnail-A-\(UUID().uuidString)", isDirectory: true)
+        let secondRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenThumbnail-B-\(UUID().uuidString)", isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: firstRoot)
+            try? FileManager.default.removeItem(at: secondRoot)
+        }
+        let messageID = UUID()
+        let attachment = FamilyMessageAttachment(
+            id: UUID(), kind: .image, filename: "same.png",
+            contentType: "public.png", byteCount: 1,
+            relativePath: "MessageAttachments/\(messageID.uuidString)/same.png",
+            createdAt: .now
+        )
+        let firstURL = firstRoot.appendingPathComponent(attachment.relativePath)
+        let secondURL = secondRoot.appendingPathComponent(attachment.relativePath)
+        for url in [firstURL, secondURL] {
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(), withIntermediateDirectories: true
+            )
+        }
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 32, height: 32))
+        let red = renderer.pngData { context in
+            UIColor.systemRed.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 32, height: 32))
+        }
+        let blue = renderer.pngData { context in
+            UIColor.systemBlue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 32, height: 32))
+        }
+        try red.write(to: firstURL)
+        try blue.write(to: secondURL)
+
+        let first = try XCTUnwrap(
+            FamilyMessageThumbnailRenderer.thumbnail(for: attachment, rootDirectory: firstRoot)
+        )
+        let firstCached = try XCTUnwrap(
+            FamilyMessageThumbnailRenderer.thumbnail(for: attachment, rootDirectory: firstRoot)
+        )
+        let second = try XCTUnwrap(
+            FamilyMessageThumbnailRenderer.thumbnail(for: attachment, rootDirectory: secondRoot)
+        )
+
+        XCTAssertTrue(first === firstCached)
+        XCTAssertFalse(first === second)
     }
 
     func testLegacyMessageDecodesWithoutAttachmentsAndNewMetadataRoundTrips() throws {

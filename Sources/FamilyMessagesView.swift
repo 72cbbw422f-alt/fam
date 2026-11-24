@@ -1,4 +1,7 @@
 import SwiftUI
+import PhotosUI
+import UniformTypeIdentifiers
+import UIKit
 
 struct FamilyMessagesView: View {
     @StateObject private var store = FamilyStore.shared
@@ -121,6 +124,10 @@ struct FamilyMessagesView: View {
 private struct FamilyChatView: View {
     @StateObject private var store = FamilyStore.shared
     @State private var draft = ""
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var selectedImageData: Data?
+    @State private var selectedImageType: String?
+    @State private var attachmentError: String?
     @State private var messagePendingDeletion: FamilyMessage?
     @FocusState private var composerFocused: Bool
 
@@ -179,6 +186,9 @@ private struct FamilyChatView: View {
             Text("Meddelandet tas bort från den här enheten.")
         }
         .onAppear { store.markConversationRead(conversationID) }
+        .onChange(of: selectedPhoto) { _, item in
+            Task { await loadSelectedPhoto(item) }
+        }
     }
 
     private var localOnlyNotice: some View {
@@ -220,10 +230,22 @@ private struct FamilyChatView: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(isMine ? .white.opacity(0.8) : FamiljenTheme.champagneDeep)
                 }
-                Text(message.text)
-                    .font(.system(size: 16))
-                    .foregroundStyle(isMine ? .white : FamiljenTheme.ink)
-                    .fixedSize(horizontal: false, vertical: true)
+                if !message.text.isEmpty {
+                    Text(message.text)
+                        .font(.system(size: 16))
+                        .foregroundStyle(isMine ? .white : FamiljenTheme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                ForEach(message.attachments ?? []) { attachment in
+                    if let imageData = try? FamilyMessageAttachmentStore.applicationStore().data(for: attachment),
+                       let image = UIImage(data: imageData) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: 220, maxHeight: 220)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
                 Text(message.sentAt.formatted(.dateTime.hour().minute()))
                     .font(.system(size: 11))
                     .foregroundStyle(isMine ? .white.opacity(0.72) : FamiljenTheme.muted)
@@ -253,37 +275,126 @@ private struct FamilyChatView: View {
     }
 
     private var composer: some View {
-        HStack(alignment: .bottom, spacing: 10) {
-            TextField("Skriv ett meddelande …", text: $draft, axis: .vertical)
-                .font(.system(size: 16))
-                .lineLimit(1...5)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 11)
-                .background(FamiljenTheme.paper, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 20).stroke(FamiljenTheme.sand, lineWidth: 1))
-                .focused($composerFocused)
-            Button(action: send) {
-                Image(systemName: "arrow.up")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 43, height: 43)
-                    .background(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? FamiljenTheme.muted : FamiljenTheme.navy,
-                                in: Circle())
+        VStack(alignment: .leading, spacing: 8) {
+            if let selectedImageData, let image = UIImage(data: selectedImageData) {
+                HStack(spacing: 10) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 58, height: 58)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    Text("Bild bifogas")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(FamiljenTheme.ink)
+                    Spacer()
+                    Button {
+                        self.selectedImageData = nil
+                        selectedImageType = nil
+                        selectedPhoto = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(FamiljenTheme.muted)
+                    }
+                    .accessibilityLabel("Ta bort vald bild")
+                }
+                .padding(.horizontal, 13)
             }
-            .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .accessibilityLabel("Skicka meddelande")
+            if let attachmentError {
+                Text(attachmentError)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 13)
+            }
+            HStack(alignment: .bottom, spacing: 9) {
+                PhotosPicker(selection: $selectedPhoto, matching: .images, photoLibrary: .shared()) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 19, weight: .medium))
+                        .foregroundStyle(FamiljenTheme.navy)
+                        .frame(width: 42, height: 43)
+                }
+                .accessibilityLabel("Välj bild")
+                TextField("Skriv ett meddelande …", text: $draft, axis: .vertical)
+                    .font(.system(size: 16))
+                    .lineLimit(1...5)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 11)
+                    .background(FamiljenTheme.paper, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(FamiljenTheme.sand, lineWidth: 1))
+                    .focused($composerFocused)
+                Button(action: send) {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 43, height: 43)
+                        .background(canSend ? FamiljenTheme.navy : FamiljenTheme.muted, in: Circle())
+                }
+                .disabled(!canSend)
+                .accessibilityLabel("Skicka meddelande")
+            }
+            .padding(.horizontal, 13)
         }
-        .padding(.horizontal, 13)
         .padding(.vertical, 10)
         .background(.white)
         .overlay(alignment: .top) { Rectangle().fill(FamiljenTheme.sand).frame(height: 1) }
     }
 
+    private var canSend: Bool {
+        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || selectedImageData != nil
+    }
+
+    @MainActor
+    private func loadSelectedPhoto(_ item: PhotosPickerItem?) async {
+        guard let item else { return }
+        attachmentError = nil
+        guard let type = item.supportedContentTypes.first(where: {
+            ["public.jpeg", "public.png", "public.heic", "public.heif"].contains($0.identifier)
+        }) else {
+            selectedImageData = nil
+            selectedImageType = nil
+            attachmentError = "Bildformatet stöds inte."
+            return
+        }
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self) else {
+                throw FamilyMessageAttachmentStoreError.emptyFile
+            }
+            guard data.count <= FamilyMessageAttachmentStore.maximumFileSize else {
+                throw FamilyMessageAttachmentStoreError.fileTooLarge
+            }
+            selectedImageData = data
+            selectedImageType = type.identifier
+        } catch {
+            selectedImageData = nil
+            selectedImageType = nil
+            attachmentError = "Bilden kunde inte läsas in. Försök igen."
+        }
+    }
+
     private func send() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        if store.sendMessage(text, conversationID: conversationID, kind: kind) {
+        guard !text.isEmpty || selectedImageData != nil else { return }
+        var attachment: FamilyMessageAttachment?
+        if let selectedImageData, let selectedImageType {
+            do {
+                attachment = try FamilyMessageAttachmentStore.applicationStore().save(
+                    data: selectedImageData,
+                    filename: "Bild",
+                    contentType: selectedImageType,
+                    messageID: UUID()
+                )
+            } catch {
+                attachmentError = "Bilden kunde inte sparas på enheten."
+                return
+            }
+        }
+        if store.sendMessage(text, conversationID: conversationID, kind: kind, attachment: attachment) {
             draft = ""
+            selectedImageData = nil
+            selectedImageType = nil
+            selectedPhoto = nil
+            attachmentError = nil
+        } else {
+            attachmentError = "Meddelandet kunde inte sparas. Försök igen."
         }
     }
 }

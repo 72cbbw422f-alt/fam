@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 import UniformTypeIdentifiers
 import UIKit
+import ImageIO
 
 struct FamilyMessagesView: View {
     @StateObject private var store = FamilyStore.shared
@@ -244,21 +245,17 @@ private struct FamilyChatView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 ForEach(message.attachments ?? []) { attachment in
-                    if let imageData = try? FamilyMessageAttachmentStore.applicationStore().data(for: attachment),
-                       let image = UIImage(data: imageData) {
-                        Button {
-                            viewingImageData = imageData
-                            isImageViewerPresented = true
-                        } label: {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxWidth: 220, maxHeight: 220)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                    Button {
+                        guard let imageData = try? FamilyMessageAttachmentStore.applicationStore().data(for: attachment) else {
+                            return
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Visa bild i helskärm")
+                        viewingImageData = imageData
+                        isImageViewerPresented = true
+                    } label: {
+                        FamilyMessageThumbnail(attachment: attachment)
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Visa bild i helskärm")
                 }
                 Text(message.sentAt.formatted(.dateTime.hour().minute()))
                     .font(.system(size: 11))
@@ -442,5 +439,58 @@ private struct FamilyMessageImageViewer: View {
             .padding(.trailing, 16)
         }
         .statusBarHidden()
+    }
+}
+
+
+/// Decodes a bounded thumbnail instead of allocating a full-resolution UIImage
+/// every time SwiftUI reevaluates a chat bubble.
+private struct FamilyMessageThumbnail: View {
+    private static let cache = NSCache<NSString, UIImage>()
+    let attachment: FamilyMessageAttachment
+
+    var body: some View {
+        Group {
+            if let image = Self.thumbnail(for: attachment) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 220, maxHeight: 220)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(FamiljenTheme.sand.opacity(0.55))
+                    .frame(width: 160, height: 100)
+                    .overlay {
+                        Image(systemName: "photo")
+                            .foregroundStyle(FamiljenTheme.muted)
+                    }
+            }
+        }
+    }
+
+    private static func thumbnail(for attachment: FamilyMessageAttachment) -> UIImage? {
+        let key = attachment.relativePath as NSString
+        if let cached = cache.object(forKey: key) { return cached }
+        guard attachment.isValid,
+              let directory = FileManager.default.urls(
+                for: .applicationSupportDirectory, in: .userDomainMask
+              ).first else { return nil }
+        let root = directory.standardizedFileURL
+        let url = root.appendingPathComponent(attachment.relativePath).standardizedFileURL
+        let rootPath = root.path.hasSuffix("/") ? root.path : root.path + "/"
+        guard url.path.hasPrefix(rootPath),
+              let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let cgImage = CGImageSourceCreateThumbnailAtIndex(
+                source, 0,
+                [
+                    kCGImageSourceCreateThumbnailFromImageAlways: true,
+                    kCGImageSourceThumbnailMaxPixelSize: 640,
+                    kCGImageSourceCreateThumbnailWithTransform: true
+                ] as CFDictionary
+              ) else { return nil }
+        let image = UIImage(cgImage: cgImage)
+        cache.setObject(image, forKey: key, cost: cgImage.bytesPerRow * cgImage.height)
+        return image
     }
 }

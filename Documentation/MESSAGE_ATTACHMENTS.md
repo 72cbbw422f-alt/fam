@@ -37,3 +37,11 @@ Lagringsgränsen är avsiktligt fristående från SwiftUI och CloudKit. Vid fram
 2. Testa PhotosPicker, format, miniatyr och borttagning på fysisk iPhone.
 3. Förbättra bildvisning med tryck-för-fullskärm och hantera orphan-filer vid avbruten process.
 4. Efter Apple Developer-konfiguration: implementera CloudKit-asset och synkstatus separat.
+
+
+## Full-screen image viewing
+
+- Tapping an image attachment in a chat bubble opens a dedicated full-screen viewer on a black canvas.
+- The image is aspect-fit so the complete image remains visible; a clearly labelled close control dismisses the viewer.
+- This viewer uses the already persisted local attachment data. It does not add remote loading, sharing, or CloudKit behavior.
+- Physical-device interaction and accessibility behavior still require manual iPhone verification.

@@ -1205,3 +1205,39 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Kontrollera att simulatorns testkompilering och samtliga tester passerar för aktuell gren-head.
 - Granska resterande `saveToDisk()`-anrop och kontrollera att varje mutation har konsekvent rollback.
 - PR #4 och #5 hålls öppna som draft; ingen merge.
+
+
+## 2026-11-24 – Bildbilagor i lokal familjechatt
+
+**Genomfört**
+- Utökat `FamilyMessage` med bakåtkompatibelt, valfritt bilagefält.
+- Lagt till `FamilyMessageAttachmentStore` för separat lokal bildlagring i Application Support med relativa sökvägar.
+- Begränsat stödet till JPEG, PNG, HEIC och HEIF samt 10 MiB per bild.
+- Lagt till PhotosPicker, förhandsvisning före sändning och bildvisning i chattbubblan.
+- Kopplat bilagemetadata till meddelandets lokala snapshot. Vid misslyckad snapshot-skrivning återställs meddelandelistan och nyss sparad bilaga tas bort.
+- Radering av ett eget meddelande tar bort dess bilagefiler först efter att snapshoten har sparats.
+- Lagt till tester för filformat, storleksgräns, path traversal, legacy-avkodning samt meddelandets bilage-livscykel.
+
+**Berörda filer**
+- `Sources/Domain/FamilyModels.swift`
+- `Sources/Data/FamilyMessageAttachmentStore.swift` (ny)
+- `Sources/Data/FamilyRepository.swift`
+- `Sources/Data/FamilyStore.swift`
+- `Sources/Data/LocalFamilyStore.swift`
+- `Sources/FamilyMessagesView.swift`
+- `Tests/FamilyMessageAttachmentStoreTests.swift` (ny)
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+
+**Verifiering**
+- Tidigare bascommit `c7697c324f4db8c25cee0b60234dce0ab3c170ef` har godkänt simulatorns enhetstester och unsigned iPhone-IPA i Actions-körningarna 45339011495 och 45339020078.
+- Den nya bilageimplementationen har ännu inte CI-verifierats. Ny körning inväntas för aktuell branch-head.
+- Ingen fysisk iPhone-verifiering är utförd.
+
+**Kvarstår**
+- Bekräfta kompilering och samtliga tester för bilageimplementationen.
+- Testa PhotosPicker och bildvisning på fysisk iPhone.
+- Förbättra fullskärmsvisning och städning av orphan-filer.
+- CloudKit-delning kräver Apple Developer-konfiguration och separat test med två Apple-konton.
+
+**Branch**: `feature/family-messenger`. PR #4 och #5 förblir öppna draft; ingen merge.

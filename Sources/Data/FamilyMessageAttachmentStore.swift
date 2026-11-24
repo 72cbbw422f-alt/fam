@@ -91,6 +91,41 @@ struct FamilyMessageAttachmentStore {
         }
     }
 
+    /// Removes regular files in the app-owned attachment tree that are not
+    /// referenced by the successfully decoded message snapshot. Symlinks and
+    /// unexpected directory names are deliberately left untouched.
+    func removeOrphanedFiles(referencedAttachments: [FamilyMessageAttachment]) throws {
+        let attachmentRoot = rootDirectory.appendingPathComponent("MessageAttachments", isDirectory: true)
+        guard fileManager.fileExists(atPath: attachmentRoot.path) else { return }
+        let referencedPaths = Set(referencedAttachments.filter(\.isValid).map(\.relativePath))
+        let messageDirectories = try fileManager.contentsOfDirectory(
+            at: attachmentRoot,
+            includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
+            options: [.skipsHiddenFiles]
+        )
+
+        for directory in messageDirectories {
+            let values = try directory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+            guard values.isDirectory == true, values.isSymbolicLink != true,
+                  UUID(uuidString: directory.lastPathComponent) != nil else { continue }
+            let files = try fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey],
+                options: [.skipsHiddenFiles]
+            )
+            for file in files {
+                let attributes = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+                guard attributes.isRegularFile == true, attributes.isSymbolicLink != true else { continue }
+                let relativePath = "MessageAttachments/\(directory.lastPathComponent)/\(file.lastPathComponent)"
+                if !referencedPaths.contains(relativePath) {
+                    try fileManager.removeItem(at: file)
+                }
+            }
+            let remaining = try fileManager.contentsOfDirectory(atPath: directory.path)
+            if remaining.isEmpty { try fileManager.removeItem(at: directory) }
+        }
+    }
+
     private func url(for attachment: FamilyMessageAttachment) -> URL? {
         let candidate = rootDirectory.appendingPathComponent(attachment.relativePath).standardizedFileURL
         let rootPath = rootDirectory.path.hasSuffix("/") ? rootDirectory.path : rootDirectory.path + "/"

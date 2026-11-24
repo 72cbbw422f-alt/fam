@@ -45,3 +45,11 @@ Lagringsgränsen är avsiktligt fristående från SwiftUI och CloudKit. Vid fram
 - The image is aspect-fit so the complete image remains visible; a clearly labelled close control dismisses the viewer.
 - This viewer uses the already persisted local attachment data. It does not add remote loading, sharing, or CloudKit behavior.
 - Physical-device interaction and accessibility behavior still require manual iPhone verification.
+
+
+## Orphaned-file cleanup
+
+- On startup, cleanup runs only after the local JSON snapshot has decoded successfully. A corrupt or unrecoverable snapshot never triggers attachment deletion.
+- The cleanup compares files under UUID-named `MessageAttachments` directories against attachment paths referenced by decoded messages.
+- Only unreferenced regular files are removed. Symbolic links and unexpected directory names are ignored; empty attachment directories are removed after their files are processed.
+- Cleanup errors are non-fatal and do not change message metadata or the JSON snapshot.

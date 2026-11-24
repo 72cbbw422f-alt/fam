@@ -382,6 +382,49 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(store.members.first?.role, .owner)
     }
 
+    func testAddingShoppingItemRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        store.addShoppingItem("Mjölk", category: .dairy)
+
+        XCTAssertTrue(store.shoppingItems.isEmpty)
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testCheckingShoppingItemRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Mjölk", category: .dairy)
+        let item = try XCTUnwrap(store.shoppingItems.first)
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        store.setShoppingItem(item.id, checked: true)
+
+        XCTAssertEqual(store.shoppingItems.first?.isChecked, false)
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testDeletingShoppingItemRollsBackWhenPersistenceFails() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Mjölk", category: .dairy)
+        let item = try XCTUnwrap(store.shoppingItems.first)
+        try FileManager.default.removeItem(at: directory)
+        try Data("block directory".utf8).write(to: directory)
+
+        store.deleteShoppingItem(item.id)
+
+        XCTAssertEqual(store.shoppingItems.map(\\.id), [item.id])
+        XCTAssertNotNil(store.persistenceError)
+    }
+
     func testShoppingItemCanBeCheckedAndDeleted() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

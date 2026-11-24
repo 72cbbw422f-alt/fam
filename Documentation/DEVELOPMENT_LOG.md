@@ -1127,3 +1127,29 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 
 
 - CI-körning #645 startades av den första kodcommitten i denna ändringsserie. Test- och dokumentationscommits följde därefter; en ny körning på slutlig gren-head krävs för att verifiera hela ändringsserien.
+
+
+## 2026-11-24 – Inköpslista: återställ ändringar vid persistensfel
+
+**Fynd**
+- Granskning av `LocalFamilyStore` visade att lägga till, bocka av och radera inköpsposter ignorerade misslyckad snapshot-skrivning.
+- En användare kunde därför se en inköpsändring som försvann efter omstart.
+
+**Åtgärd**
+- Inköpslistans tre mutationer sparar nu föregående data och återställer den om `saveToDisk()` misslyckas.
+- Radering av en post som inte finns gör ingen onödig skrivning.
+- Tre regressionstester täcker misslyckad tilläggning, avbockning och radering.
+
+**Berörda filer**
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Ändringarna är incheckade på `feature/family-messenger`.
+- CI måste verifiera slutlig gren-head innan de räknas som färdiga.
+- Ingen fysisk iPhone-testning är genomförd.
+
+**Kvarstår**
+- Granska kvarvarande mutationer som fortfarande ignorerar resultatet från `saveToDisk()`.
+- Verifiera shoppinglistans normala flöde och rollback vid diskfel.

@@ -1153,3 +1153,28 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Kvarstår**
 - Granska kvarvarande mutationer som fortfarande ignorerar resultatet från `saveToDisk()`.
 - Verifiera shoppinglistans normala flöde och rollback vid diskfel.
+
+
+## 2026-11-24 – CI-fel: korrigera key path i inköpslistans regressionstest
+
+**Fynd**
+- CI-körning [45335781165](https://github.com/72cbbw422f-alt/fam/actions/runs/45335781165) byggde och paketerade unsigned iPhone-IPA utan fel.
+- Simulatorjobbet stoppades under testkompilering i `Tests/LocalFamilyStoreTests.swift:424`: en dubblerad omvänd snedstreckskombination gjorde key path-uttrycket `map(\\.id)` ogiltigt.
+- Testerna startade därför inte. Detta var ett testkällfel, inte ett fel i appens produktionskod.
+
+**Åtgärd**
+- Korrigerade uttrycket till giltig Swift-syntax: `map(\.id)`.
+- Ändringen är incheckad i commit `96f0d95fc064163892daef454d68efa9edb6bfef` på `feature/family-messenger`.
+
+**Berörda filer**
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Föregående iPhone Release-build och unsigned IPA-paketering passerade i körning 45335781165.
+- Simulatorns testkompilering misslyckades före teststart på grund av key path-felet.
+- Den korrigerade committen måste passera en ny GitHub Actions-körning innan shoppinglistans regressionstester räknas som verifierade.
+
+**Kvarstår**
+- Kontrollera ny CI för aktuell gren-head och verifiera samtliga tester.
+- Fortsätt därefter granskningen av återstående mutationer som ignorerar persistensfel.

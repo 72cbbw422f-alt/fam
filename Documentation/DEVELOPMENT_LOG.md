@@ -1178,3 +1178,30 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Kvarstår**
 - Kontrollera ny CI för aktuell gren-head och verifiera samtliga tester.
 - Fortsätt därefter granskningen av återstående mutationer som ignorerar persistensfel.
+
+
+## 2026-11-24 – Persistensskydd för familjeprofiler och presentlistor
+
+**Fynd**
+- Familjeskapande, familjens namn, tillägg av barn/familjemedlem samt nya presentidéer och julklappar ändrade minnesmodellen utan att återställa den vid misslyckad snapshot-skrivning.
+- Det kunde ge en till synes genomförd ändring som inte överlevde omstart.
+
+**Åtgärd**
+- Lade till rollback för samtliga ovanstående mutationer när `saveToDisk()` returnerar false.
+- Familjeskapande återställer hela den tidigare lokala datamodellen, inte bara familjeobjektet.
+- Lade till regressionstester för misslyckat familjeskapande, namn-/profiländringar samt present- och julklappstillägg.
+
+**Berörda filer**
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Källkod och regressionstester är incheckade på `feature/family-messenger`.
+- GitHub Actions för den tidigare key-path-korrigeringen var ännu pending vid kontrollen. Denna ändringsserie inväntar ny CI-verifiering.
+- Ingen lokal Xcode-miljö eller fysisk iPhone-testning finns tillgänglig här.
+
+**Kvarstår**
+- Kontrollera att simulatorns testkompilering och samtliga tester passerar för aktuell gren-head.
+- Granska resterande `saveToDisk()`-anrop och kontrollera att varje mutation har konsekvent rollback.
+- PR #4 och #5 hålls öppna som draft; ingen merge.

@@ -421,7 +421,7 @@ final class LocalFamilyStoreTests: XCTestCase {
 
         store.deleteShoppingItem(item.id)
 
-        XCTAssertEqual(store.shoppingItems.map(\\.id), [item.id])
+        XCTAssertEqual(store.shoppingItems.map(\.id), [item.id])
         XCTAssertNotNil(store.persistenceError)
     }
 

@@ -5,6 +5,7 @@ enum FamilyMessageAttachmentStoreError: Error, Equatable {
     case emptyFile
     case fileTooLarge
     case invalidMetadata
+    case applicationSupportUnavailable
 }
 
 /// Stores message images outside the JSON snapshot. Message records retain only
@@ -18,9 +19,11 @@ struct FamilyMessageAttachmentStore {
     private let rootDirectory: URL
     private let fileManager: FileManager
 
-    static func applicationStore() -> FamilyMessageAttachmentStore {
-        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return FamilyMessageAttachmentStore(rootDirectory: directory)
+    static func applicationStore(fileManager: FileManager = .default) throws -> FamilyMessageAttachmentStore {
+        guard let directory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            throw FamilyMessageAttachmentStoreError.applicationSupportUnavailable
+        }
+        return FamilyMessageAttachmentStore(rootDirectory: directory, fileManager: fileManager)
     }
 
     init(rootDirectory: URL, fileManager: FileManager = .default) {

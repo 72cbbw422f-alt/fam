@@ -51,7 +51,7 @@ Each iPhone stores its own independent family data. There is no shared calendar,
 
 **Designprincip:** Barn ska kunna finnas som profiler utan egna konton. Funktionen ska stödja praktisk familjeplanering, inte bli ett generellt uppgiftssystem.
 
-**Status:** Första implementationen är incheckad 2026-11-16. En key-path-kompileringsmiss korrigerades (FAM-014). Nästa CI-körning visade ett SwiftUI type-check-fel i toolbar-uttrycket; detta har brutits ut i FAM-015 följdes av en ytterligare förenkling och interpolationsfix (FAM-016 följdes av att filtersektionen bröts ut i FAM-017. Ny CI-verifiering inväntas. Fysisk iPhone-testning återstår.
+**Status:** Första implementationen är incheckad 2026-11-16. Kompileringsproblemen i FAM-014–FAM-017 är åtgärdade. Senaste CI på `feature/family-messenger` (2026-11-24) verifierar simulatorbygge, 102/102 tester och unsigned iPhone-bygge. Fysisk iPhone-testning återstår.
 
 ## Produktgranskning: jämförelse med familjeappar (2026-11-16)
 
@@ -77,7 +77,7 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [x] Skilj på deltagare/berörda personer och ansvarig vuxen för händelsen (implementation incheckad; CI-verifiering inväntas).
 - [x] Bakåtkompatibel datamodell från nuvarande `memberID` till stöd för flera personer; bevara befintliga snapshots och poster (implementation incheckad; CI-verifiering inväntas).
 - [x] Lägg till separat plats-/adressfält för kalenderhändelser, med bakåtkompatibel lokal lagring och visning i kalenderlistan (FAM-022; CI inväntas).
-- [x] Stöd årlig återkomst även för vanliga kalenderhändelser, inte bara födelsedagar (FAM-023; CI inväntas).\n- [ ] Utöka återkomst med veckovis/månadsvis och stöd för att ändra en förekomst eller hela serien; kräver en separat serie-/förekomstmodell.
+- [x] Stöd årlig återkomst även för vanliga kalenderhändelser, inte bara födelsedagar (FAM-023; CI inväntas).\n- [x] Utöka återkomst med veckovis/månadsvis och stöd för att ändra en förekomst eller hela serien (implementation och regressionstester finns i kalenderflödet; senaste samlade CI på 2026-11-24 verifierar 102/102 tester).
 
 #### P2 – minska manuellt arbete och förbättra iOS-åtkomst
 - [ ] Bygg vidare på befintlig OCR till ett importflöde: bild/PDF → extraherat förslag på titel, datum, tid och plats → användaren granskar → väljer familjemedlem → sparar.

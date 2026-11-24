@@ -1,10 +1,13 @@
 # Meddelandebilagor – lokal grund
 
-Status: lokal lagringsgrund och metadata är implementerade på `feature/family-messenger`. UI-integration och fysisk iPhone-verifiering återstår.
+Status: lokal lagringsgrund, metadata, PhotosPicker och lokal chattvisning är implementerade på `feature/family-messenger`. CI-verifiering och fysisk iPhone-verifiering återstår.
 
 ## Omfattning i första steget
 
 - Endast bildinnehåll: JPEG, PNG, HEIC och HEIF.
+- PhotosPicker används för bildval och en lokal förhandsvisning visas före sändning.
+- Bildmeddelanden utan text stöds.
+- Chattbubblan visar den lokalt lagrade bilden.
 - Maximal filstorlek: 10 MiB per bild.
 - Bilddata sparas separat från JSON-snapshoten i appens privata Application Support-katalog.
 - Meddelandemetadata innehåller stabilt UUID, filnamn, innehållstyp, byteantal, skapandetid och relativ sökväg.
@@ -30,9 +33,7 @@ Lagringsgränsen är avsiktligt fristående från SwiftUI och CloudKit. Vid fram
 
 ## Återstående arbete
 
-1. Integrera PhotosPicker med bildförhandsvisning och avbryt/skicka.
-2. Lägg till bilagemetadata i meddelande-API:t och snapshoten med rollback vid skrivfel.
-3. Visa miniatyrer och fullskärmsbild i chatten.
-4. Hantera borttagning och orphan-filer säkert.
-5. Testa bildflödet på fysisk iPhone.
-6. Efter Apple Developer-konfiguration: implementera CloudKit-asset och synkstatus separat.
+1. Verifiera ny CI för modell, filhantering, UI och regressionstester.
+2. Testa PhotosPicker, format, miniatyr och borttagning på fysisk iPhone.
+3. Förbättra bildvisning med tryck-för-fullskärm och hantera orphan-filer vid avbruten process.
+4. Efter Apple Developer-konfiguration: implementera CloudKit-asset och synkstatus separat.

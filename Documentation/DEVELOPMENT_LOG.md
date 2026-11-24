@@ -1337,3 +1337,26 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Verifiera Swift-kompilering, enhetstester och unsigned IPA för miniatyrändringen.
 - Mäta scrollprestanda och minnesanvändning på fysisk iPhone.
 - CloudKit-synk och delning är fortfarande inte implementerade.
+
+
+## 2026-11-24 – bakgrundsavkodning av chattminiatyrer
+
+**Utgångsläge och verifiering**
+- Arbetsgren: `feature/family-messenger`.
+- Föregående commit `ed2f2630c756667e1caf176a7c0d0520d485cfed` byggdes grönt i GitHub Actions, både som iOS Simulator och unsigned iPhone IPA.
+- Simulatorn körde **102 tester, 0 fel**.
+- IPA-artefakt: `Familjen-unsigned-IPA`, artifact ID `14907312579`, 2 756 998 byte, SHA-256 `f9c1ea9b2aab5075691c90f30153e08b3329d57f8cf513a529e1c9089abdbf83`. Artefakten löper ut 2026-12-08.
+
+**Ändrat**
+- Flyttade ImageIO-avkodningen av chattminiatyrer från SwiftUI-vyns synkrona renderingsväg till en utility-prioriterad detached task.
+- En neutral platshållare visas medan miniatyren laddas. Resultatet publiceras först när uppgiften är färdig och inte har avbrutits.
+- Behöll 640 px maxdimension, sökvägsvalidering och NSCache. Fullskärmsvisaren använder fortsatt originalbilden.
+- Berörda filer: `Sources/FamilyMessagesView.swift`, `Documentation/MESSAGE_ATTACHMENTS.md`.
+- Kodcommit: `9bd4d987adc68f4a67423c889bac212fc1192d00`.
+- Dokumentationscommit: `0cff5cf5166b090f4a4994e36fe5df51d5148c4f`.
+
+**Verifiering och kvarstående**
+- Föregående commit är verifierad med 102/102 tester och båda byggspåren gröna.
+- Bakgrundsavkodningen är incheckad men väntar på en egen CI-körning. Den ska inte betraktas som verifierad förrän simulatorbygge, tester och unsigned iPhone-bygge passerat på dokumentationscommiten.
+- Ingen fysisk iPhone-testning eller prestandaprofilering har genomförts.
+- PR #5 är fortsatt draft och ska inte mergas utan uttryckligt godkännande.

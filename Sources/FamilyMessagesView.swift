@@ -129,6 +129,8 @@ private struct FamilyChatView: View {
     @State private var selectedImageType: String?
     @State private var attachmentError: String?
     @State private var messagePendingDeletion: FamilyMessage?
+    @State private var viewingImageData: Data?
+    @State private var isImageViewerPresented = false
     @FocusState private var composerFocused: Bool
 
     let title: String
@@ -189,6 +191,11 @@ private struct FamilyChatView: View {
         .onChange(of: selectedPhoto) { _, item in
             Task { await loadSelectedPhoto(item) }
         }
+        .fullScreenCover(isPresented: $isImageViewerPresented, onDismiss: { viewingImageData = nil }) {
+            if let viewingImageData, let image = UIImage(data: viewingImageData) {
+                FamilyMessageImageViewer(image: image)
+            }
+        }
     }
 
     private var localOnlyNotice: some View {
@@ -239,11 +246,18 @@ private struct FamilyChatView: View {
                 ForEach(message.attachments ?? []) { attachment in
                     if let imageData = try? FamilyMessageAttachmentStore.applicationStore().data(for: attachment),
                        let image = UIImage(data: imageData) {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: 220, maxHeight: 220)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        Button {
+                            viewingImageData = imageData
+                            isImageViewerPresented = true
+                        } label: {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: 220, maxHeight: 220)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Visa bild i helskärm")
                     }
                 }
                 Text(message.sentAt.formatted(.dateTime.hour().minute()))
@@ -396,5 +410,37 @@ private struct FamilyChatView: View {
         } else {
             attachmentError = "Meddelandet kunde inte sparas. Försök igen."
         }
+    }
+}
+
+
+private struct FamilyMessageImageViewer: View {
+    @Environment(\.dismiss) private var dismiss
+    let image: UIImage
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(12)
+        }
+        .overlay(alignment: .topTrailing) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 40, height: 40)
+                    .background(.white.opacity(0.18), in: Circle())
+            }
+            .accessibilityLabel("Stäng bildvisning")
+            .padding(.top, 12)
+            .padding(.trailing, 16)
+        }
+        .statusBarHidden()
     }
 }

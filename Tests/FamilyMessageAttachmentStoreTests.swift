@@ -87,7 +87,7 @@ final class FamilyMessageAttachmentStoreTests: XCTestCase {
 
     func testOrphanCleanupKeepsReferencedFilesAndRemovesUnreferencedFiles() throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FamiljenAttachments-\\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("FamiljenAttachments-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = FamilyMessageAttachmentStore(rootDirectory: root)
         let referenced = try store.save(

@@ -1263,3 +1263,30 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Kvarstår**
 - Verifiera fullskärmsvyn i CI och därefter på fysisk iPhone.
 - Fortsätt med säker orphan-fil-städning och tester utan att riskera bilagor som tillhör sparade meddelanden.
+
+
+## 2026-11-24 – Bildbilagor: säker städning av orphan-filer
+
+**Ändring**
+- Lade till städning av orefererade bildfiler i `FamilyMessageAttachmentStore`.
+- Städningen körs vid uppstart endast efter att JSON-snapshoten har avkodats framgångsrikt. En korrupt snapshot får aldrig utlösa filradering.
+- Endast vanliga filer under UUID-namngivna mappar i appens `MessageAttachments`-katalog jämförs med bilagor som meddelandena faktiskt refererar till.
+- Symboliska länkar och oväntade kataloger lämnas orörda. Tomma bilagemappar tas bort efter städning.
+- Städningen är icke-kritisk: filsystemsfel avbryter städningen men ändrar inte snapshot eller meddelanden.
+
+**Berörda filer**
+- `Sources/Data/FamilyMessageAttachmentStore.swift`
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/FamilyMessageAttachmentStoreTests.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Kod och test är incheckade på `feature/family-messenger`.
+- Nytt test verifierar att refererad bild behålls och orphan-fil tas bort.
+- CI för den här ändringsserien inväntas; inga testresultat på dessa commits redovisas ännu.
+- Städning efter korrupt snapshot är avsiktligt spärrad för att skydda återställningskopian.
+
+**Kvarstår**
+- Verifiera fullskärmsvyn och orphan-städningen i CI.
+- Genomföra fysisk iPhone-testning av val, sändning, öppning och radering av bilder.

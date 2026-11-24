@@ -1290,3 +1290,26 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Kvarstår**
 - Verifiera fullskärmsvyn och orphan-städningen i CI.
 - Genomföra fysisk iPhone-testning av val, sändning, öppning och radering av bilder.
+
+
+## 2026-11-24 – Meddelandebilagor: integrationstester för uppstartsstädning
+
+**Ändringar**
+- Lade till integrationstest genom `LocalFamilyStore` som verifierar att en giltig snapshot behåller bildfiler som refereras av meddelanden och tar bort en orefererad fil vid uppstart.
+- Lade till skyddstest för korrupt snapshot: bilagefiler ska bevaras när snapshoten inte kan avkodas, samtidigt som den oläsbara JSON-filen flyttas till en återställningsfil.
+- Uppdaterade bilagedokumentationen med testernas omfattning.
+
+**Berörda filer**
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/MESSAGE_ATTACHMENTS.md`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Tidigare commit `de521cb3ffaea7b9da762fa2cde3c75bbbefd5ac` verifierades i GitHub Actions-körning [45351600010](https://github.com/72cbbw422f-alt/fam/actions/runs/45351600010): 100 tester passerade utan fel; simulatorbygge och unsigned iPhone-IPA lyckades.
+- De två nya integrationstesterna är tillagda men ännu inte CI-verifierade.
+- Ny CI-körning krävs innan de räknas som godkända.
+
+**Kvarstår**
+- Granska CI för de nya integrationstesterna och kontrollera att IPA-artifact skapas.
+- Fysisk iPhone-testning av PhotosPicker, bilagevisning och radering återstår.
+- CloudKit-synk och delning är inte implementerade.

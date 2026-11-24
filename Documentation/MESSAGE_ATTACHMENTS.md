@@ -58,6 +58,7 @@ Lagringsgränsen är avsiktligt fristående från SwiftUI och CloudKit. Vid fram
 ## Thumbnail decoding and cache
 
 - Chat bubbles use ImageIO to create a transformed thumbnail with a maximum pixel dimension of 640 instead of decoding the original full-resolution image for the inline preview.
+- Thumbnail decoding runs in a utility-priority detached task rather than synchronously in the SwiftUI view body. The placeholder remains visible until decoding completes; the view checks task cancellation before publishing the result.
 - Decoded thumbnails are cached in an in-memory `NSCache`, keyed by the validated relative attachment path. The cache may evict entries under memory pressure.
 - Opening the full-screen viewer still reads the original attachment data so the preview remains full quality.
-- The thumbnail decode currently runs synchronously when the bubble is rendered; moving decoding to a background task remains a possible follow-up if profiling on physical devices shows visible scrolling stalls.
+- Physical-device scrolling performance and memory behavior still require manual verification.

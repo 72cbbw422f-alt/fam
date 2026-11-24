@@ -18,6 +18,11 @@ struct FamilyMessageAttachmentStore {
     private let rootDirectory: URL
     private let fileManager: FileManager
 
+    static func applicationStore() -> FamilyMessageAttachmentStore {
+        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return FamilyMessageAttachmentStore(rootDirectory: directory)
+    }
+
     init(rootDirectory: URL, fileManager: FileManager = .default) {
         self.rootDirectory = rootDirectory.standardizedFileURL
         self.fileManager = fileManager

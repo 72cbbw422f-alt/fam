@@ -447,12 +447,13 @@ private struct FamilyMessageImageViewer: View {
 /// every time SwiftUI reevaluates a chat bubble.
 private struct FamilyMessageThumbnail: View {
     private static let cache = NSCache<NSString, UIImage>()
+    @State private var thumbnail: UIImage?
     let attachment: FamilyMessageAttachment
 
     var body: some View {
         Group {
-            if let image = Self.thumbnail(for: attachment) {
-                Image(uiImage: image)
+            if let thumbnail {
+                Image(uiImage: thumbnail)
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: 220, maxHeight: 220)
@@ -467,8 +468,18 @@ private struct FamilyMessageThumbnail: View {
                     }
             }
         }
+        .task(id: attachment.relativePath) {
+            let item = attachment
+            let decoded = await Task.detached(priority: .utility) {
+                Self.thumbnail(for: item)
+            }.value
+            guard !Task.isCancelled else { return }
+            thumbnail = decoded
+        }
     }
 
+    /// ImageIO decoding runs off the main actor. The cache is thread-safe and
+    /// keyed by the stable, validated relative attachment path.
     private static func thumbnail(for attachment: FamilyMessageAttachment) -> UIImage? {
         let key = attachment.relativePath as NSString
         if let cached = cache.object(forKey: key) { return cached }

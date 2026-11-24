@@ -480,7 +480,7 @@ private struct FamilyMessageThumbnail: View {
 
     /// ImageIO decoding runs off the main actor. The cache is thread-safe and
     /// keyed by the stable, validated relative attachment path.
-    private static func thumbnail(for attachment: FamilyMessageAttachment) -> UIImage? {
+    nonisolated private static func thumbnail(for attachment: FamilyMessageAttachment) -> UIImage? {
         let key = attachment.relativePath as NSString
         if let cached = cache.object(forKey: key) { return cached }
         guard attachment.isValid,

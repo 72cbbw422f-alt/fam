@@ -17,8 +17,12 @@ enum FamilyMessageThumbnailRenderer {
         if let cached = cache.object(forKey: key) { return cached }
 
         let url = root.appendingPathComponent(attachment.relativePath).standardizedFileURL
-        let rootPath = root.path.hasSuffix("/") ? root.path : root.path + "/"
-        guard url.path.hasPrefix(rootPath),
+        let resolvedRoot = root.resolvingSymlinksInPath().standardizedFileURL
+        let resolvedURL = url.resolvingSymlinksInPath().standardizedFileURL
+        let lexicalRootPath = root.path.hasSuffix("/") ? root.path : root.path + "/"
+        let resolvedRootPath = resolvedRoot.path.hasSuffix("/") ? resolvedRoot.path : resolvedRoot.path + "/"
+        guard url.path.hasPrefix(lexicalRootPath),
+              resolvedURL.path.hasPrefix(resolvedRootPath),
               let source = CGImageSourceCreateWithURL(url as CFURL, nil),
               let cgImage = CGImageSourceCreateThumbnailAtIndex(
                 source, 0,

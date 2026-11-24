@@ -1424,3 +1424,20 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - IPA-artifact ID: `14932443985` (push) och `14936158511` (PR).
 - Varningar: AppIntents-metadata hoppas över eftersom appen inte länkar AppIntents.framework; GitHub Actions rapporterar Node 20-depreciering. Inga byggfel.
 - De nya testerna i denna commit är ännu inte körda. Fysisk iPhone-testning, EXIF-orientering och verklig scroll-/minnesprestanda återstår.
+
+
+## 2026-11-24 – skydd mot symlink-baserad sökvägsflykt i bildbilagor
+
+**Fynd**
+- Den befintliga kontrollen med `standardizedFileURL` stoppade `..`-traversal men kontrollerade inte vart en symbolisk länk i en mellanliggande katalog faktiskt pekade.
+- En manipulerad lokal katalogstruktur kunde därför i teorin få en giltig relativ bilagesökväg att peka utanför appens Application Support-rot.
+
+**Ändrat**
+- `FamilyMessageAttachmentStore.url(for:)` kontrollerar nu både den lexikala sökvägen och den symlink-upplösta destinationen mot den upplösta lagringsroten.
+- `FamilyMessageThumbnailRenderer` gör motsvarande kontroll före ImageIO-avkodning.
+- Lade till regressionstest som skapar en symbolisk länk från en UUID-katalog under `MessageAttachments` till en extern temporärkatalog och verifierar att både filbutiken och miniatyravkodaren nekar åtkomst.
+- Berörda filer: `Sources/Data/FamilyMessageAttachmentStore.swift`, `Sources/Data/FamilyMessageThumbnailRenderer.swift`, `Tests/FamilyMessageAttachmentStoreTests.swift`, `Documentation/MESSAGE_ATTACHMENTS.md`, `Documentation/DEVELOPMENT_LOG.md`.
+
+**Verifiering**
+- Kodgranskad mot nuvarande path-resolution och befintlig metadata-validering.
+- CI körs efter commit; testet och bygget räknas inte som verifierade förrän båda CI-jobben passerat.

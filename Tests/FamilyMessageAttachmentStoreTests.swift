@@ -222,6 +222,49 @@ final class FamilyMessageAttachmentStoreTests: XCTestCase {
         XCTAssertFalse(first === second)
     }
 
+    func testAttachmentAndThumbnailRejectSymlinkEscapingRoot() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenSymlinkRoot-\(UUID().uuidString)", isDirectory: true)
+        let outside = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenSymlinkOutside-\(UUID().uuidString)", isDirectory: true)
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: outside)
+        }
+        let messageID = UUID()
+        let outsideFile = outside.appendingPathComponent("secret.png")
+        try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 32, height: 32))
+        let imageData = renderer.pngData { context in
+            UIColor.systemPurple.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 32, height: 32))
+        }
+        try imageData.write(to: outsideFile)
+
+        let attachmentDirectory = root
+            .appendingPathComponent("MessageAttachments", isDirectory: true)
+            .appendingPathComponent(messageID.uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: attachmentDirectory.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try FileManager.default.createSymbolicLink(
+            at: attachmentDirectory, withDestinationURL: outside
+        )
+        let attachment = FamilyMessageAttachment(
+            id: UUID(), kind: .image, filename: "secret.png",
+            contentType: "public.png", byteCount: imageData.count,
+            relativePath: "MessageAttachments/\(messageID.uuidString)/secret.png",
+            createdAt: .now
+        )
+        let store = FamilyMessageAttachmentStore(rootDirectory: root)
+
+        XCTAssertThrowsError(try store.data(for: attachment)) { error in
+            XCTAssertEqual(error as? FamilyMessageAttachmentStoreError, .invalidMetadata)
+        }
+        XCTAssertNil(FamilyMessageThumbnailRenderer.thumbnail(for: attachment, rootDirectory: root))
+    }
+
     func testLegacyMessageDecodesWithoutAttachmentsAndNewMetadataRoundTrips() throws {
         let messageID = UUID()
         let senderID = UUID()

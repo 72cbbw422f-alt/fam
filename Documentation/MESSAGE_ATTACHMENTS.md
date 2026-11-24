@@ -84,3 +84,10 @@ Lagringsgränsen är avsiktligt fristående från SwiftUI och CloudKit. Vid fram
 - Added a cache-scope regression test: identical relative paths in two injected roots must not reuse the same cached UIImage; repeated requests within one root should reuse the cached instance.
 - Corrected UUID interpolation in the missing/corrupt-image tests so each test uses a genuinely unique temporary directory and matching message path.
 - CI must pass before treating these tests as verified. Device memory/scroll performance and EXIF orientation remain manual iPhone checks.
+
+
+## Symlink containment – 2026-11-24
+
+- File access now checks both lexical path containment and the symlink-resolved destination before reading or decoding an attachment.
+- This prevents an otherwise valid relative attachment path from escaping Application Support through a symbolic link in an intermediate directory.
+- Regression coverage creates an attachment-directory symlink to an external temporary directory and verifies both store reads and thumbnail decoding reject it.

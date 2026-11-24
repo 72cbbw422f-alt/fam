@@ -131,8 +131,12 @@ struct FamilyMessageAttachmentStore {
 
     private func url(for attachment: FamilyMessageAttachment) -> URL? {
         let candidate = rootDirectory.appendingPathComponent(attachment.relativePath).standardizedFileURL
-        let rootPath = rootDirectory.path.hasSuffix("/") ? rootDirectory.path : rootDirectory.path + "/"
-        guard candidate.path.hasPrefix(rootPath) else { return nil }
+        let resolvedRoot = rootDirectory.resolvingSymlinksInPath().standardizedFileURL
+        let resolvedCandidate = candidate.resolvingSymlinksInPath().standardizedFileURL
+        let lexicalRootPath = rootDirectory.path.hasSuffix("/") ? rootDirectory.path : rootDirectory.path + "/"
+        let resolvedRootPath = resolvedRoot.path.hasSuffix("/") ? resolvedRoot.path : resolvedRoot.path + "/"
+        guard candidate.path.hasPrefix(lexicalRootPath),
+              resolvedCandidate.path.hasPrefix(resolvedRootPath) else { return nil }
         return candidate
     }
 

@@ -1360,3 +1360,11 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Bakgrundsavkodningen är incheckad men väntar på en egen CI-körning. Den ska inte betraktas som verifierad förrän simulatorbygge, tester och unsigned iPhone-bygge passerat på dokumentationscommiten.
 - Ingen fysisk iPhone-testning eller prestandaprofilering har genomförts.
 - PR #5 är fortsatt draft och ska inte mergas utan uttryckligt godkännande.
+
+
+## 2026-11-24 – Bakgrundsavkodning av chattminiatyrer och CI-uppföljning
+- Senaste gren-head: `17e800b20d0d4ed1b3631c8b9290fdfae42c1a48` på `feature/family-messenger`.
+- GitHub Actions run `45371906107` (PR #5) och `45371893075` (push) avslutades med success för både iOS Simulator och unsigned iPhone IPA.
+- Simulatorns teststeg rapporterade 102 tester, 0 fel. iPhone Release-bygget skapade en unsigned IPA-artifact.
+- CI-loggen identifierade en Swift 6-kompatibilitetsvarning: statisk miniatyravkodning anropades från detached task trots implicit Main Actor-isolering. Nästa ändring markerar avkodningsfunktionen `nonisolated`; den ändringen måste verifieras i ny CI innan varningen kan betraktas som löst.
+- Fysisk iPhone-testning av PhotosPicker, bildvisning och scrollprestanda återstår. Ingen CloudKit-synk eller APNs-push ingår i denna lokala chattgrund.

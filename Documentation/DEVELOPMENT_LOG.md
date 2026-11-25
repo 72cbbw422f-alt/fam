@@ -1516,3 +1516,11 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Kontrollera CI för den slutliga branch-headen.
 - Kontrollera att asset-kompileringen och simulator-/iPhone-byggen passerar.
 - Visuell kontroll på fysisk iPhone återstår.
+
+## 2026-11-25 – korrigering av vinterbildens JPEG-kodning
+
+- CI för commit `ef9c30b` visade att Xcodes Asset Catalog-kompilator inte kunde läsa den första JPEG-filen. Både simulatorns testbygge och osignerat iPhone-bygge stoppades vid `CompileAssetCatalogVariant`; testerna hann därför inte köras.
+- Bilden har avkodats och kodats om till en ny baseline-JPEG med standardiserad färgrymd och metadata borttagna. Bildens motiv och dimensioner (360 × 203) har behållits.
+- Ersatte assetens blob på `feature/family-messenger` i commit `8367d8cadf4a521535a529e8279222aac4ea37f3`.
+- Ny CI-run `45632910087` startades för denna korrigering.
+- Verifiering av den nya asset-kompileringen, testerna och IPA-paketeringen inväntas. Ingen ny IPA är ännu godkänd.

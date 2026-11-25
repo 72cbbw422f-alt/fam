@@ -50,7 +50,7 @@ struct SeasonalFamilyHero: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            if scene == .winter {
+            if scene == .winter || scene == .advent || scene == .lucia || scene == .christmas {
                 GeometryReader { proxy in
                     Image("WinterFamilyHero")
                         .resizable()

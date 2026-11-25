@@ -137,7 +137,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         // in shared summaries after its profile is removed.
         let linkedHealthCalendarIDs = Set(healthRecords
             .filter { $0.memberID == id }
-            .compactMap(\\.calendarItemID))
+            .compactMap(\.calendarItemID))
         members.removeAll { $0.id == id }
         healthRecords.removeAll { $0.memberID == id }
         healthPrescriptions.removeAll { $0.memberID == id }

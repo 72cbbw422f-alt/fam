@@ -555,7 +555,7 @@ final class HealthStoreTests: XCTestCase {
         store.deleteMember(id: child.id)
 
         XCTAssertFalse(store.members.contains { $0.id == child.id })
-        XCTAssertEqual(store.healthRecords.map(\\.id), [ownerAppointment.id])
+        XCTAssertEqual(store.healthRecords.map(\.id), [ownerAppointment.id])
         XCTAssertTrue(store.healthPrescriptions.isEmpty)
         XCTAssertTrue(store.medicationPickups.isEmpty)
         XCTAssertTrue(store.healthProfileInformation.isEmpty)
@@ -564,7 +564,7 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertTrue(store.items.contains { $0.id == ownerAppointment.calendarItemID })
 
         let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
-        XCTAssertEqual(reloaded.healthRecords.map(\\.id), [ownerAppointment.id])
+        XCTAssertEqual(reloaded.healthRecords.map(\.id), [ownerAppointment.id])
         XCTAssertTrue(reloaded.healthPrescriptions.isEmpty)
         XCTAssertTrue(reloaded.medicationPickups.isEmpty)
         XCTAssertTrue(reloaded.healthProfileInformation.isEmpty)

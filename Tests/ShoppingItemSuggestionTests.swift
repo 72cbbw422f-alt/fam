@@ -38,4 +38,27 @@ final class ShoppingItemSuggestionTests: XCTestCase {
         let milk = ShoppingItemSuggestion.matching("mjölk").first { $0.title == "Mjölk" }
         XCTAssertEqual(milk?.category, .dairy)
     }
+    func testAliasesFindCanonicalProductsWithoutCreatingDuplicateSuggestions() {
+        let coke = ShoppingItemSuggestion.matching("coke")
+        XCTAssertEqual(coke.first?.title, "Coca-Cola")
+        XCTAssertEqual(coke.filter { $0.title == "Coca-Cola" }.count, 1)
+
+        let cola = ShoppingItemSuggestion.matching("coca cola")
+        XCTAssertTrue(cola.contains { $0.title == "Coca-Cola" })
+        XCTAssertTrue(cola.contains { $0.title == "Coca-Cola Zero" })
+
+        let zero = ShoppingItemSuggestion.matching("coke zero")
+        XCTAssertEqual(zero.first?.title, "Coca-Cola Zero")
+    }
+
+    func testAliasesIgnorePunctuationAndCase() {
+        let results = ShoppingItemSuggestion.matching("COCA-COLA")
+        XCTAssertTrue(results.contains { $0.title == "Coca-Cola" })
+    }
+
+    func testAliasResultsRespectExistingCanonicalItems() {
+        let results = ShoppingItemSuggestion.matching("coke", excluding: ["Coca-Cola"])
+        XCTAssertFalse(results.contains { $0.title == "Coca-Cola" })
+    }
+
 }

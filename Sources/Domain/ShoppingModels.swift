@@ -113,6 +113,7 @@ struct ChristmasGift: Identifiable, Codable, Equatable {
 struct ShoppingItemSuggestion: Identifiable, Equatable {
     let title: String
     let category: ShoppingCategory
+    var aliases: [String] = []
 
     var id: String { title.lowercased() }
 
@@ -612,9 +613,9 @@ struct ShoppingItemSuggestion: Identifiable, Equatable {
         .init(title: "Kexsnacks", category: .snacks),
         .init(title: "Salta kex", category: .snacks),
         .init(title: "Ostkex", category: .snacks),
-        .init(title: "Coca-Cola", category: .beverages),
-        .init(title: "Coca-Cola Zero", category: .beverages),
-        .init(title: "Coca-Cola Light", category: .beverages),
+        .init(title: "Coca-Cola", category: .beverages, aliases: ["coke", "cola", "coca cola", "coca-cola original"]),
+        .init(title: "Coca-Cola Zero", category: .beverages, aliases: ["coke zero", "cola zero", "coca cola zero", "zero"]),
+        .init(title: "Coca-Cola Light", category: .beverages, aliases: ["coke light", "cola light"]),
         .init(title: "Pepsi", category: .beverages),
         .init(title: "Pepsi Max", category: .beverages),
         .init(title: "Fanta Orange", category: .beverages),
@@ -842,23 +843,41 @@ struct ShoppingItemSuggestion: Identifiable, Equatable {
         .init(title: "Fikabröd blandat", category: .bakery),
     ]
 
+    private static func normalizedSearchText(_ value: String) -> String {
+        let folded = value.folding(
+            options: [.caseInsensitive, .diacriticInsensitive],
+            locale: Locale(identifier: "sv_SE")
+        )
+        return folded
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
+
     static func matching(_ query: String, excluding existingTitles: [String] = []) -> [ShoppingItemSuggestion] {
-        let cleaned = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleaned = normalizedSearchText(query)
         guard cleaned.count >= 2 else { return [] }
-        let options: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive]
-        let existing = Set(existingTitles.map { $0.folding(options: options, locale: Locale(identifier: "sv_SE")) })
+
+        let existing = Set(existingTitles.map(normalizedSearchText))
         return catalog
             .filter { suggestion in
-                let candidate = suggestion.title.folding(options: options, locale: Locale(identifier: "sv_SE"))
-                return !existing.contains(candidate) && candidate.localizedStandardContains(cleaned.folding(options: options, locale: Locale(identifier: "sv_SE")))
+                !existing.contains(normalizedSearchText(suggestion.title))
+                    && ([suggestion.title] + suggestion.aliases).contains {
+                        normalizedSearchText($0).contains(cleaned)
+                    }
             }
             .sorted { lhs, rhs in
-                let query = cleaned.folding(options: options, locale: Locale(identifier: "sv_SE"))
-                let left = lhs.title.folding(options: options, locale: Locale(identifier: "sv_SE"))
-                let right = rhs.title.folding(options: options, locale: Locale(identifier: "sv_SE"))
-                let leftPrefix = left.hasPrefix(query)
-                let rightPrefix = right.hasPrefix(query)
-                if leftPrefix != rightPrefix { return leftPrefix }
+                func rank(_ suggestion: ShoppingItemSuggestion) -> Int {
+                    let title = normalizedSearchText(suggestion.title)
+                    let aliases = suggestion.aliases.map(normalizedSearchText)
+                    if title.hasPrefix(cleaned) { return 0 }
+                    if aliases.contains(where: { $0.hasPrefix(cleaned) }) { return 1 }
+                    if title.contains(cleaned) { return 2 }
+                    return 3
+                }
+                let leftRank = rank(lhs)
+                let rightRank = rank(rhs)
+                if leftRank != rightRank { return leftRank < rightRank }
                 return lhs.title.localizedStandardCompare(rhs.title) == .orderedAscending
             }
             .prefix(6)

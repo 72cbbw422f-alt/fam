@@ -1130,6 +1130,11 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(Set(catalog.map(\.id)).count, catalog.count)
         XCTAssertTrue(catalog.contains { $0.title == "Havredryck" && $0.category == .dairy })
         XCTAssertTrue(catalog.contains { $0.title == "Hundmat" && $0.category == .household })
+        XCTAssertTrue(catalog.contains { $0.title == "Ahlgrens bilar" && $0.category == .candy })
+        XCTAssertTrue(catalog.contains { $0.title == "OLW grillchips" && $0.category == .snacks })
+        XCTAssertTrue(catalog.contains { $0.title == "Coca-Cola Zero" && $0.category == .beverages })
+        XCTAssertTrue(catalog.contains { $0.title == "Magnum Mandel" && $0.category == .iceCream })
+        XCTAssertTrue(catalog.contains { $0.title == "Kanelbullar" && $0.category == .bakery })
     }
 
 }

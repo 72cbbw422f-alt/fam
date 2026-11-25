@@ -1031,3 +1031,32 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Vid första kontrollen efter committen hade GitHub ännu inte exponerat någon workflow-run eller statuskontroll för SHA:n. Test och bygg är därför fortfarande ej verifierade.
 - Nästa kontroll: bekräfta att simulatorjobb, enhetstester och unsigned iPhone-build faktiskt startar och slutförs för aktuell branch-head.
 - Ingen merge och ingen IPA-distribution har genomförts.
+
+
+## 2026-11-25 – inköpslista: favoritvaror
+
+**Ändringar**
+- Införde en lokal, beständig lista över favoritvaror i inköpskatalogen.
+- Favoriter kan markeras direkt i sökförslagen med stjärnikon.
+- En separat sektion **Favoriter** visar sparade katalogvaror och låter användaren lägga till dem i inköpslistan med ett tryck.
+- Favoriter kan tas bort från sektionen och sorteras alfabetiskt.
+- Favoritlistan sparas i samma lokala snapshot som övriga familjedata. Det nya snapshotfältet är valfritt vid avkodning för bakåtkompatibilitet med äldre installationer.
+- Dubbletter förhindras med skiftlägesokänslig jämförelse. Skrivfel vid persistens återställer föregående favoritlista.
+
+**Berörda filer**
+- `Sources/Data/FamilyRepository.swift`
+- `Sources/Data/LocalFamilyStore.swift`
+- `Sources/Data/ShoppingListViewModel.swift`
+- `Sources/ShoppingListView.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `.github/workflows/ios-build.yml`
+
+**Tester**
+- Tillagt persistens-/reload-test som även kontrollerar dubblettskydd och borttagning.
+- Testet är incheckat men ännu inte kört. CI-resultat inväntas.
+- Fysisk iPhone-testning av stjärnknappar och favoritsektionen återstår.
+
+**GitHub**
+- Gren: `feature/shopping-favorites`, baserad på `feature/shopping-search-aliases`.
+- CI-triggern utökad till den nya grenen.
+- Ingen merge genomförd.

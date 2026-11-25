@@ -1117,3 +1117,44 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - CI körs på grenen efter att push-triggern lagts till; verifiering av den slutliga commiten inväntas.
 - Interaktionerna är inte fysiskt verifierade på iPhone i denna arbetsinsats; särskilt långtryck/context menu, listscroll och månadsväljaren behöver kontrolleras på enheten.
 - Arbetsgren: `feature/calendar-event-details`.
+
+## 2026-11-26 – Health data cleanup when removing a family profile
+
+- Audit found that removing a family member left their health records, prescriptions, medication pickups, profile information and reminders in the local snapshot. Linked health calendar entries could also remain visible without their owner.
+- Updated member deletion to remove all member-owned health data and linked health calendar items as one persistence operation. Unrelated family members' health records and calendar entries are preserved.
+- Added rollback for every affected collection if the snapshot cannot be saved.
+- Updated the observable FamilyStore facade to reschedule managed reminders after a member is deleted.
+- Added a regression test covering appointment/calendar links, prescriptions, pickup records, profile information, generated/custom reminders, persistence after reload and preservation of another member's health record.
+- Files: `Sources/Data/LocalFamilyStore.swift`, `Sources/Data/FamilyStore.swift`, `Tests/HealthStoreTests.swift`, `.github/workflows/ios-build.yml`.
+- Branch: `feature/health-member-data-cleanup`, based on green `feature/calendar-event-details`.
+- CI branch trigger added; automated results pending. No physical iPhone verification performed.
+- No merge performed.
+
+
+## 2026-11-26 – förtydliga synlighet för hälsodata i local-first-versionen
+
+**Granskning**
+- Gick igenom samtliga listvyer i Hälsa. Familjeöversikten filtrerar poster till `sharedSummary`, medan de separata detaljområdena visar samtliga poster för att kunna hantera även poster markerade som privata.
+- Eftersom local-first-versionen saknar individuell inloggning och behörighetskontroll är markeringen `Privat` inte ett säkerhetsskydd mot andra som använder samma enhet. Den styr endast om posten visas i familjeöversikten.
+
+**Åtgärd**
+- Förtydligade informationstexten i Hälsa så att det framgår att privata poster döljs från översikten men fortfarande kan visas på enheten.
+- Bytte informationssymbol från låssymbol till informationssymbol för att inte antyda ett säkerhetsskydd som ännu inte finns.
+- Berörd fil: `Sources/FamilyHealthView.swift`.
+- Commit: `4dec894a114565a9d72df749a8fc550f4b12b6ca`.
+
+**Verifiering och begränsningar**
+- Källkod och samtliga relevanta listvyer granskade.
+- Textändringen kräver ny CI-körning; resultat inväntas.
+- Ingen individuell behörighetskontroll eller synk mellan enheter har införts.
+- Fysisk iPhone-verifiering återstår.
+
+
+## 2026-11-26 – korrigera regressionstest för borttagning av hälsoprofil
+
+- CI på föregående PR #9-commit körde 99 tester; 98 passerade och ett nytt regressionstest misslyckades.
+- Felet var i testets förväntan: testet jämförde kvarvarande kalenderpost mot `calendarItemID` på ursprungsobjektet, vars värde är `nil` eftersom lagret genererar och sparar kalender-ID:t på den normaliserade posten.
+- Ändrade testet att läsa det faktiskt sparade kalender-ID:t efter `saveHealthRecord` och verifiera att just den orelaterade kalenderposten finns kvar efter profilborttagningen.
+- Berörd fil: `Tests/HealthStoreTests.swift`.
+- Commit: `6545ea021cc5ebcc8e8476fd889b567e6876b6f4`.
+- Ny CI-körning inväntas. Detta är en korrigering av testets referens, inte en ändring av produktionslogiken.

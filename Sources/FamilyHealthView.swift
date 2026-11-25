@@ -278,7 +278,7 @@ struct FamilyHealthView: View {
     }
 
     private var privacyNote: some View {
-        Label("Privata poster visas inte i den gemensamma översikten. Synlighetsval sparas med varje post. Individuell inloggning och behörighetskontroll mellan personer är ännu inte aktiv i local-first-versionen.", systemImage: "lock.shield")
+        Label("Privat innebär att posten döljs från familjeöversikten. Alla hälsoposter kan fortfarande visas på den här enheten. Individuell inloggning och behörighetskontroll saknas i local-first-versionen.", systemImage: "info.circle")
             .font(.system(size: 12))
             .foregroundStyle(FamiljenTheme.muted)
             .fixedSize(horizontal: false, vertical: true)

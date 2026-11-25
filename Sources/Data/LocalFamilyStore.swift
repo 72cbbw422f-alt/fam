@@ -124,19 +124,44 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
 
     func deleteMember(id: UUID) {
         guard members.contains(where: { $0.id == id && $0.role != .owner }) else { return }
+
         let previousMembers = members
         let previousItems = items
+        let previousHealthRecords = healthRecords
+        let previousPrescriptions = healthPrescriptions
+        let previousPickups = medicationPickups
+        let previousProfileInformation = healthProfileInformation
+        let previousHealthReminders = healthReminders
+
+        // Health data is member-owned and must not become orphaned or visible
+        // in shared summaries after its profile is removed.
+        let linkedHealthCalendarIDs = Set(healthRecords
+            .filter { $0.memberID == id }
+            .compactMap(\.calendarItemID))
         members.removeAll { $0.id == id }
-        // Keep calendar history when a profile is removed; only clear its assignment.
+        healthRecords.removeAll { $0.memberID == id }
+        healthPrescriptions.removeAll { $0.memberID == id }
+        medicationPickups.removeAll { $0.memberID == id }
+        healthProfileInformation.removeAll { $0.memberID == id }
+        healthReminders.removeAll { $0.memberID == id }
+        items.removeAll { linkedHealthCalendarIDs.contains($0.id) }
+
+        // Keep unrelated calendar history; only clear this member's assignment.
         for index in items.indices {
             items[index].memberIDs.removeAll { $0 == id }
             if items[index].responsibleMemberID == id {
                 items[index].responsibleMemberID = nil
             }
         }
+
         if !saveToDisk() {
             members = previousMembers
             items = previousItems
+            healthRecords = previousHealthRecords
+            healthPrescriptions = previousPrescriptions
+            medicationPickups = previousPickups
+            healthProfileInformation = previousProfileInformation
+            healthReminders = previousHealthReminders
         }
     }
 

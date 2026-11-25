@@ -505,4 +505,71 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertTrue(reloaded.healthReminders.isEmpty)
         XCTAssertNil(reloaded.persistenceError)
     }
+    func testDeletingMemberRemovesOwnedHealthDataAndLinkedReminders() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first(where: { $0.displayName == "Cleo" }))
+        let owner = try XCTUnwrap(store.members.first(where: { $0.role == .owner }))
+        let familyID = try XCTUnwrap(store.family?.id)
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+
+        let appointment = HealthRecord(
+            familyID: familyID, memberID: child.id, type: .appointment,
+            title: "Barnmottagning", startsAt: date, visibility: .sharedSummary
+        )
+        let ownerAppointment = HealthRecord(
+            familyID: familyID, memberID: owner.id, type: .appointment,
+            title: "Eget besök", startsAt: date.addingTimeInterval(86_400)
+        )
+        let prescription = HealthPrescription(
+            familyID: familyID, memberID: child.id, medicationName: "Läkemedel",
+            renewalDueAt: date, renewalStatus: .due
+        )
+        let pickup = MedicationPickup(
+            familyID: familyID, memberID: child.id, prescriptionID: prescription.id,
+            medicationName: "Läkemedel", dueAt: date
+        )
+        let information = HealthProfileInformation(
+            familyID: familyID, memberID: child.id, type: .allergy,
+            title: "Allergi", details: "Privat uppgift"
+        )
+        let customReminder = HealthReminder(
+            familyID: familyID, memberID: child.id, targetType: .custom,
+            title: "Egen påminnelse", firesAt: date
+        )
+
+        store.saveHealthRecord(appointment)
+        store.saveHealthRecord(ownerAppointment)
+        store.saveHealthPrescription(prescription)
+        store.saveMedicationPickup(pickup)
+        store.saveHealthProfileInformation(information)
+        store.saveHealthReminder(customReminder)
+        let ownerCalendarID = try XCTUnwrap(store.healthRecords.first(where: { $0.id == ownerAppointment.id })?.calendarItemID)
+        XCTAssertEqual(store.healthRecords.count, 2)
+        XCTAssertEqual(store.healthPrescriptions.count, 1)
+        XCTAssertEqual(store.medicationPickups.count, 1)
+        XCTAssertEqual(store.healthProfileInformation.count, 1)
+        XCTAssertEqual(store.healthReminders.count, 3)
+
+        store.deleteMember(id: child.id)
+
+        XCTAssertFalse(store.members.contains { $0.id == child.id })
+        XCTAssertEqual(store.healthRecords.map(\.id), [ownerAppointment.id])
+        XCTAssertTrue(store.healthPrescriptions.isEmpty)
+        XCTAssertTrue(store.medicationPickups.isEmpty)
+        XCTAssertTrue(store.healthProfileInformation.isEmpty)
+        XCTAssertTrue(store.healthReminders.isEmpty)
+        XCTAssertFalse(store.items.contains { $0.id == appointment.calendarItemID })
+        XCTAssertTrue(store.items.contains { $0.id == ownerCalendarID })
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.healthRecords.map(\.id), [ownerAppointment.id])
+        XCTAssertTrue(reloaded.healthPrescriptions.isEmpty)
+        XCTAssertTrue(reloaded.medicationPickups.isEmpty)
+        XCTAssertTrue(reloaded.healthProfileInformation.isEmpty)
+        XCTAssertTrue(reloaded.healthReminders.isEmpty)
+    }
+
 }

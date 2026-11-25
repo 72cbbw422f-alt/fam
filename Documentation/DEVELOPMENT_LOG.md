@@ -1013,3 +1013,21 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Arbetsgren: feature/shopping-search-aliases.
 - Baserad på feature/ux-navigation-shopping vid commit 47c228a49fe82448ffb1f8ef1b2f860b748a7469.
 - Ingen merge genomförd.
+
+
+## 2026-11-25 – CI-trigger för aliasgrenen
+
+**Fynd**
+- Granskning av `.github/workflows/ios-build.yml` visade att workflow endast lyssnade på push till `main`, `local-first-beta`, `feature/health-foundation` och `feature/ux-navigation-shopping`.
+- `feature/shopping-search-aliases` saknades i listan. Därför startades ingen GitHub Actions-körning för aliascommitten; tom CI-status var ett konfigurations-/triggerproblem, inte ett godkänt testresultat.
+
+**Åtgärd**
+- Lade till `feature/shopping-search-aliases` i workflowets push-brancher.
+- Fil: `.github/workflows/ios-build.yml`.
+- Commit: `9903ca7008290a657860b119ec04b9f5bcc3376c`.
+
+**Verifiering**
+- Workflow-filen är uppdaterad och incheckad på aliasgrenen.
+- Vid första kontrollen efter committen hade GitHub ännu inte exponerat någon workflow-run eller statuskontroll för SHA:n. Test och bygg är därför fortfarande ej verifierade.
+- Nästa kontroll: bekräfta att simulatorjobb, enhetstester och unsigned iPhone-build faktiskt startar och slutförs för aktuell branch-head.
+- Ingen merge och ingen IPA-distribution har genomförts.

@@ -50,28 +50,50 @@ struct SeasonalFamilyHero: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            LinearGradient(colors: palette, startPoint: .topLeading, endPoint: .bottomTrailing)
+            if scene == .winter {
+                GeometryReader { proxy in
+                    Image("WinterFamilyHero")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                        .clipped()
+                        .overlay {
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .black.opacity(0.04), location: 0),
+                                    .init(color: .black.opacity(0.12), location: 0.42),
+                                    .init(color: .black.opacity(0.72), location: 1)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        }
+                }
+                .accessibilityHidden(true)
+            } else {
+                LinearGradient(colors: palette, startPoint: .topLeading, endPoint: .bottomTrailing)
 
-            GeometryReader { proxy in
-                let width = proxy.size.width
-                let height = proxy.size.height
+                GeometryReader { proxy in
+                    let width = proxy.size.width
+                    let height = proxy.size.height
 
-                Circle()
-                    .fill(.white.opacity(0.12))
-                    .frame(width: 142, height: 142)
-                    .blur(radius: 1)
-                    .position(x: width * 0.84, y: height * 0.15)
+                    Circle()
+                        .fill(.white.opacity(0.12))
+                        .frame(width: 142, height: 142)
+                        .blur(radius: 1)
+                        .position(x: width * 0.84, y: height * 0.15)
 
-                Circle()
-                    .fill(FamiljenTheme.champagne.opacity(0.18))
-                    .frame(width: 172, height: 172)
-                    .blur(radius: 13)
-                    .position(x: width * 0.89, y: height * 0.76)
+                    Circle()
+                        .fill(FamiljenTheme.champagne.opacity(0.18))
+                        .frame(width: 172, height: 172)
+                        .blur(radius: 13)
+                        .position(x: width * 0.89, y: height * 0.76)
 
-                seasonalArtwork
-                    .frame(width: 190, height: 145)
-                    .position(x: width * 0.78, y: height * 0.54)
-                    .accessibilityHidden(true)
+                    seasonalArtwork
+                        .frame(width: 190, height: 145)
+                        .position(x: width * 0.78, y: height * 0.54)
+                        .accessibilityHidden(true)
+                }
             }
 
             VStack(alignment: .leading, spacing: 7) {

@@ -291,3 +291,4 @@ private struct FamilyChatView: View {
             draft = ""
         }
     }
+}

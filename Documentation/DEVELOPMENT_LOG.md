@@ -1478,3 +1478,41 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Kontrollera att inga kvarvarande referenser till bildbilagor eller borttagna typer finns.
 - Verifiera samtliga simulator-tester och unsigned iPhone-bygget i CI.
 - PR #5 ska fortsatt vara Draft och får inte mergas utan uttryckligt godkännande.
+
+## 2026-11-25 – verifierad textchatt och fotografisk vinterbanner
+
+**Textmeddelanden**
+- Rättade en saknad avslutande klammerparentes i `FamilyChatView` efter att CI visat att filen inte kunde kompileras.
+- GitHub Actions run `45570199602` passerade efter rättningen: simulatorbygge, enhetstester, osignerat iPhone-bygge, IPA-paketering och artifact-uppladdning.
+- Osignerad IPA finns som GitHub Actions-artifact `Familjen-unsigned-IPA` (artifact ID `15001268437`, giltig till 2026-12-09).
+
+**Vinterbanner**
+- Lade till ett fotorealistiskt vinterfoto i `Sources/Assets.xcassets/WinterFamilyHero.imageset/`.
+- Bilden används för vinter, advent, Lucia och jul; övriga årstider behåller sina säsongsanpassade motiv.
+- Bilden ligger lokalt i asset-katalogen och fungerar därmed offline. En diskret mörk gradient säkrar läsbarheten för datum, familjenamn och rubrik.
+- Bildfilen är optimerad till JPEG för appens asset-katalog.
+
+**Berörda filer**
+- `Sources/FamilyMessagesView.swift` – syntaxfix för chattvyn.
+- `Sources/SeasonalFamilyHero.swift` – fotografisk bakgrund under vinter- och högtidssäsongen.
+- `Sources/Assets.xcassets/WinterFamilyHero.imageset/Contents.json` – asset-katalogmetadata.
+- `Sources/Assets.xcassets/WinterFamilyHero.imageset/WinterFamilyHero.jpg` – fotografisk vinterbild.
+- `Documentation/DEVELOPMENT_LOG.md` – denna dokumentation.
+
+**GitHub**
+- Branch: `feature/family-messenger`.
+- Textchattfix: `79dfccdd5c8293ef5cadbe92bbbbe5d092e7e2c0`.
+- Vinterbild och asset-katalog: `e23547547f9f75ce35623730986df1135a15cf97`.
+- Hero-vy och säsongslogik: `fc22bdc95c0cc94914dbdd1a3f9988626b1ba83b`.
+- PR #5 är fortsatt Draft och inte mergad.
+
+**Verifiering**
+- Textchattfixen är verifierad av CI i run `45570199602`.
+- Den nya bildasseten och ändringen i hero-vyn behöver verifieras av en ny CI-körning.
+- Ingen fysisk iPhone-testning är genomförd.
+- Ingen ny IPA som innehåller vinterbilden finns ännu verifierad.
+
+**Kvarstår**
+- Kontrollera CI för den slutliga branch-headen.
+- Kontrollera att asset-kompileringen och simulator-/iPhone-byggen passerar.
+- Visuell kontroll på fysisk iPhone återstår.

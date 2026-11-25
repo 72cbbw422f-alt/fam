@@ -546,6 +546,7 @@ final class HealthStoreTests: XCTestCase {
         store.saveMedicationPickup(pickup)
         store.saveHealthProfileInformation(information)
         store.saveHealthReminder(customReminder)
+        let ownerCalendarID = try XCTUnwrap(store.healthRecords.first(where: { $0.id == ownerAppointment.id })?.calendarItemID)
         XCTAssertEqual(store.healthRecords.count, 2)
         XCTAssertEqual(store.healthPrescriptions.count, 1)
         XCTAssertEqual(store.medicationPickups.count, 1)
@@ -561,7 +562,7 @@ final class HealthStoreTests: XCTestCase {
         XCTAssertTrue(store.healthProfileInformation.isEmpty)
         XCTAssertTrue(store.healthReminders.isEmpty)
         XCTAssertFalse(store.items.contains { $0.id == appointment.calendarItemID })
-        XCTAssertTrue(store.items.contains { $0.id == ownerAppointment.calendarItemID })
+        XCTAssertTrue(store.items.contains { $0.id == ownerCalendarID })
 
         let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
         XCTAssertEqual(reloaded.healthRecords.map(\.id), [ownerAppointment.id])

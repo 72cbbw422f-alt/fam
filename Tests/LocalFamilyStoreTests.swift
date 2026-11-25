@@ -1138,6 +1138,20 @@ final class LocalFamilyStoreTests: XCTestCase {
     }
 
 
+    func testFavoriteShoppingItemsRequireAnInitializedFamily() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        store.setShoppingItemFavorite("Mjölk", isFavorite: true)
+        XCTAssertTrue(store.favoriteShoppingItemTitles.isEmpty)
+
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        XCTAssertTrue(store.favoriteShoppingItemTitles.isEmpty)
+
+        store.setShoppingItemFavorite("Mjölk", isFavorite: true)
+        XCTAssertEqual(store.favoriteShoppingItemTitles, ["Mjölk"])
+    }
+
     func testFavoriteShoppingItemsPersistAndCanBeRemoved() throws {
         let (store, directory) = try makeStore()
         defer { try? FileManager.default.removeItem(at: directory) }

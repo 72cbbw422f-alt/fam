@@ -1110,10 +1110,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Dokumentation**
 - Markerade dessa tre roadmap-punkter som implementerade och förtydligade att fysisk iPhone-verifiering återstår.
 - Berörd fil: `Documentation/ROADMAP.md`.
-- Ingen produktkod ändrades i denna avstämning.
+- Ingen produktkod ändrades i denna avstämning. Workflowen `.github/workflows/ios-build.yml` uppdaterades så att den nya grenen omfattas av push-CI.
 
 **Verifiering och begränsningar**
 - Kodgranskning av `Sources/FamilyCalendarView.swift` genomförd.
-- Den här dokumentationsändringen är ännu inte CI-verifierad.
+- CI körs på grenen efter att push-triggern lagts till; verifiering av den slutliga commiten inväntas.
 - Interaktionerna är inte fysiskt verifierade på iPhone i denna arbetsinsats; särskilt långtryck/context menu, listscroll och månadsväljaren behöver kontrolleras på enheten.
 - Arbetsgren: `feature/calendar-event-details`.

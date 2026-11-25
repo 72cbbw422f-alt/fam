@@ -1077,3 +1077,24 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Verifiering**
 - Ny CI-körning krävs på den här committen. Ingen test- eller simulatorbyggstatus markeras som godkänd ännu.
 - Unsigned iPhone-bygget och IPA-paketeringen lyckades i föregående körning, men det ersätter inte simulatorns testsvit.
+
+## 2026-11-25 – kvalitetssäkring av favoritvaror
+
+**Granskning och ändring**
+- Granskning av favoritlagringen visade att repository-metoden kunde anropas innan en familj hade skapats. UI-flödet exponerar normalt inte detta, men lagringslagret ska själv upprätthålla invarianten.
+- Begränsade därför favoritändringar till ett initierat familjeutrymme. Ogiltiga anrop före familjeuppläggning lämnar favoritlistan orörd.
+- Lade till regressionstest som provar anrop före familjeskapande och verifierar att favorit kan sparas efteråt.
+
+**Berörda filer**
+- `Sources/Data/LocalFamilyStore.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `.github/workflows/ios-build.yml`
+
+**Verifiering**
+- Nytt regressionstest är incheckat; CI för denna arbetsgren inväntas.
+- Senaste verifierade bas är PR #7, commit `14a4475c6f5fec20b46ee5db97496ee2de8252b0`, där simulatorns testjobb och osignerade iPhone-bygget passerade.
+- Fysisk iPhone-testning återstår.
+
+**GitHub**
+- Arbetsgren: `feature/shopping-recurring-items`, skapad från `feature/shopping-favorites`.
+- PR #7 lämnas öppen som Draft. Ingen merge genomförd.

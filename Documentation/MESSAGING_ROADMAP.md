@@ -42,15 +42,9 @@ Familjen ska vara en Apple-fokuserad app. Ingen Supabase, egen server, extern da
 - Definierad hantering av konflikter, dubbla försök och borttagna poster.
 - Notisinställningar per konversation.
 
-### Bildbilagor
-- Välj bilder via PhotosPicker och ta foto med kamera.
-- Förhandsvisning innan sändning.
-- Komprimering och format-/storlekskontroll på enheten.
-- Uppladdnings-/synkstatus, avbryt och försök igen.
-- Bildminiatyr i chatten och fullskärmsvisning.
-- Lagra filinnehåll med en Apple-stödd CloudKit-lösning och koppla metadata till meddelandet.
-- Hantera radering, saknade filer, låg lagring och avbruten synk.
-- Börja med bilder; andra filtyper ingår inte i första versionen.
+### Avgränsning
+- Bild- och filbilagor ingår inte i Familjens meddelanden.
+- Bilder delas via externa appar som Snapchat eller Messenger.
 
 ## Arkitekturregler innan implementation
 
@@ -71,7 +65,6 @@ Familjen ska vara en Apple-fokuserad app. Ingen Supabase, egen server, extern da
 4. Implementera familjeskapande, inbjudan och accepterande av CKShare.
 5. Migrera och verifiera kalender, familjeprofiler och inköpslista.
 6. Implementera meddelanden, lässtatus och återanslutning.
-7. Implementera bildbilagor och lagrings-/raderingspolicy.
 8. Lägg till APNs-notiser där plattformen och konfigurationen stöder det.
 9. Testa två Apple-konton, två iPhones, offline/online, ominstallation, konfliktfall och återställning.
 10. Skapa signerad distributionsversion först efter godkända tester.
@@ -79,8 +72,6 @@ Familjen ska vara en Apple-fokuserad app. Ingen Supabase, egen server, extern da
 ## Arbete som kan göras före Developer-kontot
 
 - Förbättra meddelandegränssnittet och den lokala interaktionen utan att påstå att meddelanden delas.
-- Förbereda domänmodeller och repository-kontrakt för bilagor och synkstatus när det kan göras bakåtkompatibelt.
-- Skriva tester för lokal persistens, bilage-metadata och migreringsformat.
 - Dokumentera CloudKit-schema, CKShare-flöden, behörigheter och testmatris.
 - Fortsätta förbättra kalender, hälsa, födelsedagar, inköpslista och säsongsupplevelsen lokalt.
 
@@ -97,7 +88,6 @@ Familjen ska vara en Apple-fokuserad app. Ingen Supabase, egen server, extern da
 - Niklas och Villemo kan dela en familj via sina egna Apple-konton.
 - Ändringar i delad kalender och inköpslista blir synliga på båda enheterna och överlever omstart.
 - Meddelanden levereras korrekt med avsändare, tidsordning och lässtatus.
-- Bilder kan skickas, öppnas och raderas enligt beslutad policy.
 - Offlineändringar synkroniseras efter återanslutning utan dataförlust eller oavsiktliga dubbletter.
 - En användare utanför familjedelningen kan inte läsa familjens data.
 - Migrering från lokala snapshots bevarar poster, ID-kopplingar, datum, tidszoner och status.

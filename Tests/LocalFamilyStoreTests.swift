@@ -1105,4 +1105,31 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.shoppingItems.map(\.title), ["Bröd"])
     }
 
+
+    func testFailedBulkShoppingClearRollsBackInMemoryItems() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Mjölk", category: .dairy)
+        store.addShoppingItem("Bröd", category: .pantry)
+        let originalItems = store.shoppingItems
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+
+        store.clearAllShoppingItems()
+
+        XCTAssertEqual(store.shoppingItems, originalItems)
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
+    }
+
+    func testShoppingSuggestionCatalogHasUniqueEntriesAndBroadCoverage() {
+        let catalog = ShoppingItemSuggestion.catalog
+        XCTAssertGreaterThan(catalog.count, 300)
+        XCTAssertEqual(Set(catalog.map(\.id)).count, catalog.count)
+        XCTAssertTrue(catalog.contains { $0.title == "Havredryck" && $0.category == .dairy })
+        XCTAssertTrue(catalog.contains { $0.title == "Hundmat" && $0.category == .household })
+    }
+
 }

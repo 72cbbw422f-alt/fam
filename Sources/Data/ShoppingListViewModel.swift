@@ -29,6 +29,11 @@ final class ShoppingListViewModel: ObservableObject {
     var suggestions: [ShoppingItemSuggestion] {
         ShoppingItemSuggestion.matching(newItemTitle, excluding: items.map(\.title))
     }
+    var favoriteSuggestions: [ShoppingItemSuggestion] {
+        ShoppingItemSuggestion.catalog.filter { suggestion in
+            store.favoriteShoppingItemTitles.contains { $0.caseInsensitiveCompare(suggestion.title) == .orderedSame }
+        }
+    }
 
     func startRealtimeIfNeeded() async {}
     func stopRealtime() async {}
@@ -49,6 +54,11 @@ final class ShoppingListViewModel: ObservableObject {
         newItemTitle = ""
         await load()
         isSaving = false
+    }
+
+    func setFavorite(_ suggestion: ShoppingItemSuggestion, isFavorite: Bool) async {
+        store.setShoppingItemFavorite(suggestion.title, isFavorite: isFavorite)
+        await load()
     }
 
     func setChecked(_ item: ShoppingItem, checked: Bool) async {

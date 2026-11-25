@@ -12,6 +12,7 @@ protocol FamilyRepository: AnyObject {
     var skippedOccurrences: [FamilyOccurrenceException] { get }
     var occurrenceOverrides: [FamilyOccurrenceOverride] { get }
     var shoppingItems: [ShoppingItem] { get }
+    var favoriteShoppingItemTitles: [String] { get }
     var giftIdeas: [GiftIdea] { get }
     var christmasGifts: [ChristmasGift] { get }
     var notifications: [FamilyNotification] { get }
@@ -47,6 +48,7 @@ protocol FamilyRepository: AnyObject {
     func deleteShoppingItem(_ id: UUID)
     func clearCompletedShoppingItems()
     func clearAllShoppingItems()
+    func setShoppingItemFavorite(_ title: String, isFavorite: Bool)
     func addGiftIdea(memberID: UUID, birthdayItemID: UUID, title: String, note: String?)
     func updateGiftIdea(_ idea: GiftIdea)
     func addChristmasGift(recipient: String, title: String, note: String?, responsibleMemberID: UUID?)
@@ -102,6 +104,8 @@ extension FamilyRepository {
     func addShoppingItem(_ title: String, category: ShoppingCategory) { addShoppingItem(title) }
     func clearCompletedShoppingItems() { }
     func clearAllShoppingItems() { }
+    var favoriteShoppingItemTitles: [String] { [] }
+    func setShoppingItemFavorite(_ title: String, isFavorite: Bool) { }
 
     func addMember(name: String) { addMember(name: name, role: .member) }
 

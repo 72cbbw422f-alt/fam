@@ -1148,3 +1148,13 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Textändringen kräver ny CI-körning; resultat inväntas.
 - Ingen individuell behörighetskontroll eller synk mellan enheter har införts.
 - Fysisk iPhone-verifiering återstår.
+
+
+## 2026-11-26 – korrigera regressionstest för borttagning av hälsoprofil
+
+- CI på föregående PR #9-commit körde 99 tester; 98 passerade och ett nytt regressionstest misslyckades.
+- Felet var i testets förväntan: testet jämförde kvarvarande kalenderpost mot `calendarItemID` på ursprungsobjektet, vars värde är `nil` eftersom lagret genererar och sparar kalender-ID:t på den normaliserade posten.
+- Ändrade testet att läsa det faktiskt sparade kalender-ID:t efter `saveHealthRecord` och verifiera att just den orelaterade kalenderposten finns kvar efter profilborttagningen.
+- Berörd fil: `Tests/HealthStoreTests.swift`.
+- Commit: `6545ea021cc5ebcc8e8476fd889b567e6876b6f4`.
+- Ny CI-körning inväntas. Detta är en korrigering av testets referens, inte en ändring av produktionslogiken.

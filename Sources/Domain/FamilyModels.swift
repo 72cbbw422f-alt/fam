@@ -260,34 +260,6 @@ enum FamilyConversationKind: String, Codable {
     case direct
 }
 
-struct FamilyMessageAttachment: Identifiable, Codable, Equatable {
-    enum Kind: String, Codable {
-        case image
-    }
-
-    let id: UUID
-    var kind: Kind
-    var filename: String
-    var contentType: String
-    var byteCount: Int
-    /// Relative to the app's private Application Support directory.
-    /// Never store an absolute sandbox URL in a synced message record.
-    var relativePath: String
-    var createdAt: Date
-
-    var isValid: Bool {
-        let allowedTypes = ["public.jpeg", "public.png", "public.heic", "public.heif"]
-        let path = relativePath
-        return !filename.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && allowedTypes.contains(contentType)
-            && byteCount > 0
-            && byteCount <= 10 * 1_024 * 1_024
-            && path.hasPrefix("MessageAttachments/")
-            && !path.contains("..")
-            && !path.hasPrefix("/")
-    }
-}
-
 struct FamilyMessage: Identifiable, Codable, Equatable {
     let id: UUID
     var conversationID: String
@@ -296,10 +268,9 @@ struct FamilyMessage: Identifiable, Codable, Equatable {
     var text: String
     var sentAt: Date
     var readAt: Date?
-    var attachments: [FamilyMessageAttachment]? = nil
 
     enum CodingKeys: String, CodingKey {
-        case id, text, attachments
+        case id, text
         case conversationID = "conversation_id"
         case kind
         case senderID = "sender_id"

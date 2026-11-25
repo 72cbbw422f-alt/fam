@@ -1060,3 +1060,20 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Gren: `feature/shopping-favorites`, baserad på `feature/shopping-search-aliases`.
 - CI-triggern utökad till den nya grenen.
 - Ingen merge genomförd.
+
+
+### 2026-11-25 – korrigera ett för strikt söktest
+
+**Fynd**
+- CI på commit `e6a42f2d745311d6f9d19c964d62da55c078e398` visade 1 fel av 97 tester: `ShoppingItemSuggestionTests.testExistingItemsAreExcludedWithoutCaseOrDiacriticSensitivity`.
+- Felet låg i testets förväntan att både `Mellanmjölk` och `Lättmjölk` alltid skulle synas i samma breda sökning. Sökfunktionen har avsiktligt en sexresultatsgräns och prioriterar prefixträffar; därför var förväntan inte stabil när katalogen växte.
+
+**Åtgärd**
+- Behöll kontrollen att befintlig vara `MJÖLK` exkluderas utan skiftlägeskänslighet.
+- Verifierar nu suffixvarorna med separata, fokuserade sökningar (`mellan` respektive `lätt`) i stället för att anta att båda ryms i samma begränsade resultatlista.
+- Fil: `Tests/ShoppingItemSuggestionTests.swift`.
+- Commit: `eefe4903d2a50610ceea194431496b19076777d1`.
+
+**Verifiering**
+- Ny CI-körning krävs på den här committen. Ingen test- eller simulatorbyggstatus markeras som godkänd ännu.
+- Unsigned iPhone-bygget och IPA-paketeringen lyckades i föregående körning, men det ersätter inte simulatorns testsvit.

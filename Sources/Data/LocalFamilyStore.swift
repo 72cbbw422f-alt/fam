@@ -778,7 +778,6 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             shoppingItems = snapshot.shoppingItems
             notifications = snapshot.notifications
             messages = snapshot.messages ?? []
-            snapshotLoadedSuccessfully = true
         } catch {
             // Preserve an unreadable snapshot before any later write can replace it.
             let recoveryURL = fileURL.deletingLastPathComponent()

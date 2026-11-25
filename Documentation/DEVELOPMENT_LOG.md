@@ -1117,3 +1117,14 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - CI körs på grenen efter att push-triggern lagts till; verifiering av den slutliga commiten inväntas.
 - Interaktionerna är inte fysiskt verifierade på iPhone i denna arbetsinsats; särskilt långtryck/context menu, listscroll och månadsväljaren behöver kontrolleras på enheten.
 - Arbetsgren: `feature/calendar-event-details`.
+
+## 2026-11-26 – Birthday gift list integrity
+
+- Audited the existing birthday gift list flow before extending it; the feature already supports per-person/per-birthday ideas, editing, deletion, ordering state and local persistence.
+- Hardened local storage so gift ideas can only be created or updated for the member actually assigned to the birthday.
+- Removing a birthday now removes its attached gift ideas. Removing a family member also removes that member's gift ideas, while preserving unrelated calendar history.
+- Added a regression test covering wrong-member rejection, birthday deletion cleanup, member deletion cleanup and persistence.
+- Files: `Sources/Data/LocalFamilyStore.swift`, `Tests/LocalFamilyStoreTests.swift`, `.github/workflows/ios-build.yml`.
+- Branch: `feature/birthday-gift-list-integrity`; based on `feature/calendar-event-details`.
+- CI: workflow trigger added for this branch; results pending at time of documentation.
+- No merge performed. Physical iPhone verification remains outstanding.

@@ -1129,3 +1129,22 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Branch: `feature/health-member-data-cleanup`, based on green `feature/calendar-event-details`.
 - CI branch trigger added; automated results pending. No physical iPhone verification performed.
 - No merge performed.
+
+
+## 2026-11-26 – förtydliga synlighet för hälsodata i local-first-versionen
+
+**Granskning**
+- Gick igenom samtliga listvyer i Hälsa. Familjeöversikten filtrerar poster till `sharedSummary`, medan de separata detaljområdena visar samtliga poster för att kunna hantera även poster markerade som privata.
+- Eftersom local-first-versionen saknar individuell inloggning och behörighetskontroll är markeringen `Privat` inte ett säkerhetsskydd mot andra som använder samma enhet. Den styr endast om posten visas i familjeöversikten.
+
+**Åtgärd**
+- Förtydligade informationstexten i Hälsa så att det framgår att privata poster döljs från översikten men fortfarande kan visas på enheten.
+- Bytte informationssymbol från låssymbol till informationssymbol för att inte antyda ett säkerhetsskydd som ännu inte finns.
+- Berörd fil: `Sources/FamilyHealthView.swift`.
+- Commit: `4dec894a114565a9d72df749a8fc550f4b12b6ca`.
+
+**Verifiering och begränsningar**
+- Källkod och samtliga relevanta listvyer granskade.
+- Textändringen kräver ny CI-körning; resultat inväntas.
+- Ingen individuell behörighetskontroll eller synk mellan enheter har införts.
+- Fysisk iPhone-verifiering återstår.

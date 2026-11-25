@@ -1524,3 +1524,30 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Ersatte assetens blob på `feature/family-messenger` i commit `8367d8cadf4a521535a529e8279222aac4ea37f3`.
 - Ny CI-run `45632910087` startades för denna korrigering.
 - Verifiering av den nya asset-kompileringen, testerna och IPA-paketeringen inväntas. Ingen ny IPA är ännu godkänd.
+
+
+## 2026-11-25 – CI-verifiering av korrigerad vinterbild
+
+**Resultat**
+- GitHub Actions run [45632910087](https://github.com/72cbbw422f-alt/fam/actions/runs/45632910087) passerade båda jobben på commit `8367d8cadf4a521535a529e8279222aac4ea37f3`.
+- Simulator: 93 enhetstester passerade, 0 fel; simulatorbygget lyckades.
+- iPhone: Release-bygget för fysisk enhet lyckades och osignerad IPA paketerades och laddades upp.
+- Asset-korrigeringen i `Sources/Assets.xcassets/WinterFamilyHero.imageset/WinterFamilyHero.jpg` kompilerades därmed av Xcodes Asset Catalog.
+- IPA-artifact: `Familjen-unsigned-IPA`, ID `15030573514`, storlek 2 713 255 byte. Artifacten är tillgänglig till 2026-12-09.
+- Bundle ID: `se.familjen.app`; minimum iOS 17.0.
+- Xcode rapporterade en icke-blockerande App Intents-metadata-varning eftersom appen inte länkar AppIntents.framework.
+
+**Berörda filer**
+- `Sources/Assets.xcassets/WinterFamilyHero.imageset/WinterFamilyHero.jpg` – omkodad baseline-JPEG.
+- `Documentation/DEVELOPMENT_LOG.md` – verifieringsresultatet.
+
+**GitHub**
+- Branch: `feature/family-messenger`.
+- Kod/asset-commit: `8367d8cadf4a521535a529e8279222aac4ea37f3`.
+- Dokumentationscommit före denna notering: `b21a21620083fd84ed3057c7e54324add98ec1cb`.
+- PR #5 är fortsatt Draft och inte mergad.
+
+**Kvarstår**
+- Installera den osignerade IPA:n via FlareStore och kontrollera vinterbildens faktiska utseende på fysisk iPhone.
+- Kontrollera beskärning, textkontrast och att övriga säsongsscener fortfarande visas korrekt.
+- PR #5 ska inte mergas utan uttryckligt godkännande.

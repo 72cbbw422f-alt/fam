@@ -258,9 +258,9 @@ Genomgången jämförde Familjens inriktning med Cozi, TimeTree och FamilyWall. 
 - [ ] Ge inköpslistekortet på startsidan en tydligare visuell avgränsning så det inte flyter ihop med övriga kort.
 
 ### Kalender – ny översikt och interaktion
-- [ ] Komplettera datumgrupperad lista med en tydlig kalenderlik översikt (månad/vecka med markeringar på dagar som har aktiviteter).
-- [ ] Tryck på en aktivitet ska öppna en ren informationsvy med datum, tid, plats, anteckningar, berörda personer och ansvarig – inte direkt redigeraren.
-- [ ] Tryck och håll på en aktivitet ska visa en kontextmeny med Redigera och Radera.
+- [x] Komplettera datumgrupperad lista med en tydlig kalenderlik månadsöversikt, veckonummer och markeringar på dagar som har aktiviteter (implementation finns; fysisk iPhone-verifiering återstår).
+- [x] Tryck på en aktivitet öppnar en separat informationsvy med datum, tid, plats, anteckningar, berörda personer, ansvarig, påminnelser och återkomst – inte direkt redigeraren (fysisk iPhone-verifiering återstår).
+- [x] Kontextmeny på en aktivitet erbjuder Redigera och Radera; svepåtgärd för radering finns också (fysisk iPhone-verifiering återstår).
 - [ ] Förstärk kategoriernas ikoner och kontrast utan att byta bort den befintliga kategoriidentiteten.
 
 ### Födelsedagar – presentlistor

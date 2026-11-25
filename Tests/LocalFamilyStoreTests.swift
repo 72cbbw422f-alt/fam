@@ -1137,4 +1137,26 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertTrue(catalog.contains { $0.title == "Kanelbullar" && $0.category == .bakery })
     }
 
+
+    func testFavoriteShoppingItemsPersistAndCanBeRemoved() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.setShoppingItemFavorite("Coca-Cola", isFavorite: true)
+        store.setShoppingItemFavorite("Mjölk", isFavorite: true)
+        store.setShoppingItemFavorite("coca-cola", isFavorite: true)
+
+        XCTAssertEqual(store.favoriteShoppingItemTitles, ["Coca-Cola", "Mjölk"])
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.favoriteShoppingItemTitles, ["Coca-Cola", "Mjölk"])
+
+        reloaded.setShoppingItemFavorite("Coca-Cola", isFavorite: false)
+        XCTAssertEqual(reloaded.favoriteShoppingItemTitles, ["Mjölk"])
+
+        let reloadedAgain = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloadedAgain.favoriteShoppingItemTitles, ["Mjölk"])
+    }
+
 }

@@ -765,7 +765,7 @@ struct ShoppingItemSuggestion: Identifiable, Equatable {
         .init(title: "Glasskulor", category: .iceCream),
         .init(title: "Strössel", category: .iceCream),
         .init(title: "Chokladsås", category: .iceCream),
-        .init(title: "Kol sås", category: .iceCream),
+        .init(title: "Kolasås", category: .iceCream),
         .init(title: "Jordgubbssås", category: .iceCream),
         .init(title: "Glassbägare", category: .iceCream),
         .init(title: "Glasspaket familj", category: .iceCream),

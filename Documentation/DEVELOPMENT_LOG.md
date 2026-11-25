@@ -961,3 +961,32 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Verifiering**
 - CI-tester och simulator-/iPhone-bygge ska köras på slutlig branch-head innan funktionerna betraktas som verifierade.
 - Fysisk iPhone-kontroll återstår.
+
+
+## 2026-11-25 – inköpslista: godis, snacks, dryck, glass och fika
+
+**Varukatalog**
+- Utökade den svenska katalogen från 342 till 723 unika förslag.
+- Nya kategorier: Godis, Chips & snacks, Dryck, Glass samt Fika & sötsaker.
+- Lade till svenska vardagsprodukter och välkända produkt-/märkesvarianter, inklusive choklad, lösgodis, chips, dipp, läsk, mineralvatten, juice, saft, energidryck, glasspinnar, glasspaket, bullar, kakor och tårtor.
+- Kategorierna är separata i både förslagsrader och kategoriindelningen i inköpslistan.
+- Befintliga kategorier och gamla varor utan sparad kategori behålls kompatibla.
+
+**Kvalitet**
+- Kontrollerade att katalogen inte innehåller dubbla normaliserade titlar: inga dubbletter hittades.
+- Lade till regressionstester för att verifiera att nya kategorier och representativa varor finns i katalogen.
+- Behöll befintlig sökordning, svensk diakritikhantering, filtrering av redan tillagda varor och sex synliga förslag.
+
+**Filer**
+- `Sources/Domain/ShoppingModels.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**GitHub**
+- Gren: `feature/ux-navigation-shopping`.
+- Senaste kod-/testcommit: `b82d85a73debb7a9d10628c8713aa7b71ccfc705`.
+- Ingen merge till huvudgren genomförd.
+
+**Verifiering**
+- CI ska verifiera kompilering och regressionstester innan katalogutökningen betraktas som färdig.
+- Ingen IPA byggd för denna ändring ännu.

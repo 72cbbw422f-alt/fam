@@ -1441,3 +1441,40 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Verifiering**
 - Kodgranskad mot nuvarande path-resolution och befintlig metadata-validering.
 - CI körs efter commit; testet och bygget räknas inte som verifierade förrän båda CI-jobben passerat.
+
+## 2026-11-25 – Familjechatten förenklad till textmeddelanden
+
+**Produktbeslut**
+- Familjens meddelanden ska användas för kort vardagskommunikation, inte ersätta Snapchat eller Messenger.
+- Bild- och filbilagor tas bort helt ur meddelandefunktionen.
+
+**Ändringar**
+- Tog bort PhotosPicker, bildförhandsvisning, bilageknapp, miniatyrer och fullskärmsvisare ur chattgränssnittet.
+- Förenklade sändning till textmeddelanden; tomma meddelanden kan inte skickas.
+- Tog bort bilagemetadata från FamilyMessage, bilage-API från repository/store och lokal bilagelagring.
+- Tog bort bildlagrings-/miniatyrimplementation och dess dedikerade tester.
+- Tog bort bilagetester från LocalFamilyStoreTests; befintliga tester för textmeddelanden, persistens, lässtatus och radering behålls.
+- Uppdaterade meddelanderoadmapen med den nya avgränsningen.
+
+**Berörda filer**
+- Sources/FamilyMessagesView.swift
+- Sources/Domain/FamilyModels.swift
+- Sources/Data/FamilyRepository.swift
+- Sources/Data/FamilyStore.swift
+- Sources/Data/LocalFamilyStore.swift
+- Sources/Data/FamilyMessageAttachmentStore.swift (borttagen)
+- Sources/Data/FamilyMessageThumbnailRenderer.swift (borttagen)
+- Tests/FamilyMessageAttachmentStoreTests.swift (borttagen)
+- Tests/LocalFamilyStoreTests.swift
+- Documentation/MESSAGE_ATTACHMENTS.md (borttagen)
+- Documentation/MESSAGING_ROADMAP.md
+
+**Verifiering**
+- Källändringarna är incheckade på feature/family-messenger.
+- GitHub Actions måste passera för slutlig branch-head innan ändringen räknas som bygg- och testverifierad.
+- Ingen fysisk iPhone-testning är genomförd.
+
+**Kvarstår**
+- Kontrollera att inga kvarvarande referenser till bildbilagor eller borttagna typer finns.
+- Verifiera samtliga simulator-tester och unsigned iPhone-bygget i CI.
+- PR #5 ska fortsatt vara Draft och får inte mergas utan uttryckligt godkännande.

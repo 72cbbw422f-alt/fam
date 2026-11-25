@@ -42,8 +42,11 @@ protocol FamilyRepository: AnyObject {
     func saveOccurrenceOverride(seriesID: UUID, occurrenceDate: Date, item: FamilyItem)
     func skipOccurrence(of item: FamilyItem)
     func addShoppingItem(_ title: String)
+    func addShoppingItem(_ title: String, category: ShoppingCategory)
     func setShoppingItem(_ id: UUID, checked: Bool)
     func deleteShoppingItem(_ id: UUID)
+    func clearCompletedShoppingItems()
+    func clearAllShoppingItems()
     func addGiftIdea(memberID: UUID, birthdayItemID: UUID, title: String, note: String?)
     func updateGiftIdea(_ idea: GiftIdea)
     func addChristmasGift(recipient: String, title: String, note: String?, responsibleMemberID: UUID?)
@@ -95,6 +98,10 @@ extension FamilyRepository {
     func skipOccurrence(of item: FamilyItem) { }
     var persistenceError: String? { nil }
     func updateMemberSymbol(id: UUID, symbolName: String?) { }
+
+    func addShoppingItem(_ title: String, category: ShoppingCategory) { addShoppingItem(title) }
+    func clearCompletedShoppingItems() { }
+    func clearAllShoppingItems() { }
 
     func addMember(name: String) { addMember(name: name, role: .member) }
 

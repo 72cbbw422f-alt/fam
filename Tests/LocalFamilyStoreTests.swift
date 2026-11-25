@@ -515,7 +515,7 @@ final class LocalFamilyStoreTests: XCTestCase {
             id: series.id, familyID: series.familyID, title: "Veckomöte – flyttat",
             details: "Gäller bara detta tillfälle", startsAt: anchor.addingTimeInterval(2 * 60 * 60),
             endsAt: nil, kind: .event, memberID: nil, isRecurringYearly: false,
-            reminderOffsets: [], recurrenceFrequency: .none
+            reminderOffsets: [], recurrenceFrequency: FamilyRecurrenceFrequency.none
         )
         let override = FamilyOccurrenceOverride(
             seriesID: series.id, occurrenceDate: anchor, item: changedOccurrence
@@ -986,6 +986,155 @@ final class LocalFamilyStoreTests: XCTestCase {
         store.addChristmasGift(recipient: "Cleo", title: "   ", note: nil, responsibleMemberID: owner.id)
         store.addChristmasGift(recipient: "   ", title: "Bok", note: nil, responsibleMemberID: owner.id)
         XCTAssertTrue(store.christmasGifts.isEmpty)
+    }
+
+
+
+    func testShoppingCategoriesAndCheckedItemsPersistAndLegacyItemsDecode() throws {
+        let familyID = UUID()
+        let itemID = UUID()
+        let legacyJSON = """
+        {
+          "id": "\(itemID.uuidString)",
+          "list_id": "\(familyID.uuidString)",
+          "title": "Mjölk",
+          "is_checked": false,
+          "created_at": 1767261600
+        }
+        """
+        let legacyItem = try JSONDecoder().decode(ShoppingItem.self, from: Data(legacyJSON.utf8))
+        XCTAssertNil(legacyItem.category)
+        XCTAssertEqual(legacyItem.title, "Mjölk")
+
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Äpplen", category: .fruitVegetables)
+        let item = try XCTUnwrap(store.shoppingItems.first)
+        XCTAssertEqual(item.category, .fruitVegetables)
+
+        store.setShoppingItem(item.id, checked: true)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.shoppingItems.first?.category, .fruitVegetables)
+        XCTAssertEqual(reloaded.shoppingItems.first?.isChecked, true)
+    }
+
+    func testShoppingSuggestionsMatchSwedishTextAndAssignCategory() {
+        let suggestions = ShoppingItemSuggestion.matching("mjöl")
+        XCTAssertTrue(suggestions.contains { $0.title == "Mjölk" && $0.category == .dairy })
+        XCTAssertTrue(suggestions.contains { $0.title == "Mjöl" && $0.category == .pantry })
+    }
+
+    func testShoppingSuggestionsExcludeExistingItemsAndIgnoreCase() {
+        let suggestions = ShoppingItemSuggestion.matching("MJÖL", excluding: ["mjölk"])
+        XCTAssertFalse(suggestions.contains { $0.title == "Mjölk" })
+        XCTAssertTrue(suggestions.contains { $0.title == "Mjöl" })
+    }
+
+    func testSeasonalSceneResolverCoversSeasonAndHolidayBoundaries() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
+            calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12))!
+        }
+
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2026, 11, 28), calendar: calendar), .winter)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2026, 11, 29), calendar: calendar), .advent)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2026, 12, 13), calendar: calendar), .lucia)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2026, 12, 24), calendar: calendar), .christmas)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2027, 1, 6), calendar: calendar), .christmas)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2027, 1, 7), calendar: calendar), .winter)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2027, 3, 1), calendar: calendar), .spring)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2027, 6, 1), calendar: calendar), .summer)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2027, 9, 1), calendar: calendar), .autumn)
+    }
+
+    func testAdventCandleCountAdvancesOnEachSunday() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
+            calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12))!
+        }
+
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 11, 28), calendar: calendar), 0)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 11, 29), calendar: calendar), 1)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 12, 5), calendar: calendar), 1)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 12, 6), calendar: calendar), 2)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 12, 13), calendar: calendar), 3)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2026, 12, 20), calendar: calendar), 4)
+
+        // First Advent falls on different November/December dates depending on year.
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2024, 11, 30), calendar: calendar), .winter)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2024, 12, 1), calendar: calendar), .advent)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2025, 11, 29), calendar: calendar), .winter)
+        XCTAssertEqual(SeasonalSceneResolver.scene(for: date(2025, 11, 30), calendar: calendar), .advent)
+        XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2025, 11, 30), calendar: calendar), 1)
+    }
+
+
+    func testClearShoppingItemsRemovesAllItemsAndPersists() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Mjölk", category: .dairy)
+        store.addShoppingItem("Bröd", category: .pantry)
+        let checked = try XCTUnwrap(store.shoppingItems.first)
+        store.setShoppingItem(checked.id, checked: true)
+
+        store.clearAllShoppingItems()
+
+        XCTAssertTrue(store.shoppingItems.isEmpty)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.shoppingItems.isEmpty)
+    }
+
+    func testClearCompletedShoppingItemsKeepsActiveItemsAndPersists() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Mjölk", category: .dairy)
+        store.addShoppingItem("Bröd", category: .pantry)
+        let checked = try XCTUnwrap(store.shoppingItems.first)
+        store.setShoppingItem(checked.id, checked: true)
+
+        store.clearCompletedShoppingItems()
+
+        XCTAssertEqual(store.shoppingItems.map(\.title), ["Bröd"])
+        XCTAssertFalse(store.shoppingItems.contains(where: \.isChecked))
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.shoppingItems.map(\.title), ["Bröd"])
+    }
+
+
+    func testFailedBulkShoppingClearRollsBackInMemoryItems() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Mjölk", category: .dairy)
+        store.addShoppingItem("Bröd", category: .pantry)
+        let originalItems = store.shoppingItems
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+
+        store.clearAllShoppingItems()
+
+        XCTAssertEqual(store.shoppingItems, originalItems)
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
+    }
+
+    func testShoppingSuggestionCatalogHasUniqueEntriesAndBroadCoverage() {
+        let catalog = ShoppingItemSuggestion.catalog
+        XCTAssertGreaterThan(catalog.count, 300)
+        XCTAssertEqual(Set(catalog.map(\.id)).count, catalog.count)
+        XCTAssertTrue(catalog.contains { $0.title == "Havredryck" && $0.category == .dairy })
+        XCTAssertTrue(catalog.contains { $0.title == "Hundmat" && $0.category == .household })
+        XCTAssertTrue(catalog.contains { $0.title == "Ahlgrens bilar" && $0.category == .candy })
+        XCTAssertTrue(catalog.contains { $0.title == "OLW grillchips" && $0.category == .snacks })
+        XCTAssertTrue(catalog.contains { $0.title == "Coca-Cola Zero" && $0.category == .beverages })
+        XCTAssertTrue(catalog.contains { $0.title == "Magnum Mandel" && $0.category == .iceCream })
+        XCTAssertTrue(catalog.contains { $0.title == "Kanelbullar" && $0.category == .bakery })
     }
 
 }

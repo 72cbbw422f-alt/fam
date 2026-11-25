@@ -290,11 +290,15 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     func addShoppingItem(_ title: String) {
+        addShoppingItem(title, category: .other)
+    }
+
+    func addShoppingItem(_ title: String, category: ShoppingCategory) {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let family, !clean.isEmpty, clean.count <= 160 else { return }
         shoppingItems.append(ShoppingItem(id: UUID(), listID: family.id,
-                                          title: clean,
-                                          isChecked: false, createdAt: .now))
+                                          title: clean, isChecked: false,
+                                          createdAt: .now, category: category))
         saveToDisk()
     }
 
@@ -305,8 +309,22 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     func deleteShoppingItem(_ id: UUID) {
+        let previous = shoppingItems
         shoppingItems.removeAll { $0.id == id }
-        saveToDisk()
+        if !saveToDisk() { shoppingItems = previous }
+    }
+
+    func clearCompletedShoppingItems() {
+        let previous = shoppingItems
+        shoppingItems.removeAll(where: \.isChecked)
+        if !saveToDisk() { shoppingItems = previous }
+    }
+
+    func clearAllShoppingItems() {
+        guard !shoppingItems.isEmpty else { return }
+        let previous = shoppingItems
+        shoppingItems.removeAll()
+        if !saveToDisk() { shoppingItems = previous }
     }
 
     func addGiftIdea(memberID: UUID, birthdayItemID: UUID, title: String, note: String?) {

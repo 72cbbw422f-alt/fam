@@ -634,3 +634,359 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 
 **Verifiering**
 - Källkod och regressionstest är incheckade. CI-verifiering inväntas.
+
+
+## 2026-11-22 – UX-förbättringar: översiktsnavigation och svensk kalender
+
+**Ändringar**
+- Skapade separat arbetsgren `feature/ux-navigation-shopping` från den aktuella hälsogrenens commit `4489fcbd0c73892f764ab4de152b1ed3ab664833`. Pågående PR #2 lämnades orörd och ommergad.
+- Översiktsfliken får nu ett nytt navigations-ID när den trycks. Dashboardens `NavigationStack` återskapas därmed och återgår till startsidan även om Översikt redan är vald och en undersida ligger ovanpå.
+- Kalenderns datumformat använder nu explicit svensk locale (`sv_SE`) i stället för att förlita sig på enhetens aktuella språkval.
+- Veckodagsrubrikerna i månadsvyn använder svenska tvåbokstavsförkortningar: Må, Ti, On, To, Fr, Lö, Sö.
+
+
+- Uppdaterade `.github/workflows/ios-build.yml` så att pushar på `feature/ux-navigation-shopping` också kör simulatorns enhetstester/build och unsigned iPhone-build. Detta gör att den separata UX-grenen får samma CI-kvalitetsgrind.
+
+**Berörda filer**
+- `Sources/RootView.swift`
+- `Sources/FamilyCalendarView.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Källändringarna är incheckade på `feature/ux-navigation-shopping`.
+- Inga lokala Xcode-tester kan köras i den tillgängliga miljön.
+- CI har ännu inte verifierat dessa commits. Ingen IPA har skapats från denna arbetsgren.
+- Navigationen behöver dessutom verifieras visuellt/interaktivt på iPhone när nästa IPA finns.
+
+**Kvarstår**
+- Fortsatt UX-arbete med Bring-inspirerad inköpslista. Datamodell, lokal persistens, äldre snapshots och regressionstester ska granskas innan kategorier och övriga listfunktioner implementeras.
+
+
+## 2026-11-22 – Bring-inspirerad inköpslista: kategorier och handlat-status
+
+**Ändringar**
+- Lade till sju inköpskategorier med svenska namn och symboler: Frukt & grönt, Mejeri, Kött & fisk, Skafferi, Frys, Hushåll och Övrigt.
+- Kategorin sparas per vara i den befintliga lokala JSON-snapshoten. Äldre varor utan kategorifält avkodas fortsatt och visas under Övrigt.
+- Snabbtillägg behålls med ett separat kategorival. Aktiva varor grupperas per kategori.
+- Att bocka av en vara raderar den inte längre. Den flyttas till Handlat och kan återställas med ett tryck. Manuell borttagning via svep finns kvar.
+- Repository-kontraktet har en kompatibel standardimplementation för kategoriserat tillägg, så alternativa repository-adaptrar som ännu inte stöder kategorier fortsätter att kompilera.
+
+**Berörda filer**
+- Sources/Domain/ShoppingModels.swift
+- Sources/Data/FamilyRepository.swift
+- Sources/Data/LocalFamilyStore.swift
+- Sources/Data/FamilyStore.swift
+- Sources/Data/ShoppingListViewModel.swift
+- Sources/ShoppingListView.swift
+- Tests/LocalFamilyStoreTests.swift
+
+**Tester**
+- Tillagt regressionstest för avkodning av äldre inköpsvaror utan kategori.
+- Tillagt persistensprov för kategori och avbockad status efter omladdning.
+- Testerna är incheckade men ännu inte körda. CI-resultat inväntas.
+
+**Begränsningar**
+- Kvantitet och anteckning per vara ingår inte i denna iteration.
+- Ingen synk mellan flera enheter; listan använder fortsatt lokal lagring.
+- Ingen IPA har verifierats från denna arbetsgren.
+
+
+## 2026-11-23 – CI-fel: svensk locale i kalenderdetaljer
+
+**Fynd**
+- GitHub Actions visade att simulatorns testjobb stoppades under kompilering och att iPhone-bygget föll på tre fel i `FamilyCalendarView.swift`: `swedishLocale` användes i `FamilyCalendarItemDetailView`, men egenskapen var privat i en annan vytyp.
+- Enhetstesterna hann därför inte köras; teststeget avbröts på grund av kompileringsfelet. Ikonrenderingen och XcodeGen-projektgenereringen passerade.
+
+**Åtgärd**
+- Lade till en egen lokal `swedishLocale`-egenskap i `FamilyCalendarItemDetailView`. Det behåller svensk datum- och tidsformatering utan att ändra den andra vytypens åtkomstnivå.
+
+**Berörd fil**
+- `Sources/FamilyCalendarView.swift`
+
+**Commit**
+- `5a4a17c6fa7f13570e47a2ddb511757128c8280c` på `feature/ux-navigation-shopping`.
+
+**Verifiering**
+- Kodändringen är incheckad. Ny CI-körning inväntas.
+- Appikonens asset catalog och renderingssteget finns, men visning av ikonen i en installerad iOS-notis är ännu inte verifierad på fysisk enhet.
+- Ingen ny IPA är tillgänglig från denna commit ännu.
+
+
+## 2026-11-23 – CI: iPhone-paketering passerar, regressionstest korrigerat
+
+**Resultat från körning 45128667578**
+- Ikonrendering och XcodeGen-projektgenerering passerade.
+- Byggsteget för fysisk iPhone passerade och skapade ett unsigned IPA-artifact (run 45128667578, artifact 14797345612).
+- Simulatorns testjobb stoppades före testkörning på ett syntaxfel i slutet av `Tests/LocalFamilyStoreTests.swift`: en bokstavlig `\\n` hade råkat hamna efter klassens avslutande klammer.
+
+**Åtgärd**
+- Tog bort den felaktiga escape-sekvensen så testfilen avslutas korrekt.
+- Fil: `Tests/LocalFamilyStoreTests.swift`.
+- Commit: `533e9d376d5a9c26057dd3773dae770be201c5dd`.
+
+**Verifiering / kvarstår**
+- En ny CI-körning startas automatiskt av committen. Simulatorns testresultat måste inväntas.
+- IPA-artifactet från föregående körning byggdes från commit `344d0cef1180e19bd9ea16e64047e15986d8495d`, alltså före denna testfix. Det distribueras inte som verifierad version.
+- Notisikonens utseende behöver fortfarande kontrolleras på fysisk iPhone efter en fullständigt godkänd bygg- och testkörning.
+
+
+## 2026-11-23 – CI-stabilisering för parallella pushar
+
+**Fynd**
+- CI-körning 45137385951 avbröts under installationen av byggverktyg innan ikonrendering, projektgenerering, test eller byggen hann starta.
+- Workflow-konfigurationen hade `cancel-in-progress: true`. En efterföljande dokumentationscommit på samma gren kunde därför avbryta den pågående verifieringen.
+- Granskning av testfilen visade att testmetoden och testklassen avslutades med två klamrar på samma rad. Det var giltig Swift-syntax, men avslutningen har nu formaterats tydligare.
+
+**Åtgärder**
+- Ändrade CI-concurrency till `cancel-in-progress: false` så att en ny push inte avbryter en pågående bygg- och testkörning. Senare körningar köas i stället.
+- Formaterade avslutningen av shoppinglistans regressionstest.
+
+**Berörda filer**
+- `.github/workflows/ios-build.yml`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Ändringarna är incheckade på `feature/ux-navigation-shopping`.
+- Ny CI-verifiering inväntas. Inga nya testresultat eller IPA-artifact har ännu verifierats efter ändringarna.
+- PR #4 är fortsatt öppen som draft och har inte slagits ihop.
+
+**Kvarstår**
+- Bekräfta gröna simulatorstester och unsigned iPhone-build.
+- Kontrollera att appikonen finns i den paketerade appen.
+- Installera och testa navigering, kalender och inköpslista på fysisk iPhone.
+
+
+## 2026-11-23 – Fullständig CI-verifiering och IPA-inspektion
+
+**CI-resultat**
+- GitHub Actions-körning: [45138536295](https://github.com/72cbbw422f-alt/fam/actions/runs/45138536295).
+- Simulatorjobbet passerade: ikonrendering, XcodeGen, Swift package resolution, samtliga 79 enhetstester och simulatorbygget.
+- Testresultat: 79 tester, 0 fel.
+- iPhone-jobbet passerade: Release-build för `iphoneos`, paketering och uppladdning av unsigned IPA.
+- En varning kvarstår i `Tests/LocalFamilyStoreTests.swift:518` om tvetydig `Optional<FamilyRecurrenceFrequency>.none`. Den blockerar inte bygget eller testerna och bör städas separat.
+
+**IPA-inspektion**
+- Artifact: `Familjen-unsigned-IPA`, ID `14801676082`.
+- Byggd från commit `90cf866028dd93a9dae714f8c0c1d9f4169b2a85`.
+- Arkivet innehåller `Payload/Familjen.app`, körbar binär, `Assets.car`, appikonfiler och `Info.plist`.
+- Bundle ID: `se.familjen.app`.
+- Minimum iOS: `17.0`.
+- Plattform: `iPhoneOS`.
+- Info.plist deklarerar `AppIcon` som primär appikon. Att ikonen finns i appbundle är verifierat; visuellt utseende i iOS-notiser är inte verifierat på fysisk iPhone.
+- IPA är osignerad. Den behöver signeras/installationshanteras av FlareStore eller motsvarande innan enheten kan installera den.
+
+**Berörda filer**
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Kvarstår**
+- Installera via FlareStore och kontrollera appstart, navigation, kalender och inköpslista på fysisk iPhone.
+- Kontrollera notisikonens utseende på enheten.
+- Åtgärda den icke-blockerande Swift-varningen i ett separat litet underhållsarbete.
+- PR #4 hålls fortsatt öppen som draft; ingen merge har gjorts.
+
+
+## 2026-11-23 – Städa Swift-varning efter grön CI
+
+**Fynd**
+- Senaste CI-körningen `45159145961` passerade med 79 tester utan fel samt simulator- och iPhone Release-bygge.
+- Kompilatorn rapporterade en icke-blockerande varning i `Tests/LocalFamilyStoreTests.swift:518`: `.none` tolkades som `Optional.none` i stället för enumvärdet.
+
+**Åtgärd**
+- Kvalificerade värdet med den explicita typen `FamilyRecurrenceFrequency.none` för att undanröja tvetydigheten.
+
+**Berörda filer**
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Verifiering**
+- Ändringen är incheckad och ny CI-körning startar automatiskt.
+- Föregående kodcommit har 79/79 godkända tester och en godkänd unsigned iPhone-build. Denna lilla varningsfix måste också passera CI innan den betraktas som verifierad.
+
+**Kvarstår**
+- Installera senaste IPA via FlareStore och testa funktionerna på fysisk iPhone.
+- Kontrollera notisikon visuellt på enheten.
+- PR #4 lämnas öppen som draft.
+
+
+## 2026-11-23 – Fullständig CI-verifiering efter varningsfix
+
+**CI-resultat**
+- GitHub Actions-körning: [45163360241](https://github.com/72cbbw422f-alt/fam/actions/runs/45163360241).
+- Verifierad kodcommit: `821161440687b98eb388e8cedc3d89eda259b8e2` på `feature/ux-navigation-shopping`.
+- Simulatorjobbet passerade ikonrendering, XcodeGen, Swift package resolution, enhetstester och simulatorbygge.
+- Testresultat: 79 tester, 0 fel. Xcode-loggen avslutades med `TEST SUCCEEDED`.
+- iPhone-jobbet passerade Release-build, paketering och uppladdning av osignerad IPA.
+- Den tidigare tvetydiga `.none`-varningen i `Tests/LocalFamilyStoreTests.swift` återfinns inte i den nya testloggen efter att värdet kvalificerats som `FamilyRecurrenceFrequency.none`.
+- Xcode rapporterar fortfarande en icke-blockerande App Intents-metadata-varning eftersom appen inte har någon `AppIntents.framework`-dependency.
+
+**IPA**
+- Artifact: `Familjen-unsigned-IPA`, ID `14814400977`.
+- Byggd från verifierad kodcommit `821161440687b98eb388e8cedc3d89eda259b8e2`.
+- Storlek: 2 646 272 byte.
+- Artifact-länk: [GitHub Actions 45163360241](https://github.com/72cbbw422f-alt/fam/actions/runs/45163360241).
+- Artefakten är osignerad och behöver installeras/signeras via FlareStore eller motsvarande. Fysisk iPhone-installation är inte verifierad.
+
+**Berörda filer i denna dokumentationsuppdatering**
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**Kvarstår**
+- Fysisk iPhone-testning av appstart, översiktsnavigation, svensk kalender och inköpslistans kategorier/Handlat-flöde.
+- Verifiera appikonens och notisikonens visuella utseende på enheten.
+- PR #4 hålls öppen som draft; ingen merge har gjorts.
+
+
+## 2026-11-23 – Inköpslista: helradstryck och svenska tidsformat
+
+**Ändringar**
+- Hela inköpsvarans rad är nu en tryckyta. Tryck var som helst på raden markerar varan som handlad; ett nytt tryck i Handlat återställer den. Svep för manuell borttagning finns kvar.
+- Startsidan använder nu explicit `sv_SE` för klockslag, datum, veckodagar och relativa tidsangivelser. Detta åtgärdar engelska värden som "Tuesday" och "13 seconds ago" när telefonens språkregion inte är svenska.
+- Varuförslag har lagts till för en första svensk katalog med vanliga livsmedel och hushållsvaror. Matchning ignorerar skiftläge/diakritiska skillnader, prioriterar prefix och filtrerar bort redan aktiva varor. Val av förslag lägger till varan i föreslagen kategori.
+- Regressionstester tillagda för sökträffar, kategori och filtrering av redan tillagda varor.
+
+**Berörda filer**
+- `Sources/Domain/ShoppingModels.swift`
+- `Sources/Data/ShoppingListViewModel.swift`
+- `Sources/ShoppingListView.swift`
+- `Sources/DashboardView.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+
+**Verifiering**
+- Kod incheckad på `feature/ux-navigation-shopping`.
+- CI-körning `45167892315` för commit `1bc3edecc2943aa28cac29457678cb524bc8eb6d` startade men är ännu inte avslutad vid dokumentationstillfället. Den täcker varuförslag och svensk datumformatering.
+- Helradstryck lades till i efterföljande commit och behöver ingå i nästa gröna CI-körning.
+- Fysisk iPhone-testning krävs fortfarande för att kontrollera känslan i interaktionen och datumvisningen.
+
+**Vintrig toppbild**
+- En ny vinterbild har genererats som designunderlag. Den har ännu inte lagts in i appens asset catalog eller kopplats till `SeasonalFamilyHero`. Ingen bildväxling i appen ska betraktas som färdig innan asseten är incheckad och CI-byggd.
+
+
+**Säsongsbanner – vinter**
+- Ändrade säsongslogiken så att november också använder vinterscenen, med fortsatt prioritet för advent, Lucia och jul.
+- Uppdaterade vinterscenen med snötäckta granar, måne och snöflingor i den befintliga vektorbaserade SwiftUI-illustrationen.
+- Den genererade fotorealistiska vinterbilden användes som visuellt inspirationsunderlag men är inte incheckad som bildasset. Bannerbytet är därför en uppdaterad inbyggd illustration, inte ett foto.
+- Fil: `Sources/SeasonalFamilyHero.swift`.
+- Ändringen inväntar CI-verifiering.
+
+
+## 2026-11-23 – Säsongsbanner: datumuppdatering och regressionstester
+
+**Ändringar**
+- Flyttade datumlogiken till den testbara SeasonalSceneResolver, med explicita gränser för årstider, advent, Lucia och jul.
+- Startsidan uppdaterar nu sitt datum när kalenderdagen ändras, vid betydande tidsändring och när appen återgår till aktivt läge.
+- Adventsberäkningen är separerad och hanterar datum före första advent som noll tända ljus.
+- Säkerställde att advent kan börja redan i november; Lucia har fortsatt företräde den 13 december och julscenen gäller 24 december–6 januari.
+- Lade till regressionstester för säsongs-/högtidsgränser och de fyra adventssöndagarna.
+
+**Berörda filer**
+- Sources/SeasonalFamilyHero.swift
+- Tests/LocalFamilyStoreTests.swift
+- Documentation/DEVELOPMENT_LOG.md
+
+**Verifiering**
+- Källkod och tester är incheckade på feature/ux-navigation-shopping.
+- CI-verifiering inväntas. Inga nya testresultat eller IPA är ännu godkända från dessa ändringar.
+- Fotorealistiska säsongsbilder är fortfarande inte integrerade; befintliga SwiftUI-illustrationer används tills riktiga bildassets har lagts in.
+
+**Nästa steg**
+- Granska CI-loggarna och korrigera eventuella kompilerings-/testfel.
+- Därefter ta fram separata säsongs- och högtidsbilder som riktiga assets, med offline-fallback.
+- PR #4 förblir öppen som draft; ingen merge.
+
+- Efter kodgranskning lades UIKit-import till för den explicita UIApplication-tidsändringsnotisen och SeasonalScene deklarerades uttryckligen Equatable för stabila tester.
+
+- Utökade datumtester med flera kalenderår där första advent infaller 1 december (2024) respektive 30 november (2025), och bytte scenassertions till direkt Equatable-jämförelse.
+
+
+## 2026-11-24 – regressionstester för inköpslistans autocomplete
+
+**Granskning**
+- Bring-liknande förslag finns redan i `ShoppingItemSuggestion`: minst två tecken, svensk case-/diakritikokänslig matchning, prefixprioritering, exkludering av redan listade varor och högst sex förslag.
+- Hela inköpsraden är redan en knapp som växlar mellan aktiv och handlad; handlade varor visas separat under **Handlat**.
+- Dashboardens `SeasonalFamilyHero` är en lokalt renderad säsongsillustration som växlar automatiskt; november använder vinter/advent-logik enligt datum.
+
+**Ändrat**
+- Lade till `Tests/ShoppingItemSuggestionTests.swift` med regressionstäckning för minsta söklängd, svensk accent-/skiftlägesmatchning, prefixsortering, dubblettexkludering, resultatgräns och kategorimappning.
+- Förfinade testerna för att använda verkliga svenska katalogposter, bland annat `Crème fraiche`.
+- Commits: `674c5c5b1d477d29275c05044cc6ef717020d662` (första testfilen), `8db0b213addc057cf5fae2d0d29cb91ba8a7f824` (slutlig testversion).
+
+**Verifiering**
+- Testerna är incheckade på `feature/ux-navigation-shopping`.
+- Ingen workflow-run har ännu rapporterats för commit `8db0b213addc057cf5fae2d0d29cb91ba8a7f824`; testresultat och byggstatus är därför ej verifierade.
+- Nästa steg är att invänta/utlösa CI och granska resultatet innan funktionen markeras verifierad.
+- Fysisk iPhone-testning av autocomplete, radtryck och säsongsillustration återstår.
+
+
+## 2026-11-24 – korrigera CI-kompileringsfel i dashboardens datumformat
+
+**CI-fynd**
+- Workflow run `45441598539` på commit `3f611236699e4ae6983f54a5a03306bbd15533d4` misslyckades i unsigned iPhone-bygget. Simulatorjobbet avbröts innan det kunde ge testresultat.
+- Kompilatorfelet var i `Sources/DashboardView.swift`: `Date.FormatStyle.Symbol.Month` saknar medlemmen `.long` i uttrycket `month(.long)`.
+- Det här var ett befintligt kompileringsfel i den aktiva utvecklingsgrenen, inte ett fel i autocomplete-testernas logik.
+
+**Åtgärd**
+- Bytte till det giltiga formatalternativet `.month(.wide)`, vilket behåller avsikten att visa månadens fullständiga namn.
+- Fil: `Sources/DashboardView.swift`.
+- Commit: `130841df113291459fc8b8390a6a7df01eb531c5`.
+
+**Verifiering**
+- Korrigeringen är incheckad. Ny CI-körning för denna commit inväntas; bygget och de sex nya autocomplete-testerna är ännu inte verifierade.
+
+
+## 2026-11-25 – inköpslista: hopfällbar handlat-sektion och större varukatalog
+
+**Produktbeslut**
+- Handlade varor visas i en hopfällbar sektion med antal; sektionen är stängd som standard.
+- Varor kan återställas genom att trycka på dem när sektionen öppnas.
+- Inköpslistans meny erbjuder både `Rensa handlade` och `Rensa hela listan`; båda kräver bekräftelse.
+- Rensning av hela listan tar bort både aktiva och handlade varor. Ingen automatisk tidsbaserad rensning införs.
+
+**Varukatalog**
+- Utökade den lokala svenska katalogen från 47 till 342 förslag, fördelade på frukt & grönt, mejeri, kött & fisk, skafferi, frys och hushåll.
+- Katalogen kontrollerades för unika sök-ID:n; inga dubbletter hittades.
+- Behöll befintlig svensk tecken-/diakritikokänslig sökning, dubblettfiltrering och högst sex relevanta förslag åt gången.
+
+**Teknik och test**
+- Lade till repository-operationer för att rensa handlade respektive samtliga inköpsvaror.
+- Lokal lagring återställer föregående lista i minnet om skrivningen misslyckas.
+- Lade till regressionstester för rensning, persistens, rollback vid skrivfel och katalogens storlek/unikhet.
+- Berörda filer: `Sources/Domain/ShoppingModels.swift`, `Sources/Data/FamilyRepository.swift`, `Sources/Data/LocalFamilyStore.swift`, `Sources/Data/ShoppingListViewModel.swift`, `Sources/ShoppingListView.swift`, `Tests/LocalFamilyStoreTests.swift`.
+
+**GitHub**
+- Gren: `feature/ux-navigation-shopping`.
+- Bas-commit vid arbetets start: `479ddbb5171d1bea14c3a58fe02b44bc08fe4aa9`.
+- Senaste kodcommit för denna ändring: `95f9784b55749919a7f052a2c13869ab81825c17`.
+- Ingen merge till huvudgren genomförd.
+
+**Verifiering**
+- CI-tester och simulator-/iPhone-bygge ska köras på slutlig branch-head innan funktionerna betraktas som verifierade.
+- Fysisk iPhone-kontroll återstår.
+
+
+## 2026-11-25 – inköpslista: godis, snacks, dryck, glass och fika
+
+**Varukatalog**
+- Utökade den svenska katalogen från 342 till 723 unika förslag.
+- Nya kategorier: Godis, Chips & snacks, Dryck, Glass samt Fika & sötsaker.
+- Lade till svenska vardagsprodukter och välkända produkt-/märkesvarianter, inklusive choklad, lösgodis, chips, dipp, läsk, mineralvatten, juice, saft, energidryck, glasspinnar, glasspaket, bullar, kakor och tårtor.
+- Kategorierna är separata i både förslagsrader och kategoriindelningen i inköpslistan.
+- Befintliga kategorier och gamla varor utan sparad kategori behålls kompatibla.
+
+**Kvalitet**
+- Kontrollerade att katalogen inte innehåller dubbla normaliserade titlar: inga dubbletter hittades.
+- Lade till regressionstester för att verifiera att nya kategorier och representativa varor finns i katalogen.
+- Behöll befintlig sökordning, svensk diakritikhantering, filtrering av redan tillagda varor och sex synliga förslag.
+
+**Filer**
+- `Sources/Domain/ShoppingModels.swift`
+- `Tests/LocalFamilyStoreTests.swift`
+- `Documentation/DEVELOPMENT_LOG.md`
+
+**GitHub**
+- Gren: `feature/ux-navigation-shopping`.
+- Senaste kod-/testcommit: `b82d85a73debb7a9d10628c8713aa7b71ccfc705`.
+- Ingen merge till huvudgren genomförd.
+
+**Verifiering**
+- CI ska verifiera kompilering och regressionstester innan katalogutökningen betraktas som färdig.
+- Ingen IPA byggd för denna ändring ännu.

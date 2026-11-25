@@ -1,45 +1,20 @@
 import SwiftUI
+import UIKit
 
 /// A locally rendered seasonal illustration. It changes automatically with the
 /// device calendar and remains available offline.
 struct SeasonalFamilyHero: View {
     let familyName: String
 
-    private enum SeasonScene {
-        case autumn, advent, lucia, christmas, winter, spring, summer
-    }
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var currentDate = Date.now
 
-    private var scene: SeasonScene {
-        let calendar = Calendar(identifier: .gregorian)
-        let month = calendar.component(.month, from: .now)
-        let day = calendar.component(.day, from: .now)
-        let year = calendar.component(.year, from: .now)
-
-        let firstAdvent = calendar.startOfDay(for: firstSundayOnOrAfterNovember27(year: year, calendar: calendar))
-        let today = calendar.startOfDay(for: .now)
-        var christmasEveComponents = DateComponents()
-        christmasEveComponents.year = year
-        christmasEveComponents.month = 12
-        christmasEveComponents.day = 24
-        let christmasEve = calendar.date(from: christmasEveComponents) ?? firstAdvent
-
-        if month == 12 && day == 13 { return .lucia }
-        if today >= firstAdvent && today < christmasEve { return .advent }
-        if (month == 12 && day >= 24) || (month == 1 && day <= 6) { return .christmas }
-
-        switch month {
-        case 12, 1, 2: return .winter
-        case 3, 4, 5: return .spring
-        case 6, 7, 8: return .summer
-        default: return .autumn
-        }
+    private var scene: SeasonalScene {
+        SeasonalSceneResolver.scene(for: currentDate)
     }
 
     private var adventLitCount: Int {
-        let calendar = Calendar(identifier: .gregorian)
-        let first = firstSundayOnOrAfterNovember27(year: calendar.component(.year, from: .now), calendar: calendar)
-        let days = calendar.dateComponents([.day], from: first, to: .now).day ?? 0
-        return min(4, max(1, days / 7 + 1))
+        SeasonalSceneResolver.adventLitCount(for: currentDate)
     }
 
     private var sceneTitle: String {
@@ -101,9 +76,9 @@ struct SeasonalFamilyHero: View {
 
             VStack(alignment: .leading, spacing: 7) {
                 HStack(alignment: .firstTextBaseline, spacing: 7) {
-                    Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "sv_SE"))).capitalized)
+                    Text(currentDate.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "sv_SE"))).capitalized)
                     Text("·").foregroundStyle(.white.opacity(0.7))
-                    Text("v. \(Calendar(identifier: .iso8601).component(.weekOfYear, from: .now))")
+                    Text("v. \(Calendar(identifier: .iso8601).component(.weekOfYear, from: currentDate))")
                 }
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.88))
@@ -130,6 +105,21 @@ struct SeasonalFamilyHero: View {
         }
         .shadow(color: FamiljenTheme.navy.opacity(0.10), radius: 13, x: 0, y: 7)
         .accessibilityElement(children: .combine)
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+            refreshSeasonalDate()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
+            refreshSeasonalDate()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                refreshSeasonalDate()
+            }
+        }
+    }
+
+    private func refreshSeasonalDate() {
+        currentDate = .now
     }
 
     @ViewBuilder
@@ -152,15 +142,56 @@ struct SeasonalFamilyHero: View {
         }
     }
 
-    private func firstSundayOnOrAfterNovember27(year: Int, calendar: Calendar) -> Date {
-        var components = DateComponents()
-        components.year = year
-        components.month = 11
-        components.day = 27
-        let start = calendar.date(from: components) ?? .now
+
+}
+
+enum SeasonalScene: Equatable {
+    case autumn, advent, lucia, christmas, winter, spring, summer
+}
+
+enum SeasonalSceneResolver {
+    static func scene(for date: Date, calendar: Calendar = Calendar(identifier: .gregorian)) -> SeasonalScene {
+        let month = calendar.component(.month, from: date)
+        let day = calendar.component(.day, from: date)
+        let year = calendar.component(.year, from: date)
+        let today = calendar.startOfDay(for: date)
+        let firstAdvent = calendar.startOfDay(for: firstSundayOnOrAfterNovember27(year: year, calendar: calendar))
+        let christmasEve = makeDate(year: year, month: 12, day: 24, calendar: calendar) ?? firstAdvent
+
+        if month == 12 && day == 13 { return .lucia }
+        if today >= firstAdvent && today < christmasEve { return .advent }
+        if (month == 12 && day >= 24) || (month == 1 && day <= 6) { return .christmas }
+
+        switch month {
+        case 11, 12, 1, 2: return .winter
+        case 3, 4, 5: return .spring
+        case 6, 7, 8: return .summer
+        default: return .autumn
+        }
+    }
+
+    static func adventLitCount(for date: Date, calendar: Calendar = Calendar(identifier: .gregorian)) -> Int {
+        let year = calendar.component(.year, from: date)
+        let first = calendar.startOfDay(for: firstSundayOnOrAfterNovember27(year: year, calendar: calendar))
+        let today = calendar.startOfDay(for: date)
+        guard today >= first else { return 0 }
+        let days = calendar.dateComponents([.day], from: first, to: today).day ?? 0
+        return min(4, max(1, days / 7 + 1))
+    }
+
+    private static func firstSundayOnOrAfterNovember27(year: Int, calendar: Calendar) -> Date {
+        let start = makeDate(year: year, month: 11, day: 27, calendar: calendar) ?? .now
         let weekday = calendar.component(.weekday, from: start)
         let daysUntilSunday = (8 - weekday) % 7
         return calendar.date(byAdding: .day, value: daysUntilSunday, to: start) ?? start
+    }
+
+    private static func makeDate(year: Int, month: Int, day: Int, calendar: Calendar) -> Date? {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        return calendar.date(from: components)
     }
 }
 
@@ -276,14 +307,28 @@ private struct WinterArtwork: View {
     var body: some View {
         ZStack {
             Image(systemName: "moon.stars.fill")
-                .font(.system(size: 82, weight: .light))
-                .foregroundStyle(Color.white.opacity(0.83))
-                .offset(x: 15, y: -18)
-            ForEach(0..<9, id: \.self) { index in
+                .font(.system(size: 70, weight: .ultraLight))
+                .foregroundStyle(Color.white.opacity(0.82))
+                .offset(x: 43, y: -37)
+
+            HStack(alignment: .bottom, spacing: -12) {
+                Image(systemName: "tree.fill")
+                    .font(.system(size: 76, weight: .ultraLight))
+                    .foregroundStyle(Color(red: 0.76, green: 0.84, blue: 0.83).opacity(0.78))
+                Image(systemName: "tree.fill")
+                    .font(.system(size: 112, weight: .ultraLight))
+                    .foregroundStyle(Color(red: 0.91, green: 0.94, blue: 0.91).opacity(0.92))
+                Image(systemName: "tree.fill")
+                    .font(.system(size: 86, weight: .ultraLight))
+                    .foregroundStyle(Color(red: 0.70, green: 0.80, blue: 0.81).opacity(0.82))
+            }
+            .offset(x: 8, y: 38)
+
+            ForEach(0..<8, id: \.self) { index in
                 Image(systemName: "snowflake")
                     .font(.system(size: CGFloat(8 + index % 3 * 3), weight: .light))
-                    .foregroundStyle(.white.opacity(0.72))
-                    .offset(x: CGFloat((index % 3) * 48 - 48), y: CGFloat((index / 3) * 35 - 35))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .offset(x: CGFloat((index % 4) * 42 - 66), y: CGFloat((index / 4) * 54 - 46))
             }
         }
     }

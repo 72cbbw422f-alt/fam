@@ -89,6 +89,7 @@ final class FamilyStore: ObservableObject {
         rescheduleHealthReminders()
     }
     func addShoppingItem(_ title: String) { repository.addShoppingItem(title); refresh() }
+    func addShoppingItem(_ title: String, category: ShoppingCategory) { repository.addShoppingItem(title, category: category); refresh() }
     func setShoppingItem(_ id: UUID, checked: Bool) { repository.setShoppingItem(id, checked: checked); refresh() }
     func deleteShoppingItem(_ id: UUID) { repository.deleteShoppingItem(id); refresh() }
     func addGiftIdea(memberID: UUID, birthdayItemID: UUID, title: String, note: String?) {

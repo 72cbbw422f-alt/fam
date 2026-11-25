@@ -2,12 +2,12 @@ name: iOS build
 
 on:
   push:
-    branches: [main, local-first-beta, feature/health-foundation]
+    branches: [main, local-first-beta, feature/health-foundation, feature/ux-navigation-shopping]
   workflow_dispatch:
 
 concurrency:
   group: ios-build-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read

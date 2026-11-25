@@ -170,6 +170,8 @@ struct FamilyCalendarView: View {
     @State private var pendingDeletion: FamilyItem?
     @State private var showDeleteConfirmation = false
 
+    private var swedishLocale: Locale { Locale(identifier: "sv_SE") }
+
     private var visibleItems: [FamilyItem] {
         let peopleFiltered = FamilyCalendarViewModel.filteredItems(model.items, selectedMemberIDs: selectedMemberIDs)
         guard let selectedKind else { return peopleFiltered }
@@ -204,7 +206,7 @@ struct FamilyCalendarView: View {
     }
 
     private var monthWeekdayLabels: [String] {
-        ["M", "T", "O", "T", "F", "L", "S"]
+        ["Må", "Ti", "On", "To", "Fr", "Lö", "Sö"]
     }
 
     private var monthWeekRows: [[Date?]] {
@@ -241,7 +243,7 @@ struct FamilyCalendarView: View {
                     }
                     .accessibilityLabel("Föregående månad")
                     Spacer()
-                    Text(displayedMonth.formatted(.dateTime.month(.wide).year()).capitalized)
+                    Text(displayedMonth.formatted(.dateTime.locale(swedishLocale).month(.wide).year()).capitalized)
                         .font(.system(size: 17, weight: .semibold, design: .serif))
                         .foregroundStyle(FamiljenTheme.ink)
                     Spacer()
@@ -312,7 +314,7 @@ struct FamilyCalendarView: View {
             selectedCalendarDate = isSelected ? nil : day
         } label: {
             VStack(spacing: 2) {
-                Text(day.formatted(.dateTime.day()))
+                Text(day.formatted(.dateTime.locale(swedishLocale).day()))
                     .font(.system(size: 14, weight: isSelected || isToday || hasItems ? .bold : .medium))
                     .foregroundStyle(isSelected ? .white : FamiljenTheme.ink)
                 if hasItems {
@@ -339,7 +341,7 @@ struct FamilyCalendarView: View {
         }
         .buttonStyle(.borderless)
         .contentShape(Circle())
-        .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+        .accessibilityLabel(day.formatted(.dateTime.locale(swedishLocale).weekday(.wide).day().month(.wide)))
         .accessibilityHint(hasItems ? "Har aktiviteter. Tryck för att visa dagens aktiviteter." : "Tryck för att filtrera på dagen.")
     }
 
@@ -351,9 +353,9 @@ struct FamilyCalendarView: View {
 
     private func calendarSectionTitle(for date: Date) -> String {
         let calendar = Calendar.current
-        if calendar.isDateInToday(date) { return "Idag · " + date.formatted(.dateTime.day().month(.wide)) }
-        if calendar.isDateInTomorrow(date) { return "Imorgon · " + date.formatted(.dateTime.day().month(.wide)) }
-        return date.formatted(.dateTime.weekday(.wide).day().month(.wide)).capitalized
+        if calendar.isDateInToday(date) { return "Idag · " + date.formatted(.dateTime.locale(swedishLocale).day().month(.wide)) }
+        if calendar.isDateInTomorrow(date) { return "Imorgon · " + date.formatted(.dateTime.locale(swedishLocale).day().month(.wide)) }
+        return date.formatted(.dateTime.locale(swedishLocale).weekday(.wide).day().month(.wide)).capitalized
     }
 
     @ViewBuilder
@@ -734,8 +736,8 @@ struct FamilyCalendarView: View {
     private func calendarRow(_ item: FamilyItem) -> some View {
         HStack(spacing: 13) {
             VStack(spacing: 2) {
-                Text(item.startsAt.formatted(.dateTime.day())).font(.title2.weight(.semibold))
-                Text(item.startsAt.formatted(.dateTime.month(.abbreviated)).uppercased()).font(.system(size: 11, weight: .bold))
+                Text(item.startsAt.formatted(.dateTime.locale(swedishLocale).day())).font(.title2.weight(.semibold))
+                Text(item.startsAt.formatted(.dateTime.locale(swedishLocale).month(.abbreviated)).uppercased()).font(.system(size: 11, weight: .bold))
             }
             .foregroundStyle(FamiljenTheme.navy).frame(width: 42)
             VStack(alignment: .leading, spacing: 4) {
@@ -747,7 +749,7 @@ struct FamilyCalendarView: View {
                             .accessibilityLabel("Återkommer: \(item.recurrenceFrequency.title)")
                     }
                     Text("·")
-                    Text(item.startsAt.formatted(.dateTime.weekday(.wide).hour().minute()))
+                    Text(item.startsAt.formatted(.dateTime.locale(swedishLocale).weekday(.wide).hour().minute()))
                 }
                 .font(.system(size: 14, weight: .medium)).foregroundStyle(FamiljenTheme.muted)
                 if item.isForEveryone {
@@ -1084,6 +1086,8 @@ private struct FamilyCalendarItemDetailView: View {
     let members: [FamilyMember]
     @Environment(\.dismiss) private var dismiss
 
+    private var swedishLocale: Locale { Locale(identifier: "sv_SE") }
+
     private var peopleText: String {
         if item.isForEveryone { return "Hela familjen" }
         let names = members.filter { item.memberIDs.contains($0.id) }.map(\.displayName)
@@ -1113,7 +1117,7 @@ private struct FamilyCalendarItemDetailView: View {
                         }
                     }
 
-                    detailCard("Datum", value: item.startsAt.formatted(.dateTime.weekday(.wide).day().month(.wide).year()).capitalized, symbol: "calendar")
+                    detailCard("Datum", value: item.startsAt.formatted(.dateTime.locale(swedishLocale).weekday(.wide).day().month(.wide).year()).capitalized, symbol: "calendar")
                     detailCard("Tid", value: timeDescription, symbol: "clock")
                     detailCard("Gäller", value: peopleText, symbol: "person.2")
 
@@ -1170,9 +1174,9 @@ private struct FamilyCalendarItemDetailView: View {
     }
 
     private var timeDescription: String {
-        let start = item.startsAt.formatted(.dateTime.hour().minute())
+        let start = item.startsAt.formatted(.dateTime.locale(swedishLocale).hour().minute())
         guard let end = item.endsAt else { return start }
-        return "\(start)–\(end.formatted(.dateTime.hour().minute()))"
+        return "\(start)–\(end.formatted(.dateTime.locale(swedishLocale).hour().minute()))"
     }
 
     private func detailCard(_ title: String, value: String, symbol: String) -> some View {

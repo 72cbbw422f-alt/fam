@@ -1117,3 +1117,15 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - CI körs på grenen efter att push-triggern lagts till; verifiering av den slutliga commiten inväntas.
 - Interaktionerna är inte fysiskt verifierade på iPhone i denna arbetsinsats; särskilt långtryck/context menu, listscroll och månadsväljaren behöver kontrolleras på enheten.
 - Arbetsgren: `feature/calendar-event-details`.
+
+## 2026-11-26 – Health data cleanup when removing a family profile
+
+- Audit found that removing a family member left their health records, prescriptions, medication pickups, profile information and reminders in the local snapshot. Linked health calendar entries could also remain visible without their owner.
+- Updated member deletion to remove all member-owned health data and linked health calendar items as one persistence operation. Unrelated family members' health records and calendar entries are preserved.
+- Added rollback for every affected collection if the snapshot cannot be saved.
+- Updated the observable FamilyStore facade to reschedule managed reminders after a member is deleted.
+- Added a regression test covering appointment/calendar links, prescriptions, pickup records, profile information, generated/custom reminders, persistence after reload and preservation of another member's health record.
+- Files: `Sources/Data/LocalFamilyStore.swift`, `Sources/Data/FamilyStore.swift`, `Tests/HealthStoreTests.swift`, `.github/workflows/ios-build.yml`.
+- Branch: `feature/health-member-data-cleanup`, based on green `feature/calendar-event-details`.
+- CI branch trigger added; automated results pending. No physical iPhone verification performed.
+- No merge performed.

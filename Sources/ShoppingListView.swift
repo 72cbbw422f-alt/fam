@@ -3,6 +3,14 @@ import SwiftUI
 struct ShoppingListView: View {
     @StateObject private var model = ShoppingListViewModel()
     @State private var completedItemMessage: String?
+    @State private var isCompletedExpanded = false
+    @State private var clearAction: ClearAction?
+    @State private var showingClearConfirmation = false
+
+    private enum ClearAction: Equatable {
+        case completed
+        case all
+    }
 
     private var categoriesWithItems: [ShoppingCategory] {
         ShoppingCategory.allCases.filter { category in
@@ -106,15 +114,44 @@ struct ShoppingListView: View {
 
             if !model.completedItems.isEmpty {
                 Section {
-                    ForEach(model.completedItems) { item in
-                        itemRow(item)
+                    if isCompletedExpanded {
+                        ForEach(model.completedItems) { item in
+                            itemRow(item)
+                        }
                     }
                 } header: {
-                    HStack {
-                        Label("Handlat", systemImage: "checkmark.circle")
-                        Spacer()
-                        Text("\(model.completedItems.count)")
-                            .foregroundStyle(FamiljenTheme.muted)
+                    HStack(spacing: 10) {
+                        Button {
+                            withAnimation(.snappy(duration: 0.22)) {
+                                isCompletedExpanded.toggle()
+                            }
+                        } label: {
+                            HStack {
+                                Label("Handlat", systemImage: "checkmark.circle")
+                                Text("\(model.completedItems.count)")
+                                    .foregroundStyle(FamiljenTheme.muted)
+                                Spacer()
+                                Image(systemName: isCompletedExpanded ? "chevron.up" : "chevron.down")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(isCompletedExpanded ? "Dölj handlade varor" : "Visa handlade varor")
+
+                        Menu {
+                            Button(role: .destructive) {
+                                clearAction = .completed
+                                showingClearConfirmation = true
+                            } label: {
+                                Label("Rensa handlade", systemImage: "checkmark.circle")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .padding(.horizontal, 6)
+                                .contentShape(Rectangle())
+                        }
+                        .accessibilityLabel("Alternativ för handlade varor")
                     }
                     .font(.system(size: 14, weight: .semibold))
                 }
@@ -132,6 +169,48 @@ struct ShoppingListView: View {
         .background(FamiljenTheme.paper)
         .navigationTitle(model.listTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button(role: .destructive) {
+                        clearAction = .all
+                        showingClearConfirmation = true
+                    } label: {
+                        Label("Rensa hela listan", systemImage: "trash")
+                    }
+                    .disabled(model.items.isEmpty)
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .foregroundStyle(FamiljenTheme.navy)
+                }
+                .accessibilityLabel("Inköpslistans alternativ")
+            }
+        }
+        .confirmationDialog(
+            clearAction == .all ? "Rensa hela inköpslistan?" : "Rensa handlade varor?",
+            isPresented: $showingClearConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(clearAction == .all ? "Rensa hela listan" : "Rensa handlade", role: .destructive) {
+                Task {
+                    if clearAction == .all {
+                        await model.clearAll()
+                        isCompletedExpanded = false
+                    } else {
+                        await model.clearCompleted()
+                    }
+                    completedItemMessage = clearAction == .all
+                        ? "Inköpslistan är rensad"
+                        : "Handlade varor är borttagna"
+                    clearAction = nil
+                }
+            }
+            Button("Avbryt", role: .cancel) { clearAction = nil }
+        } message: {
+            Text(clearAction == .all
+                ? "Alla varor, både att handla och redan handlade, tas bort permanent."
+                : "Alla markerade varor tas bort från listan.")
+        }
         .overlay {
             if model.isLoading && model.items.isEmpty {
                 ProgressView("Hämtar inköpslistan …")

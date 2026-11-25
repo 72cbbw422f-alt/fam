@@ -1071,4 +1071,38 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(SeasonalSceneResolver.adventLitCount(for: date(2025, 11, 30), calendar: calendar), 1)
     }
 
+
+    func testClearShoppingItemsRemovesAllItemsAndPersists() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Mjölk", category: .dairy)
+        store.addShoppingItem("Bröd", category: .pantry)
+        let checked = try XCTUnwrap(store.shoppingItems.first)
+        store.setShoppingItem(checked.id, checked: true)
+
+        store.clearAllShoppingItems()
+
+        XCTAssertTrue(store.shoppingItems.isEmpty)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.shoppingItems.isEmpty)
+    }
+
+    func testClearCompletedShoppingItemsKeepsActiveItemsAndPersists() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addShoppingItem("Mjölk", category: .dairy)
+        store.addShoppingItem("Bröd", category: .pantry)
+        let checked = try XCTUnwrap(store.shoppingItems.first)
+        store.setShoppingItem(checked.id, checked: true)
+
+        store.clearCompletedShoppingItems()
+
+        XCTAssertEqual(store.shoppingItems.map(\.title), ["Bröd"])
+        XCTAssertFalse(store.shoppingItems.contains(where: \.isChecked))
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.shoppingItems.map(\.title), ["Bröd"])
+    }
+
 }

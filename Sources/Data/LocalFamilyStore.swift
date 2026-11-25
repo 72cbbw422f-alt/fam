@@ -126,7 +126,9 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         guard members.contains(where: { $0.id == id && $0.role != .owner }) else { return }
         let previousMembers = members
         let previousItems = items
+        let previousGiftIdeas = giftIdeas
         members.removeAll { $0.id == id }
+        giftIdeas.removeAll { $0.memberID == id }
         // Keep calendar history when a profile is removed; only clear its assignment.
         for index in items.indices {
             items[index].memberIDs.removeAll { $0 == id }
@@ -137,6 +139,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         if !saveToDisk() {
             members = previousMembers
             items = previousItems
+            giftIdeas = previousGiftIdeas
         }
     }
 
@@ -236,7 +239,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let previousSkippedOccurrences = skippedOccurrences
         let previousOccurrenceOverrides = occurrenceOverrides
         let previousHealthRecords = healthRecords
+        let previousGiftIdeas = giftIdeas
         items.removeAll { $0.id == item.id }
+        if item.kind == .birthday {
+            giftIdeas.removeAll { $0.birthdayItemID == item.id }
+        }
         skippedOccurrences.removeAll { $0.seriesID == item.id }
         occurrenceOverrides.removeAll { $0.seriesID == item.id }
         // A calendar deletion cancels the linked health appointment but keeps its history.
@@ -250,6 +257,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             skippedOccurrences = previousSkippedOccurrences
             occurrenceOverrides = previousOccurrenceOverrides
             healthRecords = previousHealthRecords
+            giftIdeas = previousGiftIdeas
         }
     }
 
@@ -353,7 +361,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func addGiftIdea(memberID: UUID, birthdayItemID: UUID, title: String, note: String?) {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard members.contains(where: { $0.id == memberID }),
-              items.contains(where: { $0.id == birthdayItemID && $0.kind == .birthday }),
+              items.contains(where: { $0.id == birthdayItemID && $0.kind == .birthday && $0.memberIDs.contains(memberID) }),
               !clean.isEmpty, clean.count <= 160 else { return }
         let cleanNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
         giftIdeas.append(GiftIdea(memberID: memberID, birthdayItemID: birthdayItemID,
@@ -364,7 +372,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func updateGiftIdea(_ idea: GiftIdea) {
         guard let index = giftIdeas.firstIndex(where: { $0.id == idea.id }),
               members.contains(where: { $0.id == idea.memberID }),
-              items.contains(where: { $0.id == idea.birthdayItemID && $0.kind == .birthday }) else { return }
+              items.contains(where: { $0.id == idea.birthdayItemID && $0.kind == .birthday && $0.memberIDs.contains(idea.memberID) }) else { return }
         let clean = idea.title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 160 else { return }
         let previous = giftIdeas[index]

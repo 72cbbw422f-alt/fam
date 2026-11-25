@@ -1173,4 +1173,42 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(reloadedAgain.favoriteShoppingItemTitles, ["Mjölk"])
     }
 
+    func testBirthdayGiftIdeasStayLinkedToTheirMemberAndBirthdayLifecycle() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let owner = try XCTUnwrap(store.members.first(where: { $0.role == .owner }))
+        let child = try XCTUnwrap(store.members.first(where: { $0.role == .child }))
+
+        store.saveItem(id: nil, title: "Cleo", details: nil,
+                       startsAt: Date(timeIntervalSince1970: 1_800_000_000),
+                       kind: .birthday, memberID: child.id, recurring: true,
+                       reminderOffsets: [])
+        let birthday = try XCTUnwrap(store.items.first(where: { $0.kind == .birthday }))
+
+        store.addGiftIdea(memberID: owner.id, birthdayItemID: birthday.id,
+                          title: "Fel person", note: nil)
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+
+        store.addGiftIdea(memberID: child.id, birthdayItemID: birthday.id,
+                          title: "Bok", note: nil)
+        XCTAssertEqual(store.giftIdeas.count, 1)
+
+        store.deleteItem(birthday)
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        XCTAssertTrue(LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json")).giftIdeas.isEmpty)
+
+        store.saveItem(id: nil, title: "Cleo", details: nil,
+                       startsAt: Date(timeIntervalSince1970: 1_831_536_000),
+                       kind: .birthday, memberID: child.id, recurring: true,
+                       reminderOffsets: [])
+        let replacementBirthday = try XCTUnwrap(store.items.first(where: { $0.kind == .birthday }))
+        store.addGiftIdea(memberID: child.id, birthdayItemID: replacementBirthday.id,
+                          title: "Pyssel", note: nil)
+        store.deleteMember(id: child.id)
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        XCTAssertTrue(LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json")).giftIdeas.isEmpty)
+    }
+
 }

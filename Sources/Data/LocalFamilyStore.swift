@@ -11,6 +11,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     @Published private(set) var skippedOccurrences: [FamilyOccurrenceException] = []
     @Published private(set) var occurrenceOverrides: [FamilyOccurrenceOverride] = []
     @Published private(set) var shoppingItems: [ShoppingItem] = []
+    @Published private(set) var favoriteShoppingItemTitles: [String] = []
     @Published private(set) var giftIdeas: [GiftIdea] = []
     @Published private(set) var christmasGifts: [ChristmasGift] = []
     @Published private(set) var notifications: [FamilyNotification] = []
@@ -66,6 +67,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         skippedOccurrences = []
         occurrenceOverrides = []
         shoppingItems = []
+        favoriteShoppingItemTitles = []
         giftIdeas = []
         christmasGifts = []
         notifications = []
@@ -325,6 +327,26 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let previous = shoppingItems
         shoppingItems.removeAll()
         if !saveToDisk() { shoppingItems = previous }
+    }
+
+    func setShoppingItemFavorite(_ title: String, isFavorite: Bool) {
+        let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, clean.count <= 160 else { return }
+        let previous = favoriteShoppingItemTitles
+        if isFavorite {
+            guard !favoriteShoppingItemTitles.contains(where: {
+                $0.caseInsensitiveCompare(clean) == .orderedSame
+            }) else { return }
+            favoriteShoppingItemTitles.append(clean)
+        } else {
+            favoriteShoppingItemTitles.removeAll {
+                $0.caseInsensitiveCompare(clean) == .orderedSame
+            }
+        }
+        favoriteShoppingItemTitles.sort {
+            $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+        }
+        if !saveToDisk() { favoriteShoppingItemTitles = previous }
     }
 
     func addGiftIdea(memberID: UUID, birthdayItemID: UUID, title: String, note: String?) {
@@ -694,6 +716,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         var members: [FamilyMember]
         var items: [FamilyItem]
         var shoppingItems: [ShoppingItem]
+        var favoriteShoppingItemTitles: [String]? = nil
         var notifications: [FamilyNotification]
         var messages: [FamilyMessage]?
         var skippedOccurrences: [FamilyOccurrenceException]? = nil
@@ -725,6 +748,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             healthProfileInformation = snapshot.healthProfileInformation ?? []
             healthReminders = snapshot.healthReminders ?? []
             shoppingItems = snapshot.shoppingItems
+            favoriteShoppingItemTitles = snapshot.favoriteShoppingItemTitles ?? []
             notifications = snapshot.notifications
             messages = snapshot.messages ?? []
         } catch {
@@ -748,7 +772,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             return false
         }
         let snapshot = Snapshot(family: family, members: members, items: items,
-                                shoppingItems: shoppingItems, notifications: notifications, messages: messages,
+                                shoppingItems: shoppingItems, favoriteShoppingItemTitles: favoriteShoppingItemTitles,
+                                notifications: notifications, messages: messages,
                                 skippedOccurrences: skippedOccurrences,
                                 occurrenceOverrides: occurrenceOverrides,
                                 giftIdeas: giftIdeas, christmasGifts: christmasGifts,

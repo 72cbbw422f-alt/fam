@@ -1098,3 +1098,22 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **GitHub**
 - Arbetsgren: `feature/shopping-recurring-items`, skapad från `feature/shopping-favorites`.
 - PR #7 lämnas öppen som Draft. Ingen merge genomförd.
+
+
+## 2026-11-25 – avstämning av kalenderns översikt och aktivitetsdetaljer
+
+**Granskning**
+- Roadmapens kvarstående punkter för månadsöversikt, aktivitetsdetaljer och kontextmeny jämfördes med den aktuella implementationen.
+- Funktionerna finns redan i `FamilyCalendarView.swift`: månadsrutnät med svenska veckonummer och aktivitetsmarkeringar, separat detaljvy vid tryck samt kontextmeny med Redigera/Radera och svep för radering.
+- Detaljvyn visar datum, tid, berörda personer, ansvarig, plats, anteckningar, påminnelser och återkomst. Kartlänk visas när koordinater finns.
+
+**Dokumentation**
+- Markerade dessa tre roadmap-punkter som implementerade och förtydligade att fysisk iPhone-verifiering återstår.
+- Berörd fil: `Documentation/ROADMAP.md`.
+- Ingen produktkod ändrades i denna avstämning.
+
+**Verifiering och begränsningar**
+- Kodgranskning av `Sources/FamilyCalendarView.swift` genomförd.
+- Den här dokumentationsändringen är ännu inte CI-verifierad.
+- Interaktionerna är inte fysiskt verifierade på iPhone i denna arbetsinsats; särskilt långtryck/context menu, listscroll och månadsväljaren behöver kontrolleras på enheten.
+- Arbetsgren: `feature/calendar-event-details`.

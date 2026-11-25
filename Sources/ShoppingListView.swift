@@ -40,29 +40,45 @@ struct ShoppingListView: View {
                     if !model.suggestions.isEmpty {
                         VStack(spacing: 0) {
                             ForEach(model.suggestions) { suggestion in
-                                Button {
-                                    Task { await model.addSuggestion(suggestion) }
-                                } label: {
-                                    HStack(spacing: 10) {
-                                        Image(systemName: suggestion.category.symbol)
-                                            .foregroundStyle(FamiljenTheme.champagneDeep)
-                                            .frame(width: 22)
-                                        Text(suggestion.title)
-                                            .foregroundStyle(FamiljenTheme.ink)
-                                        Spacer()
-                                        Text(suggestion.category.title)
-                                            .font(.caption)
-                                            .foregroundStyle(FamiljenTheme.muted)
-                                        Image(systemName: "plus")
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(FamiljenTheme.navy)
+                                HStack(spacing: 8) {
+                                    Button {
+                                        Task { await model.addSuggestion(suggestion) }
+                                    } label: {
+                                        HStack(spacing: 10) {
+                                            Image(systemName: suggestion.category.symbol)
+                                                .foregroundStyle(FamiljenTheme.champagneDeep)
+                                                .frame(width: 22)
+                                            Text(suggestion.title)
+                                                .foregroundStyle(FamiljenTheme.ink)
+                                            Spacer()
+                                            Text(suggestion.category.title)
+                                                .font(.caption)
+                                                .foregroundStyle(FamiljenTheme.muted)
+                                            Image(systemName: "plus")
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundStyle(FamiljenTheme.navy)
+                                        }
+                                        .contentShape(Rectangle())
                                     }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 11)
-                                    .contentShape(Rectangle())
+                                    .buttonStyle(.plain)
+                                    .disabled(model.isSaving)
+
+                                    Button {
+                                        Task {
+                                            let isFavorite = !model.favoriteSuggestions.contains { $0.id == suggestion.id }
+                                            await model.setFavorite(suggestion, isFavorite: isFavorite)
+                                        }
+                                    } label: {
+                                        Image(systemName: model.favoriteSuggestions.contains { $0.id == suggestion.id } ? "star.fill" : "star")
+                                            .foregroundStyle(FamiljenTheme.champagneDeep)
+                                            .frame(width: 34, height: 40)
+                                            .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(model.favoriteSuggestions.contains { $0.id == suggestion.id } ? "Ta bort \(suggestion.title) från favoriter" : "Spara \(suggestion.title) som favorit")
                                 }
-                                .buttonStyle(.plain)
-                                .disabled(model.isSaving)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 7)
                                 if suggestion.id != model.suggestions.last?.id {
                                     Divider().overlay(FamiljenTheme.sand)
                                 }
@@ -90,6 +106,44 @@ struct ShoppingListView: View {
                     .accessibilityLabel("Välj kategori för ny vara")
                 }
                 .padding(.vertical, 4)
+            }
+
+            if !model.favoriteSuggestions.isEmpty {
+                Section {
+                    ForEach(model.favoriteSuggestions) { suggestion in
+                        HStack(spacing: 10) {
+                            Button {
+                                Task { await model.addSuggestion(suggestion) }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: suggestion.category.symbol)
+                                        .foregroundStyle(FamiljenTheme.champagneDeep)
+                                        .frame(width: 22)
+                                    Text(suggestion.title)
+                                        .foregroundStyle(FamiljenTheme.ink)
+                                    Spacer()
+                                    Image(systemName: "plus.circle.fill")
+                                        .foregroundStyle(FamiljenTheme.navy)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(model.isSaving)
+
+                            Button {
+                                Task { await model.setFavorite(suggestion, isFavorite: false) }
+                            } label: {
+                                Image(systemName: "star.slash")
+                                    .foregroundStyle(FamiljenTheme.muted)
+                                    .frame(width: 34, height: 40)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Ta bort \(suggestion.title) från favoriter")
+                        }
+                    }
+                } header: {
+                    Label("Favoriter", systemImage: "star.fill")
+                }
             }
 
             if model.activeItems.isEmpty && model.completedItems.isEmpty && !model.isLoading {

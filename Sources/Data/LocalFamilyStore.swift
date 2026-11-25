@@ -331,7 +331,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
 
     func setShoppingItemFavorite(_ title: String, isFavorite: Bool) {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !clean.isEmpty, clean.count <= 160 else { return }
+        // Favorites belong to an initialized family snapshot, never to an orphaned store.
+        guard family != nil, !clean.isEmpty, clean.count <= 160 else { return }
         let previous = favoriteShoppingItemTitles
         if isFavorite {
             guard !favoriteShoppingItemTitles.contains(where: {

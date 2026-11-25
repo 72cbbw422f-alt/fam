@@ -52,8 +52,6 @@ protocol FamilyRepository: AnyObject {
     func deleteChristmasGift(_ id: UUID)
     func deleteGiftIdea(_ id: UUID)
     @discardableResult func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) -> Bool
-    @discardableResult func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind,
-                                        attachment: FamilyMessageAttachment?) -> Bool
     func deleteMessage(_ id: UUID)
     func markConversationRead(_ conversationID: String)
     func saveHealthRecord(_ record: HealthRecord)
@@ -99,12 +97,6 @@ extension FamilyRepository {
     func skipOccurrence(of item: FamilyItem) { }
     var persistenceError: String? { nil }
     func deleteMessage(_ id: UUID) { }
-    @discardableResult
-    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind,
-                     attachment: FamilyMessageAttachment?) -> Bool {
-        guard attachment == nil else { return false }
-        return sendMessage(text, conversationID: conversationID, kind: kind)
-    }
     func updateMemberSymbol(id: UUID, symbolName: String?) { }
 
     func addShoppingItem(_ title: String, category: ShoppingCategory) { addShoppingItem(title) }

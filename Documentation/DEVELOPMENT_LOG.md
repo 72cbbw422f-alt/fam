@@ -931,3 +931,33 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 
 **Verifiering**
 - Korrigeringen är incheckad. Ny CI-körning för denna commit inväntas; bygget och de sex nya autocomplete-testerna är ännu inte verifierade.
+
+
+## 2026-11-25 – inköpslista: hopfällbar handlat-sektion och större varukatalog
+
+**Produktbeslut**
+- Handlade varor visas i en hopfällbar sektion med antal; sektionen är stängd som standard.
+- Varor kan återställas genom att trycka på dem när sektionen öppnas.
+- Inköpslistans meny erbjuder både `Rensa handlade` och `Rensa hela listan`; båda kräver bekräftelse.
+- Rensning av hela listan tar bort både aktiva och handlade varor. Ingen automatisk tidsbaserad rensning införs.
+
+**Varukatalog**
+- Utökade den lokala svenska katalogen från 47 till 342 förslag, fördelade på frukt & grönt, mejeri, kött & fisk, skafferi, frys och hushåll.
+- Katalogen kontrollerades för unika sök-ID:n; inga dubbletter hittades.
+- Behöll befintlig svensk tecken-/diakritikokänslig sökning, dubblettfiltrering och högst sex relevanta förslag åt gången.
+
+**Teknik och test**
+- Lade till repository-operationer för att rensa handlade respektive samtliga inköpsvaror.
+- Lokal lagring återställer föregående lista i minnet om skrivningen misslyckas.
+- Lade till regressionstester för rensning, persistens, rollback vid skrivfel och katalogens storlek/unikhet.
+- Berörda filer: `Sources/Domain/ShoppingModels.swift`, `Sources/Data/FamilyRepository.swift`, `Sources/Data/LocalFamilyStore.swift`, `Sources/Data/ShoppingListViewModel.swift`, `Sources/ShoppingListView.swift`, `Tests/LocalFamilyStoreTests.swift`.
+
+**GitHub**
+- Gren: `feature/ux-navigation-shopping`.
+- Bas-commit vid arbetets start: `479ddbb5171d1bea14c3a58fe02b44bc08fe4aa9`.
+- Senaste kodcommit för denna ändring: `95f9784b55749919a7f052a2c13869ab81825c17`.
+- Ingen merge till huvudgren genomförd.
+
+**Verifiering**
+- CI-tester och simulator-/iPhone-bygge ska köras på slutlig branch-head innan funktionerna betraktas som verifierade.
+- Fysisk iPhone-kontroll återstår.

@@ -990,3 +990,26 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **Verifiering**
 - CI ska verifiera kompilering och regressionstester innan katalogutökningen betraktas som färdig.
 - Ingen IPA byggd för denna ändring ännu.
+
+ 
+## 2026-11-25 – inköpslista: aliasbaserad sökning
+
+**Ändringar**
+- Lade till valfria sökalias per katalogvara. Alias påverkar sökträffar men skapar inte separata produkter eller dubbletter i listan.
+- Normaliserar sökord genom svensk case-/diakritikhantering och skiljeteckensnormalisering, så exempelvis ”Coca Cola”, ”Coca-Cola” och ”coke” kan hitta samma kanoniska produkt.
+- Prioriterar titelprefix, därefter aliasprefix och sedan delträffar. Behåller gränsen på sex förslag.
+- Lade till alias för Coca-Cola-varianter som första konkreta aliasgrupp.
+
+**Berörda filer**
+- Sources/Domain/ShoppingModels.swift
+- Tests/ShoppingItemSuggestionTests.swift
+- Documentation/DEVELOPMENT_LOG.md
+
+**Tester**
+- Regressionstester tillagda för alias, skiljetecken, skiftläge, prioritering och filtrering när kanonisk vara redan finns.
+- Testerna är ännu inte körda; CI-verifiering inväntas.
+
+**GitHub**
+- Arbetsgren: feature/shopping-search-aliases.
+- Baserad på feature/ux-navigation-shopping vid commit 47c228a49fe82448ffb1f8ef1b2f860b748a7469.
+- Ingen merge genomförd.

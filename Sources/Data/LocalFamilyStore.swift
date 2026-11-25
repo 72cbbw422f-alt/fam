@@ -29,9 +29,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     }
 
     private let fileURL: URL
-    private let attachmentStore: FamilyMessageAttachmentStore
     private var persistenceBlockedByCorruption = false
-    private var snapshotLoadedSuccessfully = false
 
     private convenience init() {
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -41,9 +39,6 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     /// Injectable file location keeps persistence tests isolated from the user's real app data.
     init(fileURL: URL) {
         self.fileURL = fileURL
-        self.attachmentStore = FamilyMessageAttachmentStore(
-            rootDirectory: fileURL.deletingLastPathComponent()
-        )
         do {
             try FileManager.default.createDirectory(
                 at: fileURL.deletingLastPathComponent(),
@@ -53,11 +48,6 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             persistenceError = persistenceFailureMessage
         }
         loadFromDisk()
-        if snapshotLoadedSuccessfully {
-            try? attachmentStore.removeOrphanedFiles(
-                referencedAttachments: messages.flatMap { $0.attachments ?? [] }
-            )
-        }
     }
 
     func createFamily(name: String, ownerName: String) {
@@ -431,32 +421,16 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
 
     @discardableResult
     func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind) -> Bool {
-        sendMessage(text, conversationID: conversationID, kind: kind, attachment: nil)
-    }
-
-    @discardableResult
-    func sendMessage(_ text: String, conversationID: String, kind: FamilyConversationKind,
-                     attachment: FamilyMessageAttachment?) -> Bool {
         guard let senderID = members.first(where: { $0.role == .owner })?.id else { return false }
         let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard clean.count <= 4000, !clean.isEmpty || attachment != nil else { return false }
-        if let attachment {
-            guard attachment.isValid else { return false }
-            do {
-                _ = try attachmentStore.data(for: attachment)
-            } catch {
-                return false
-            }
-        }
+        guard !clean.isEmpty, clean.count <= 4000 else { return false }
 
         let previousMessages = messages
         messages.append(FamilyMessage(id: UUID(), conversationID: conversationID,
                                       kind: kind, senderID: senderID, text: clean,
-                                      sentAt: .now, readAt: nil,
-                                      attachments: attachment.map { [$0] }))
+                                      sentAt: .now, readAt: nil))
         guard saveToDisk() else {
             messages = previousMessages
-            if let attachment { try? attachmentStore.delete(attachment) }
             return false
         }
         return true
@@ -466,14 +440,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         guard let ownerID = members.first(where: { $0.role == .owner })?.id,
               let index = messages.firstIndex(where: { $0.id == id && $0.senderID == ownerID }) else { return }
         let previousMessages = messages
-        let removed = messages[index]
         messages.remove(at: index)
         guard saveToDisk() else {
             messages = previousMessages
             return
-        }
-        for attachment in removed.attachments ?? [] {
-            try? attachmentStore.delete(attachment)
         }
     }
 

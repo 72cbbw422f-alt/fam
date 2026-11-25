@@ -59,4 +59,20 @@ final class ShoppingListViewModel: ObservableObject {
         store.deleteShoppingItem(item.id)
         await load()
     }
+
+    func clearCompleted() async {
+        guard !isSaving else { return }
+        isSaving = true
+        store.clearCompletedShoppingItems()
+        await load()
+        isSaving = false
+    }
+
+    func clearAll() async {
+        guard !isSaving else { return }
+        isSaving = true
+        store.clearAllShoppingItems()
+        await load()
+        isSaving = false
+    }
 }

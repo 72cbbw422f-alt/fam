@@ -172,4 +172,48 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertEqual(candidates.count, 75)
     }
 
+    func testSharedCapacitySelectionKeepsEarlierHealthReminderAheadOfCalendarBacklog() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let calendarCandidates = (0..<75).map { index in
+            (
+                identifier: "familjen-item-\\(index)",
+                fireDate: now.addingTimeInterval(TimeInterval(3600 + index))
+            )
+        }
+        let healthCandidates = [
+            (
+                identifier: "familjen-health-urgent",
+                fireDate: now.addingTimeInterval(60)
+            )
+        ]
+
+        let selected = LocalReminderScheduler.selectCandidates(
+            calendar: calendarCandidates,
+            health: healthCandidates,
+            limit: 60,
+            fireDate: { $0.fireDate },
+            identifier: { $0.identifier }
+        )
+
+        XCTAssertEqual(selected.count, 60)
+        XCTAssertEqual(selected.first?.identifier, "familjen-health-urgent")
+        XCTAssertTrue(selected.contains { $0.identifier == "familjen-health-urgent" })
+        XCTAssertEqual(selected.filter { $0.identifier.hasPrefix("familjen-item-") }.count, 59)
+    }
+
+    func testSharedCapacitySelectionReturnsNoCandidatesForZeroLimit() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let candidates = [(identifier: "candidate", fireDate: now.addingTimeInterval(60))]
+
+        let selected = LocalReminderScheduler.selectCandidates(
+            calendar: candidates,
+            health: [],
+            limit: 0,
+            fireDate: { $0.fireDate },
+            identifier: { $0.identifier }
+        )
+
+        XCTAssertTrue(selected.isEmpty)
+    }
+
 }

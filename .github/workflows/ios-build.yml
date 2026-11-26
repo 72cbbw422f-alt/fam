@@ -2,7 +2,7 @@ name: iOS build
 
 on:
   push:
-    branches: [main, local-first-beta, feature/health-foundation, feature/ux-navigation-shopping, feature/shopping-search-aliases, feature/shopping-favorites, feature/shopping-recurring-items, feature/calendar-event-details]
+    branches: [main, local-first-beta, feature/health-foundation, feature/ux-navigation-shopping, feature/shopping-search-aliases, feature/shopping-favorites, feature/shopping-recurring-items, feature/calendar-event-details, feature/calendar-reminder-sync]
   workflow_dispatch:
 
 concurrency:

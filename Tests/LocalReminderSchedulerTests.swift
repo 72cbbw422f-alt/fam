@@ -111,4 +111,46 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertEqual(candidate.fireDate, movedDate.addingTimeInterval(-3600))
     }
 
+
+    func testDuplicateReminderOffsetsProduceOnlyOneCandidatePerOffset() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Dubbeltest",
+            details: nil, startsAt: now.addingTimeInterval(3 * 60 * 60), endsAt: nil,
+            kind: .event, memberID: nil, isRecurringYearly: false,
+            reminderOffsets: [3600, 3600, 900, 900])
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
+
+        XCTAssertEqual(candidates.count, 2)
+        XCTAssertEqual(Set(candidates.map(\.offset)), Set([3600, 900]))
+        XCTAssertEqual(Set(candidates.map(\.id)).count, candidates.count)
+    }
+
+    func testObsoleteCleanupOnlySelectsStaleFamiljenIdentifiers() {
+        let staleCalendar = "familjen-item-old-calendar"
+        let staleHealth = "familjen-health-old-health"
+        let desiredCalendar = "familjen-item-current"
+        let unrelated = ["other-app-reminder", "calendar-event-123"]
+
+        let obsolete = LocalReminderScheduler.obsoleteManagedIdentifiers(
+            existingIdentifiers: [staleCalendar, desiredCalendar, staleHealth] + unrelated,
+            desiredIdentifiers: [desiredCalendar]
+        )
+
+        XCTAssertEqual(obsolete, [staleCalendar, staleHealth])
+    }
+
+    func testObsoleteCleanupIsStableAndDoesNotRemoveDesiredHealthReminder() {
+        let stale = "familjen-health-stale"
+        let desired = "familjen-health-current"
+
+        let obsolete = LocalReminderScheduler.obsoleteManagedIdentifiers(
+            existingIdentifiers: [desired, stale, stale],
+            desiredIdentifiers: [desired]
+        )
+
+        XCTAssertEqual(obsolete, [stale, stale])
+        XCTAssertFalse(obsolete.contains(desired))
+    }
+
 }

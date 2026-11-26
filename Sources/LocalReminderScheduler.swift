@@ -98,6 +98,20 @@ enum LocalReminderScheduler {
         })).sorted()
     }
 
+    /// Selects the nearest reminders across both sources under one shared capacity limit.
+    /// Kept generic so the ordering/cap policy can be tested without UserNotifications.
+    static func selectCandidates<Candidate>(calendar: [Candidate], health: [Candidate], limit: Int,
+                                            fireDate: (Candidate) -> Date,
+                                            identifier: (Candidate) -> String) -> [Candidate] {
+        guard limit > 0 else { return [] }
+        return (calendar + health).sorted {
+            let lhsDate = fireDate($0)
+            let rhsDate = fireDate($1)
+            if lhsDate != rhsDate { return lhsDate < rhsDate }
+            return identifier($0) < identifier($1)
+        }.prefix(limit).map { $0 }
+    }
+
     static func shouldRemoveObsoleteReminders(afterSuccessfulAdds: Bool) -> Bool {
         afterSuccessfulAdds
     }
@@ -135,10 +149,13 @@ enum LocalReminderScheduler {
             .map(ManagedReminderCandidate.calendar)
         let healthCandidates = makeHealthCandidates(for: healthReminders, now: .now)
             .map(ManagedReminderCandidate.health)
-        let candidates = (calendarCandidates + healthCandidates).sorted {
-            if $0.fireDate != $1.fireDate { return $0.fireDate < $1.fireDate }
-            return $0.identifier < $1.identifier
-        }.prefix(maximumPendingReminders)
+        let candidates = Self.selectCandidates(
+            calendar: calendarCandidates,
+            health: healthCandidates,
+            limit: maximumPendingReminders,
+            fireDate: { $0.fireDate },
+            identifier: { $0.identifier }
+        )
         let desiredIDs = Set(candidates.map(\.identifier))
 
         // Add/update desired reminders before removing obsolete ones. Calendar and

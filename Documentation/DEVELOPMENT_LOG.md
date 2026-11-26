@@ -1136,3 +1136,27 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Gren: `feature/calendar-reminder-sync`, baserad på `feature/calendar-event-details`.
 - Kodcommit: `01faf2a546f464e30de0a78d2f490801ddd1f45c`.
 - CI och fysisk iPhone-verifiering inväntar resultat. Ingen merge har gjorts.
+
+
+## 2026-11-26 – deduplicering och städning av lokala påminnelser
+
+**Granskning**
+- Den första CI-körningen för kalenderändringarna är grön: 98 tester passerade utan fel, simulatorbygget lyckades och osignerad iPhone-IPA paketerades.
+- Granskningen av påminnelseschemaläggaren visade att upprepade påminnelseintervall redan dedupliceras vid kandidatgenerering, men detta saknade ett direkt regressionstest.
+- Städningen av gamla notiser filtrerade bort främmande appar och behöll önskade Familjen-ID:n. Samma identifierare kunde dock förekomma mer än en gång i indata och därmed skickas upprepade gånger till borttagningsanropet.
+
+**Ändrat**
+- Gjorde listan över inaktuella Familjen-notis-ID:n unik och deterministiskt sorterad.
+- Lade till tester för dubbla påminnelseintervall, skydd av notiser som tillhör andra appar, bibehållna önskade hälsopåminnelser samt unik städlista.
+- Berörda filer:
+  - `Sources/LocalReminderScheduler.swift`
+  - `Tests/LocalReminderSchedulerTests.swift`
+
+**Verifiering**
+- De nya testerna är incheckade men ännu inte körda. En ny GitHub Actions-körning inväntas.
+- Senaste gröna bas före dessa tester: 98 tester, 0 fel; iPhone unsigned-build och IPA-paketering lyckades.
+- Fysisk iPhone-verifiering av att flyttade, avbokade och borttagna händelser ger rätt notiser återstår.
+
+**GitHub**
+- Gren: `feature/calendar-reminder-sync`.
+- Ingen merge genomförd.

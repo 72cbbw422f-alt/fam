@@ -1178,3 +1178,13 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Gren: `feature/ios-app-icon-validation`.
 - Verifierad commit: `1cab690c12aefbee40d3ff45bf4e64afb757f1ba`.
 - PR #10 är fortsatt öppen som Draft mot `feature/calendar-event-details`. Ingen merge har gjorts.
+
+**Senaste CI-uppföljning – 2026-11-26**
+- Senaste workflow run: [45775815431](https://github.com/72cbbw422f-alt/fam/actions/runs/45775815431).
+- Verifierad branch-head: `db3bece21d41deedc4cab8fe0ca9e118bdbe7f3f`.
+- Båda jobben lyckades: `Build Familjen (iOS Simulator)` och `Build unsigned IPA (iPhone)`.
+- Simulatorns testkörning passerade med 98 tester och 0 fel.
+- `assetutil` bekräftade `AppIcon` i kompilerad `Assets.car` för både simulator- och iPhone-paketet.
+- IPA-artefakt: `Familjen-unsigned-IPA`, ID `15096122388`, 2 744 167 byte. SHA-256: `bd2b3d34b1c439350418021bbc1554b881550f873ac8c0bdc14a721f50ec2252`. Artefakten finns till 2026-12-10 07:31 UTC.
+- Den äldre noteringen ovan om att CI inväntar verifiering avser en tidigare commit/run och ersätts av detta resultat.
+- Fysisk iPhone-verifiering av notisens utseende återstår. Ingen merge har gjorts.

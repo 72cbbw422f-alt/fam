@@ -1141,3 +1141,12 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - CI startas av push till den nya grenen. Resultat ska bedömas på exakt senaste branch-head och båda jobben måste lyckas.
 - Ingen fysisk iPhone-notis har verifierats i denna ändring. Efter godkänd CI krävs ny installation av IPA och kontroll av en faktisk notis på iPhone.
 - Appikonen är fortsatt en SVG-källa som renderas till PNG under byggningen; PNG checkas inte in som separat binärfil.
+
+
+**CI-fynd och korrigering – 2026-11-26**
+- Första verifieringskörningen byggde både simulatorappen och iPhone-appen, men de nya kontrollstegen stoppade eftersom den genererade `Info.plist` saknade nyckeln `CFBundleIconName`.
+- Det var en brist i byggkonfigurationen/verifieringsantagandet, inte ett Swift-kompileringsfel. Asset-katalogen byggdes, men metadata för ikonens namn deklarerades inte uttryckligen.
+- Lade därför till `INFOPLIST_KEY_CFBundleIconName: AppIcon` i `project.yml` och lade till utskrift av värdet i iPhone-jobbets paketlogg.
+- Berörda filer: `project.yml`, `.github/workflows/ios-build.yml`, denna utvecklingslogg.
+- Första verifieringskörningar: `45767538463` och `45767554900`; båda misslyckades endast i de nya ikonverifieringsstegen efter att byggena lyckats.
+- Ny CI krävs för den korrigerade branch-headen. Inga tester eller paketkontroller räknas som godkända ännu.

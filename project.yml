@@ -13,6 +13,7 @@ settings:
     GENERATE_INFOPLIST_FILE: YES
     PRODUCT_BUNDLE_IDENTIFIER: se.familjen.app
     INFOPLIST_KEY_CFBundleDisplayName: Familjen
+    INFOPLIST_KEY_CFBundleIconName: AppIcon
 targets:
   Familjen:
     type: application

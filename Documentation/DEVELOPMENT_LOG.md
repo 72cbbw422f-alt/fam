@@ -1150,3 +1150,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Berörda filer: `project.yml`, `.github/workflows/ios-build.yml`, denna utvecklingslogg.
 - Första verifieringskörningar: `45767538463` och `45767554900`; båda misslyckades endast i de nya ikonverifieringsstegen efter att byggena lyckats.
 - Ny CI krävs för den korrigerade branch-headen. Inga tester eller paketkontroller räknas som godkända ännu.
+
+**Uppföljande CI-analys – 2026-11-26**
+- CI på commit `9dfe3748c684303bdbf06d4c3dba68f603a3a3ff` visade att Xcode inte skapar `CFBundleIconName` i den genererade `Info.plist`, trots att asset-katalogen byggs. Att tvinga in nyckeln via XcodeGen-inställningen gav inte avsedd effekt.
+- Tog bort den verifikationskontroll som byggde på den nyckeln och tog bort den ineffektiva plist-override-inställningen.
+- Ny kontroll använder i stället Apples `assetutil` för att läsa den kompilerade `Assets.car` och kräver att en rendition med namnet `AppIcon` finns i både simulator- och iPhone-paketet.
+- Detta kontrollerar den faktiska kompilerade asset-katalogen snarare än en plist-nyckel som inte är en tillförlitlig indikator i detta projekt.
+- Workflow- och projektändringarna inväntar ny CI. Ingen ikonfix betraktas som verifierad förrän båda jobben passerar.

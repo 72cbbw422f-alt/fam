@@ -73,9 +73,9 @@ jobs:
           APP_PATH="build-simulator/Build/Products/Debug-iphonesimulator/Familjen.app"
           test -d "$APP_PATH"
           test -s "$APP_PATH/Assets.car"
-          ICON_NAME="$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$APP_PATH/Info.plist")"
-          test "$ICON_NAME" = "AppIcon"
-          echo "Verified simulator app icon catalog: $ICON_NAME"
+          xcrun assetutil --info "$APP_PATH/Assets.car" > /tmp/familjen-assets.json
+          grep -q "AppIcon" /tmp/familjen-assets.json
+          echo "Verified AppIcon rendition in compiled simulator asset catalog"
 
   build-device-ipa:
     name: Build unsigned IPA (iPhone)
@@ -126,7 +126,6 @@ jobs:
           APP_PATH="build/Build/Products/Release-iphoneos/Familjen.app"
           test -d "$APP_PATH"
           echo "===== BUILT APP INFO.PLIST ====="
-          /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$APP_PATH/Info.plist"
           /usr/libexec/PlistBuddy -c "Print :UIDeviceFamily" "$APP_PATH/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Print :UIRequiresFullScreen" "$APP_PATH/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Print :UILaunchScreen" "$APP_PATH/Info.plist" || true
@@ -134,9 +133,9 @@ jobs:
           /usr/libexec/PlistBuddy -c "Print :UISupportedInterfaceOrientations" "$APP_PATH/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$APP_PATH/Info.plist" || true
           test -s "$APP_PATH/Assets.car"
-          ICON_NAME="$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$APP_PATH/Info.plist")"
-          test "$ICON_NAME" = "AppIcon"
-          echo "Verified iPhone app icon catalog: $ICON_NAME"
+          xcrun assetutil --info "$APP_PATH/Assets.car" > /tmp/familjen-assets.json
+          grep -q "AppIcon" /tmp/familjen-assets.json
+          echo "Verified AppIcon rendition in compiled iPhone asset catalog"
           echo "===== APP EXECUTABLE / BUNDLE ====="
           /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist"
           /usr/libexec/PlistBuddy -c "Print :CFBundleSupportedPlatforms" "$APP_PATH/Info.plist"

@@ -149,7 +149,7 @@ final class LocalReminderSchedulerTests: XCTestCase {
             desiredIdentifiers: [desired]
         )
 
-        XCTAssertEqual(obsolete, [stale, stale])
+        XCTAssertEqual(obsolete, [stale])
         XCTAssertFalse(obsolete.contains(desired))
     }
 

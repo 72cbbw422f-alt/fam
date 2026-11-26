@@ -1117,3 +1117,22 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - CI körs på grenen efter att push-triggern lagts till; verifiering av den slutliga commiten inväntas.
 - Interaktionerna är inte fysiskt verifierade på iPhone i denna arbetsinsats; särskilt långtryck/context menu, listscroll och månadsväljaren behöver kontrolleras på enheten.
 - Arbetsgren: `feature/calendar-event-details`.
+
+## 2026-11-26 – synkronisera lokala påminnelser efter kalenderundantag
+
+**Fynd**
+- Vanlig kalenderredigering och borttagning via `FamilyStore` schemalägger om lokala påminnelser.
+- Redigering av ett enskilt återkommande tillfälle (`saveOccurrenceOverride`) och avbokning av en förekomst (`skipOccurrence`) går direkt via repository i `FamilyCalendarViewModel` och utlöste inte motsvarande omschemaläggning.
+- Det kunde lämna kvar en påminnelse för gammalt datum eller sakna en påminnelse för det flyttade tillfället tills nästa fullständiga schemaläggning.
+
+**Ändrat**
+- Lade till en gemensam metod som omschemalägger enhetens kalender- och hälsopåminnelser när lokala påminnelser är aktiverade.
+- Anropar metoden efter lyckad sparning av ett enskilt tillfälles override, efter att en förekomst hoppats över och efter kalenderpost tagits bort.
+- Använder repositoryts uppdaterade poster, undantag och overrides som underlag. Funktionen lämnar schemaläggningen orörd om användaren har stängt av lokala påminnelser.
+- Berörd kodfil: `Sources/Data/FamilyCalendarViewModel.swift`.
+- Befintliga scheduler-tester täcker redan flyttad förekomst, överhoppad förekomst och nästa giltiga återkomst. De körs på nytt i CI för denna gren.
+
+**GitHub och verifiering**
+- Gren: `feature/calendar-reminder-sync`, baserad på `feature/calendar-event-details`.
+- Kodcommit: `01faf2a546f464e30de0a78d2f490801ddd1f45c`.
+- CI och fysisk iPhone-verifiering inväntar resultat. Ingen merge har gjorts.

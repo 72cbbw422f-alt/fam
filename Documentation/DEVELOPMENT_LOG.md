@@ -1181,3 +1181,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **GitHub**
 - Gren: `feature/calendar-reminder-sync`.
 - Ingen merge genomförd.
+
+
+**CI-trigger för senaste regressionstesterna**
+- Uppdaterade workflow-kommentaren på samma arbetsgren för att skapa en ny push-händelse och begära CI på senaste testcommitten.
+- Workflow-commit: `d26168f360153193829f37d1d02e8d207ebea67e`.
+- Workflowen omfattar fortsatt `feature/calendar-reminder-sync`.
+- GitHub Actions-resultat för den nya head-commiten är ännu inte synligt via tillgängliga statuskontroller; därför redovisas de nya testerna fortfarande som ej verifierade.

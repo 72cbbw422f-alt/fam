@@ -1157,3 +1157,24 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Ny kontroll använder i stället Apples `assetutil` för att läsa den kompilerade `Assets.car` och kräver att en rendition med namnet `AppIcon` finns i både simulator- och iPhone-paketet.
 - Detta kontrollerar den faktiska kompilerade asset-katalogen snarare än en plist-nyckel som inte är en tillförlitlig indikator i detta projekt.
 - Workflow- och projektändringarna inväntar ny CI. Ingen ikonfix betraktas som verifierad förrän båda jobben passerar.
+
+
+## 2026-11-26 – appikon verifierad i kompilerade iOS-paket
+
+**Verifierad CI**
+- Workflow run: [45772586007](https://github.com/72cbbw422f-alt/fam/actions/runs/45772586007).
+- Commit: `1cab690c12aefbee40d3ff45bf4e64afb757f1ba`.
+- Simulatorjobb: lyckades. Enhetstester: **98 tester, 0 fel**; Xcode avslutade med `TEST SUCCEEDED`.
+- Simulatorns kompilerade `Assets.car` innehåller en rendition som matchar `AppIcon`; kontrollsteget passerade.
+- iPhone Release-bygge: lyckades. Kompilerade `Assets.car` innehåller `AppIcon`; kontrollsteget passerade.
+- IPA-paketering och uppladdning: lyckades. Artifact `Familjen-unsigned-IPA`, ID `15095132652`, storlek 2 744 167 byte. [Hämta via GitHub Actions](https://github.com/72cbbw422f-alt/fam/actions/runs/45772586007/artifacts/15095132652).
+
+**Bedömning**
+- Den tidigare generiska appikonsituationen har nu en verifierad byggkedja: asset-källan renderas och appikonen finns i den kompilerade asset-katalogen för både simulator och iPhone.
+- Detta bevisar inte i sig att iOS visar just den ikonen i en notisbanner. Fysisk iPhone-installation och visuell kontroll av en faktisk notis återstår.
+- IPA:n är osignerad och är inte en signerad/distributionsklar release.
+
+**GitHub**
+- Gren: `feature/ios-app-icon-validation`.
+- Verifierad commit: `1cab690c12aefbee40d3ff45bf4e64afb757f1ba`.
+- PR #10 är fortsatt öppen som Draft mot `feature/calendar-event-details`. Ingen merge har gjorts.

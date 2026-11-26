@@ -1,6 +1,6 @@
 name: iOS build
 
-# Calendar occurrence and reminder regression coverage runs on this branch.
+# Calendar occurrence, reminder capacity and regression coverage runs on this branch.
 
 on:
   push:

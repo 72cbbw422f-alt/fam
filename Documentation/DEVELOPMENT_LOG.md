@@ -1117,3 +1117,74 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - CI körs på grenen efter att push-triggern lagts till; verifiering av den slutliga commiten inväntas.
 - Interaktionerna är inte fysiskt verifierade på iPhone i denna arbetsinsats; särskilt långtryck/context menu, listscroll och månadsväljaren behöver kontrolleras på enheten.
 - Arbetsgren: `feature/calendar-event-details`.
+
+
+## 2026-11-26 – verifiering av appikon i iOS-paketet
+
+**Fynd**
+- Appikonens asset catalog deklarerar `AppIcon.png`, medan källan i repot är `AppIcon.svg`. PNG-filen genereras i CI före Xcode-bygget och checkas inte in.
+- Den tidigare workflowen kontrollerade att IPA kunde paketeras, men verifierade inte att den kompilerade appen faktiskt innehöll en `Assets.car` eller att `Info.plist` pekade på `CFBundleIconName = AppIcon`.
+- En generisk ikon i iOS-notisen kan bero på att iOS inte hittar en giltig appikon i det installerade paketet. Det är en hypotes som nu får en explicit byggkontroll; CI kan inte bevisa hur bannern ser ut på en fysisk telefon.
+
+**Ändringar**
+- Behöll SVG som versionshanterad källasset och gjorde genereringen av 1024×1024 PNG explicit validerad i båda byggjobben.
+- Simulator- och iPhone-byggen kontrollerar nu att den kompilerade appen innehåller `Assets.car` och att `CFBundleIconName` är exakt `AppIcon`.
+- Simulatorbyggen använder en explicit DerivedData-sökväg så att den färdiga appbundlen kan inspekteras efter tester och build.
+- Berörd fil: `.github/workflows/ios-build.yml`.
+
+**GitHub**
+- Gren: `feature/ios-app-icon-validation`, baserad på `feature/calendar-event-details`.
+- Workflow-ändring: `282c508bc10dd03c47bbebe38dd0840f1117e7ee`.
+- Ingen merge till produktionsgren eller annan utvecklingsgren har gjorts.
+
+**Verifiering**
+- CI startas av push till den nya grenen. Resultat ska bedömas på exakt senaste branch-head och båda jobben måste lyckas.
+- Ingen fysisk iPhone-notis har verifierats i denna ändring. Efter godkänd CI krävs ny installation av IPA och kontroll av en faktisk notis på iPhone.
+- Appikonen är fortsatt en SVG-källa som renderas till PNG under byggningen; PNG checkas inte in som separat binärfil.
+
+
+**CI-fynd och korrigering – 2026-11-26**
+- Första verifieringskörningen byggde både simulatorappen och iPhone-appen, men de nya kontrollstegen stoppade eftersom den genererade `Info.plist` saknade nyckeln `CFBundleIconName`.
+- Det var en brist i byggkonfigurationen/verifieringsantagandet, inte ett Swift-kompileringsfel. Asset-katalogen byggdes, men metadata för ikonens namn deklarerades inte uttryckligen.
+- Lade därför till `INFOPLIST_KEY_CFBundleIconName: AppIcon` i `project.yml` och lade till utskrift av värdet i iPhone-jobbets paketlogg.
+- Berörda filer: `project.yml`, `.github/workflows/ios-build.yml`, denna utvecklingslogg.
+- Första verifieringskörningar: `45767538463` och `45767554900`; båda misslyckades endast i de nya ikonverifieringsstegen efter att byggena lyckats.
+- Ny CI krävs för den korrigerade branch-headen. Inga tester eller paketkontroller räknas som godkända ännu.
+
+**Uppföljande CI-analys – 2026-11-26**
+- CI på commit `9dfe3748c684303bdbf06d4c3dba68f603a3a3ff` visade att Xcode inte skapar `CFBundleIconName` i den genererade `Info.plist`, trots att asset-katalogen byggs. Att tvinga in nyckeln via XcodeGen-inställningen gav inte avsedd effekt.
+- Tog bort den verifikationskontroll som byggde på den nyckeln och tog bort den ineffektiva plist-override-inställningen.
+- Ny kontroll använder i stället Apples `assetutil` för att läsa den kompilerade `Assets.car` och kräver att en rendition med namnet `AppIcon` finns i både simulator- och iPhone-paketet.
+- Detta kontrollerar den faktiska kompilerade asset-katalogen snarare än en plist-nyckel som inte är en tillförlitlig indikator i detta projekt.
+- Workflow- och projektändringarna inväntar ny CI. Ingen ikonfix betraktas som verifierad förrän båda jobben passerar.
+
+
+## 2026-11-26 – appikon verifierad i kompilerade iOS-paket
+
+**Verifierad CI**
+- Workflow run: [45772586007](https://github.com/72cbbw422f-alt/fam/actions/runs/45772586007).
+- Commit: `1cab690c12aefbee40d3ff45bf4e64afb757f1ba`.
+- Simulatorjobb: lyckades. Enhetstester: **98 tester, 0 fel**; Xcode avslutade med `TEST SUCCEEDED`.
+- Simulatorns kompilerade `Assets.car` innehåller en rendition som matchar `AppIcon`; kontrollsteget passerade.
+- iPhone Release-bygge: lyckades. Kompilerade `Assets.car` innehåller `AppIcon`; kontrollsteget passerade.
+- IPA-paketering och uppladdning: lyckades. Artifact `Familjen-unsigned-IPA`, ID `15095132652`, storlek 2 744 167 byte. [Hämta via GitHub Actions](https://github.com/72cbbw422f-alt/fam/actions/runs/45772586007/artifacts/15095132652).
+
+**Bedömning**
+- Den tidigare generiska appikonsituationen har nu en verifierad byggkedja: asset-källan renderas och appikonen finns i den kompilerade asset-katalogen för både simulator och iPhone.
+- Detta bevisar inte i sig att iOS visar just den ikonen i en notisbanner. Fysisk iPhone-installation och visuell kontroll av en faktisk notis återstår.
+- IPA:n är osignerad och är inte en signerad/distributionsklar release.
+
+**GitHub**
+- Gren: `feature/ios-app-icon-validation`.
+- Verifierad commit: `1cab690c12aefbee40d3ff45bf4e64afb757f1ba`.
+- PR #10 är fortsatt öppen som Draft mot `feature/calendar-event-details`. Ingen merge har gjorts.
+
+**Senaste CI-uppföljning – 2026-11-26**
+- Senaste workflow run: [45775815431](https://github.com/72cbbw422f-alt/fam/actions/runs/45775815431).
+- Verifierad branch-head: `db3bece21d41deedc4cab8fe0ca9e118bdbe7f3f`.
+- Båda jobben lyckades: `Build Familjen (iOS Simulator)` och `Build unsigned IPA (iPhone)`.
+- Simulatorns testkörning passerade med 98 tester och 0 fel.
+- `assetutil` bekräftade `AppIcon` i kompilerad `Assets.car` för både simulator- och iPhone-paketet.
+- IPA-artefakt: `Familjen-unsigned-IPA`, ID `15096122388`, 2 744 167 byte. SHA-256: `bd2b3d34b1c439350418021bbc1554b881550f873ac8c0bdc14a721f50ec2252`. Artefakten finns till 2026-12-10 07:31 UTC.
+- Den äldre noteringen ovan om att CI inväntar verifiering avser en tidigare commit/run och ersätts av detta resultat.
+- Fysisk iPhone-verifiering av notisens utseende återstår. Ingen merge har gjorts.

@@ -2,7 +2,7 @@ name: iOS build
 
 on:
   push:
-    branches: [main, local-first-beta, feature/health-foundation, feature/ux-navigation-shopping, feature/shopping-search-aliases, feature/shopping-favorites, feature/shopping-recurring-items, feature/calendar-event-details]
+    branches: [main, local-first-beta, feature/health-foundation, feature/ux-navigation-shopping, feature/shopping-search-aliases, feature/shopping-favorites, feature/shopping-recurring-items, feature/calendar-event-details, feature/ios-app-icon-validation]
   workflow_dispatch:
 
 concurrency:
@@ -28,8 +28,16 @@ jobs:
       - name: Install build tools
         run: brew install xcodegen librsvg
 
-      - name: Render app icon
-        run: rsvg-convert -w 1024 -h 1024 Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.svg -o Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+      - name: Render and validate app icon source
+        run: |
+          ICON_DIR="Sources/Assets.xcassets/AppIcon.appiconset"
+          test -s "$ICON_DIR/AppIcon.svg"
+          rsvg-convert -w 1024 -h 1024 "$ICON_DIR/AppIcon.svg" -o "$ICON_DIR/AppIcon.png"
+          test -s "$ICON_DIR/AppIcon.png"
+          DIMENSIONS="$(sips -g pixelWidth -g pixelHeight "$ICON_DIR/AppIcon.png")"
+          echo "$DIMENSIONS"
+          echo "$DIMENSIONS" | grep -q "pixelWidth: 1024"
+          echo "$DIMENSIONS" | grep -q "pixelHeight: 1024"
 
       - name: Generate Xcode project
         run: xcodegen generate
@@ -45,6 +53,7 @@ jobs:
             -project Familjen.xcodeproj \
             -scheme Familjen \
             -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+            -derivedDataPath build-simulator \
             CODE_SIGNING_ALLOWED=NO \
             test
 
@@ -55,8 +64,18 @@ jobs:
             -scheme Familjen \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build-simulator \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+      - name: Verify compiled simulator app icon
+        run: |
+          APP_PATH="build-simulator/Build/Products/Debug-iphonesimulator/Familjen.app"
+          test -d "$APP_PATH"
+          test -s "$APP_PATH/Assets.car"
+          xcrun assetutil --info "$APP_PATH/Assets.car" > /tmp/familjen-assets.json
+          grep -q "AppIcon" /tmp/familjen-assets.json
+          echo "Verified AppIcon rendition in compiled simulator asset catalog"
 
   build-device-ipa:
     name: Build unsigned IPA (iPhone)
@@ -73,8 +92,16 @@ jobs:
       - name: Install build tools
         run: brew install xcodegen librsvg
 
-      - name: Render app icon
-        run: rsvg-convert -w 1024 -h 1024 Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.svg -o Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+      - name: Render and validate app icon source
+        run: |
+          ICON_DIR="Sources/Assets.xcassets/AppIcon.appiconset"
+          test -s "$ICON_DIR/AppIcon.svg"
+          rsvg-convert -w 1024 -h 1024 "$ICON_DIR/AppIcon.svg" -o "$ICON_DIR/AppIcon.png"
+          test -s "$ICON_DIR/AppIcon.png"
+          DIMENSIONS="$(sips -g pixelWidth -g pixelHeight "$ICON_DIR/AppIcon.png")"
+          echo "$DIMENSIONS"
+          echo "$DIMENSIONS" | grep -q "pixelWidth: 1024"
+          echo "$DIMENSIONS" | grep -q "pixelHeight: 1024"
 
       - name: Generate Xcode project
         run: xcodegen generate
@@ -105,6 +132,10 @@ jobs:
           /usr/libexec/PlistBuddy -c "Print :UILaunchStoryboardName" "$APP_PATH/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Print :UISupportedInterfaceOrientations" "$APP_PATH/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$APP_PATH/Info.plist" || true
+          test -s "$APP_PATH/Assets.car"
+          xcrun assetutil --info "$APP_PATH/Assets.car" > /tmp/familjen-assets.json
+          grep -q "AppIcon" /tmp/familjen-assets.json
+          echo "Verified AppIcon rendition in compiled iPhone asset catalog"
           echo "===== APP EXECUTABLE / BUNDLE ====="
           /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist"
           /usr/libexec/PlistBuddy -c "Print :CFBundleSupportedPlatforms" "$APP_PATH/Info.plist"

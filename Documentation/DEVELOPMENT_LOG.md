@@ -1160,3 +1160,24 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 **GitHub**
 - Gren: `feature/calendar-reminder-sync`.
 - Ingen merge genomförd.
+
+
+## 2026-11-26 – regressionstester för avbokning av en kalenderförekomst
+
+**Granskning**
+- Genomgång av repositoryns återkomsthantering bekräftade att avbokning av en enskild förekomst ska vara idempotent och transaktionell.
+- Implementationen hade redan skydd mot dubbla undantag och återställning vid skrivfel, men dessa två egenskaper saknade direkta tester i den dedikerade återkomsttestsviten.
+
+**Ändrat**
+- Lade till test som avbokar samma veckoförekomst två gånger och verifierar att endast ett undantag sparas och överlever omladdning.
+- Lade till test som simulerar skrivfel vid avbokning och verifierar att undantaget återställs, att felet exponeras och att blockeringsfilen inte skrivs över.
+- Berörd fil: `Tests/OccurrenceOverrideRestorationTests.swift`.
+
+**Verifiering**
+- Testerna är incheckade men inte körda ännu. CI-resultat inväntas.
+- Tidigare verifierade bas för kalenderpåminnelsegrenen: 98 tester passerade; simulator- och osignerat iPhone-bygge lyckades före de senaste testtilläggen.
+- Fysisk iPhone-verifiering av verklig notisleverans återstår.
+
+**GitHub**
+- Gren: `feature/calendar-reminder-sync`.
+- Ingen merge genomförd.

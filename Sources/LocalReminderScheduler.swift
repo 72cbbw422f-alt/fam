@@ -92,12 +92,10 @@ enum LocalReminderScheduler {
     }
 
     static func obsoleteManagedIdentifiers(existingIdentifiers: [String], desiredIdentifiers: Set<String>) -> [String] {
-        existingIdentifiers
-            .filter {
-                ($0.hasPrefix(identifierPrefix) || $0.hasPrefix(healthIdentifierPrefix))
-                    && !desiredIdentifiers.contains($0)
-            }
-            .sorted()
+        Array(Set(existingIdentifiers.filter {
+            ($0.hasPrefix(identifierPrefix) || $0.hasPrefix(healthIdentifierPrefix))
+                && !desiredIdentifiers.contains($0)
+        })).sorted()
     }
 
     static func shouldRemoveObsoleteReminders(afterSuccessfulAdds: Bool) -> Bool {

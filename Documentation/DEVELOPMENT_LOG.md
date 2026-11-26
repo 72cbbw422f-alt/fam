@@ -1117,3 +1117,27 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - CI körs på grenen efter att push-triggern lagts till; verifiering av den slutliga commiten inväntas.
 - Interaktionerna är inte fysiskt verifierade på iPhone i denna arbetsinsats; särskilt långtryck/context menu, listscroll och månadsväljaren behöver kontrolleras på enheten.
 - Arbetsgren: `feature/calendar-event-details`.
+
+
+## 2026-11-26 – verifiering av appikon i iOS-paketet
+
+**Fynd**
+- Appikonens asset catalog deklarerar `AppIcon.png`, medan källan i repot är `AppIcon.svg`. PNG-filen genereras i CI före Xcode-bygget och checkas inte in.
+- Den tidigare workflowen kontrollerade att IPA kunde paketeras, men verifierade inte att den kompilerade appen faktiskt innehöll en `Assets.car` eller att `Info.plist` pekade på `CFBundleIconName = AppIcon`.
+- En generisk ikon i iOS-notisen kan bero på att iOS inte hittar en giltig appikon i det installerade paketet. Det är en hypotes som nu får en explicit byggkontroll; CI kan inte bevisa hur bannern ser ut på en fysisk telefon.
+
+**Ändringar**
+- Behöll SVG som versionshanterad källasset och gjorde genereringen av 1024×1024 PNG explicit validerad i båda byggjobben.
+- Simulator- och iPhone-byggen kontrollerar nu att den kompilerade appen innehåller `Assets.car` och att `CFBundleIconName` är exakt `AppIcon`.
+- Simulatorbyggen använder en explicit DerivedData-sökväg så att den färdiga appbundlen kan inspekteras efter tester och build.
+- Berörd fil: `.github/workflows/ios-build.yml`.
+
+**GitHub**
+- Gren: `feature/ios-app-icon-validation`, baserad på `feature/calendar-event-details`.
+- Workflow-ändring: `282c508bc10dd03c47bbebe38dd0840f1117e7ee`.
+- Ingen merge till produktionsgren eller annan utvecklingsgren har gjorts.
+
+**Verifiering**
+- CI startas av push till den nya grenen. Resultat ska bedömas på exakt senaste branch-head och båda jobben måste lyckas.
+- Ingen fysisk iPhone-notis har verifierats i denna ändring. Efter godkänd CI krävs ny installation av IPA och kontroll av en faktisk notis på iPhone.
+- Appikonen är fortsatt en SVG-källa som renderas till PNG under byggningen; PNG checkas inte in som separat binärfil.

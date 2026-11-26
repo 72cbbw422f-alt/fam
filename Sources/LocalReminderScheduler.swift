@@ -78,7 +78,7 @@ enum LocalReminderScheduler {
             }
             return $0.offset < $1.offset
         }
-        return Array(candidates.prefix(maximumPendingReminders))
+        return candidates
     }
 
     static func makeHealthCandidates(for reminders: [HealthReminder], now: Date) -> [HealthReminderCandidate] {

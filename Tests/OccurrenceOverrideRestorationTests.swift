@@ -93,4 +93,60 @@ final class OccurrenceOverrideRestorationTests: XCTestCase {
         XCTAssertNotNil(store.persistenceError)
         XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
     }
+
+    func testSkippingSameOccurrenceTwiceDoesNotCreateDuplicateExceptions() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let originalDate = Date(timeIntervalSince1970: 1_800_000_000)
+        store.saveCalendarItem(
+            id: nil, title: "Veckomöte", details: nil, startsAt: originalDate,
+            kind: .event, memberIDs: [], isForEveryone: true,
+            responsibleMemberID: nil, recurring: false, reminderOffsets: [],
+            recurrenceFrequency: .weekly
+        )
+        let series = try XCTUnwrap(store.items.first)
+        let occurrence = FamilyItem(
+            id: series.id, familyID: series.familyID, title: series.title,
+            details: nil, startsAt: originalDate, endsAt: nil, kind: .event,
+            memberID: nil, isRecurringYearly: false, reminderOffsets: [],
+            recurrenceFrequency: .none
+        )
+
+        store.skipOccurrence(of: occurrence)
+        store.skipOccurrence(of: occurrence)
+
+        XCTAssertEqual(store.skippedOccurrences.count, 1)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.skippedOccurrences.count, 1)
+    }
+
+    func testFailedSkipWriteRollsBackOccurrenceException() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let originalDate = Date(timeIntervalSince1970: 1_800_000_000)
+        store.saveCalendarItem(
+            id: nil, title: "Veckomöte", details: nil, startsAt: originalDate,
+            kind: .event, memberIDs: [], isForEveryone: true,
+            responsibleMemberID: nil, recurring: false, reminderOffsets: [],
+            recurrenceFrequency: .weekly
+        )
+        let series = try XCTUnwrap(store.items.first)
+        let occurrence = FamilyItem(
+            id: series.id, familyID: series.familyID, title: series.title,
+            details: nil, startsAt: originalDate, endsAt: nil, kind: .event,
+            memberID: nil, isRecurringYearly: false, reminderOffsets: [],
+            recurrenceFrequency: .none
+        )
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+        store.skipOccurrence(of: occurrence)
+
+        XCTAssertTrue(store.skippedOccurrences.isEmpty)
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
+    }
+
 }

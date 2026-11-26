@@ -1206,3 +1206,28 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Nytt test är incheckat men inte kört; CI inväntas.
 - Den faktiska schemaläggningen behåller fortsatt ett totalt tak på 60 väntande Familjen-påminnelser.
 - Fysisk iPhone-verifiering återstår.
+
+
+## 2026-11-26 – verifiera faktiskt urval under gemensamt påminnelsetak
+
+**Fynd och åtgärd**
+- Det tidigare regressionstestet visade att kalenderkandidatgenereringen inte längre kapar listan före sammanslagningen, men bevisade inte direkt att hälsopåminnelser får rätt plats i det slutliga urvalet.
+- Bröt därför ut den faktiska sorterings- och kapacitetslogiken till LocalReminderScheduler.selectCandidates.
+- Produktionsschemaläggningen använder nu samma rena funktion som testerna, vilket undviker att test och produktionskod provar två olika urvalsalgoritmer.
+- Lade till test med 75 senare kalenderpåminnelser och en tidigare hälsopåminnelse. Testet förväntar 60 valda kandidater, inklusive hälsopåminnelsen och 59 kalenderpåminnelser.
+- Lade även till test för gränsfallet kapacitet 0.
+
+**Berörda filer**
+- Sources/LocalReminderScheduler.swift
+- Tests/LocalReminderSchedulerTests.swift
+- Documentation/DEVELOPMENT_LOG.md
+
+**Commits**
+- Produktionskod: 821c55798bfe10ce3f7108d7516e966fab371118.
+- Regressionstester: 606510c9a869210ce6f62a5e04b3a7c9a3e68cb1.
+
+**Verifiering**
+- Källkod och tester är incheckade på feature/calendar-reminder-sync.
+- Testerna är ännu inte körda i GitHub Actions; inget grönt CI-resultat hävdas för dessa commits.
+- Fysisk iPhone-testning och faktisk notisleverans återstår.
+- PR #11 förblir draft och har inte mergats.

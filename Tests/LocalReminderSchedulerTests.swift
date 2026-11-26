@@ -153,4 +153,23 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertFalse(obsolete.contains(desired))
     }
 
+
+    func testCalendarCandidateGenerationDoesNotConsumeSharedCapBeforeHealthMerge() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let items = (0..<75).map { index in
+            FamilyItem(
+                id: UUID(), familyID: UUID(), title: "Aktivitet \(index)",
+                details: nil, startsAt: now.addingTimeInterval(TimeInterval(3600 + index * 60)),
+                endsAt: nil, kind: .event, memberID: nil,
+                isRecurringYearly: false, reminderOffsets: [0]
+            )
+        }
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: items, now: now)
+
+        // The 60-request limit is shared with health reminders and must be applied
+        // only after both candidate types have been merged by fire date.
+        XCTAssertEqual(candidates.count, 75)
+    }
+
 }

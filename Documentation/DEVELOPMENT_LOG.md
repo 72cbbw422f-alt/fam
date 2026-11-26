@@ -1188,3 +1188,21 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Workflow-commit: `d26168f360153193829f37d1d02e8d207ebea67e`.
 - Workflowen omfattar fortsatt `feature/calendar-reminder-sync`.
 - GitHub Actions-resultat för den nya head-commiten är ännu inte synligt via tillgängliga statuskontroller; därför redovisas de nya testerna fortfarande som ej verifierade.
+
+
+## 2026-11-26 – gemensamt kapacitetstak för kalender- och hälsopåminnelser
+
+**Granskning**
+- Hittade en prioriteringsbugg i `LocalReminderScheduler`: kalenderkandidater begränsades till 60 innan hälsopåminnelser lades till.
+- Om familjekalendern hade minst 60 kommande påminnelser kunde därför hälsopåminnelser helt trängas undan, trots att båda typerna senare sorteras och delar samma systemgräns.
+
+**Ändrat**
+- Tog bort det för tidiga taket i kalenderkandidatgenereringen.
+- Det gemensamma taket på 60 tillämpas nu efter att kalender- och hälsopåminnelser slagits samman och sorterats efter när de ska skickas.
+- Lade till regressionstest som verifierar att kandidatgenereringen inte kapar kalenderlistan innan sammanslagningen.
+- Berörda filer: `Sources/LocalReminderScheduler.swift`, `Tests/LocalReminderSchedulerTests.swift`.
+
+**Verifiering**
+- Nytt test är incheckat men inte kört; CI inväntas.
+- Den faktiska schemaläggningen behåller fortsatt ett totalt tak på 60 väntande Familjen-påminnelser.
+- Fysisk iPhone-verifiering återstår.

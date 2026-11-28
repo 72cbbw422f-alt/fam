@@ -1344,3 +1344,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Inga produktionsändringar behövdes i dessa statusflöden efter granskningen; den enda produktionsändringen i denna del är normalisering av dubbletter per länkad target.
 - Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: testkällan återhämtad från GitHub och Swift-interpolation kontrollerad. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head ännu.
+
+## 2026-11-28 – blockera nya påminnelser för avslutade hälsomål
+- Granskningen av den publika lagringsvägen för HealthReminder hittade en lucka: valideringen kontrollerade att länkad post och familjemedlem fanns, men inte att målet fortfarande var aktivt. Det gick därför att lägga till en ny record-påminnelse för ett genomfört vårdbesök, en förnyelsepåminnelse för ett redan förnyat recept eller en hämtningspåminnelse för läkemedel som redan hämtats/avbokats.
+- Skärpte valideringen: record-påminnelser kräver status planerat/inväntar svar, receptpåminnelser kräver förnyelse due/requested och hämtningspåminnelser kräver status planned. Egna/custom-påminnelser påverkas inte.
+- Lade till regressionstest som försöker skapa alla tre inaktiva länktyperna och verifierar att ingen sparas, inte heller efter omladdning.
+- Berörda filer: Sources/Data/LocalFamilyStore.swift, Tests/HealthReminderSchedulerTests.swift, Documentation/DEVELOPMENT_LOG.md.
+- Verifiering: kod och test återhämtade från GitHub; testets Swift-interpolation kontrollerad. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head.

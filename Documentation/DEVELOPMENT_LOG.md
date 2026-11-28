@@ -1360,3 +1360,9 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till regressionstest som verifierar borttagning av personliga hälsodata och notiser, bevarad övrig kalenderhistorik samt resultat efter omladdning.
 - Berörda filer: Sources/Data/LocalFamilyStore.swift, Sources/Data/FamilyStore.swift, Sources/FamilyMembersView.swift, Tests/LocalFamilyStoreTests.swift, Documentation/DEVELOPMENT_LOG.md.
 - Verifiering: kod/test/dokumentation återhämtade och kontrollerade via GitHub. Ingen lokal Swift/Xcode-körning; CI för aktuell head inväntas.
+
+## 2026-11-28 – korrigera Swift-keypath i återkomsttest
+- Källkodsgranskning av den senaste PR-headen hittade ett extra escapetecken i keypath-uttrycket i testet för 12 kommande veckoförekomster. Det skulle ge ett Swift-kompileringsfel innan testet kunde köras.
+- Korrigerade uttrycket till `candidates.map(\\.id)` i `Tests/LocalReminderSchedulerTests.swift`.
+- Commit: `9dafbd77e10abc396e4541ec2f2a748310e85393`.
+- Verifiering: uppdaterad fil återhämtas och kontrolleras från GitHub. Ingen lokal Swift/Xcode-körning; CI för den nya head-commiten måste inväntas. Ingen IPA och ingen merge.

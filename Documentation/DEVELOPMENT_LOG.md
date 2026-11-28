@@ -1257,3 +1257,11 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Berörd fil: `Sources/Data/FamilyCalendarViewModel.swift`.
 - Commit: `4a8601d7ffad09a85b111ccdc3cb15dd874034fb`.
 - Verifiering: kodväg granskad och ändringen incheckad på `feature/calendar-reminder-sync`. Ingen Swift/Xcode-körning; CI saknar ännu körning/status för tidigare head och måste kontrolleras mot den nya committen. Fysisk iPhone-verifiering återstår.
+
+
+## 2026-11-28 – kalenderkoppling följer status för hälsoärenden
+- Granskningen visade att hälsoärenden av typen vårdbesök/uppföljning behöll en kalenderpost även när status ändrades till genomfört eller avbokat. Det kunde lämna en missvisande kalenderpost och lokala påminnelser kopplade till ett avslutat ärende.
+- Ändrade synkroniseringen så att endast aktiva ärenden (planerat eller inväntar svar) har en länkad kalenderpost. Genomfört/avbokat ärende behålls i hälsohistoriken men dess kalenderpost tas bort och kalenderkopplingen nollställs.
+- Lade till regressionstest som verifierar att planerat besök skapar kalenderpost och att statusövergång till genomfört respektive avbokat tar bort kalenderposten utan att radera hälsoärendet.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: ändringar incheckade på `feature/calendar-reminder-sync`; ingen lokal Swift/Xcode-körning. CI-status för aktuell gren/head behöver inväntas. Ingen merge.

@@ -274,4 +274,35 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertTrue(candidates.allSatisfy { $0.fireDate > now })
     }
 
+
+    func testPersonalHealthCalendarItemsAreExcludedFromLocalReminderCandidates() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let privateID = UUID()
+        let sharedID = UUID()
+        let familyID = UUID()
+        let items = [
+            FamilyItem(
+                id: privateID, familyID: familyID, title: "Privat läkarbesök",
+                details: nil, startsAt: now.addingTimeInterval(3_600), endsAt: nil,
+                kind: .healthVisit, memberID: nil, isRecurringYearly: false,
+                reminderOffsets: [0]
+            ),
+            FamilyItem(
+                id: sharedID, familyID: familyID, title: "Gemensam aktivitet",
+                details: nil, startsAt: now.addingTimeInterval(7_200), endsAt: nil,
+                kind: .event, memberID: nil, isRecurringYearly: false,
+                reminderOffsets: [0]
+            )
+        ]
+
+        let visible = LocalReminderScheduler.excludingPrivateHealthItems(
+            items, privateHealthCalendarIDs: [privateID]
+        )
+        let candidates = LocalReminderScheduler.makeCandidates(for: visible, now: now)
+
+        XCTAssertEqual(visible.map(\\.id), [sharedID])
+        XCTAssertEqual(candidates.map(\\.item.id), [sharedID])
+        XCTAssertFalse(candidates.contains { $0.item.title == "Privat läkarbesök" })
+    }
+
 }

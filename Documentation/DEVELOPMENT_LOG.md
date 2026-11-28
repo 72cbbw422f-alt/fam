@@ -1306,3 +1306,11 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Berörd fil: `Sources/RootView.swift`.
 - Commit: `26ac91f40fb0de8132096a177ccf0d622734e299`.
 - Verifiering: kodväg granskad och filen incheckad. Ingen lokal Xcode/Swift-körning; CI för aktuell head inväntas. Fysisk iPhone-verifiering av att behörighetsdialogen endast visas efter aktivt val återstår.
+
+## 2026-11-28 – rullande kö för återkommande kalenderpåminnelser
+- Granskningen visade att schemaläggaren endast projicerade nästa förekomst per återkommande kalenderpost. Om appen inte öppnades igen efter att den påminnelsen skickats kunde kommande veckor sakna förhandsplanerade notiser.
+- Schemaläggaren bygger nu en rullande kö med upp till 12 kommande förekomster per återkommande serie. Varje iteration använder samma kalenderprojektion som appens översikt, vilket bevarar hanteringen av överhoppade datum och flyttade undantag utan att ändra vad kalendern visar.
+- Icke återkommande poster behåller tidigare beteende. Det gemensamma taket på 60 kalender- och hälsopåminnelser tillämpas fortsatt efter sammanslagning och sortering.
+- Lade till regressionstest som verifierar 12 unika veckoförekomster i kronologisk ordning.
+- Berörda filer: `Sources/LocalReminderScheduler.swift`, `Tests/LocalReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: kod och test är incheckade på `feature/calendar-reminder-sync`. Ingen lokal Swift/Xcode-körning; CI-resultat för aktuell head inväntas. Test på fysisk iPhone och faktisk notisleverans återstår. Ingen IPA byggd och ingen merge genomförd.

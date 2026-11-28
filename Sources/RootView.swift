@@ -51,6 +51,7 @@ private struct FamilyTabShell: View {
         }
     }
 
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab: Tab = .overview
     @State private var overviewNavigationID = UUID()
 
@@ -80,14 +81,21 @@ private struct FamilyTabShell: View {
         .background(FamiljenTheme.paper.ignoresSafeArea())
         .tint(FamiljenTheme.navy)
         .task {
-            await reconcileLocalRemindersOnLaunch()
+            await reconcileLocalReminders()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await reconcileLocalReminders() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name.NSSystemTimeZoneDidChange)) { _ in
+            Task { await reconcileLocalReminders() }
         }
     }
 
     /// Reconcile previously enabled reminders without prompting on app launch.
     /// Permission is requested only after the user explicitly enables reminders in Settings.
     @MainActor
-    private func reconcileLocalRemindersOnLaunch() async {
+    private func reconcileLocalReminders() async {
         guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
 
         let settings = await UNUserNotificationCenter.current().notificationSettings()

@@ -214,10 +214,6 @@ enum LocalReminderScheduler {
         center.removeDeliveredNotifications(withIdentifiers: obsoleteIDs)
     }
 
-    private static func identifier(for candidate: ReminderCandidate) -> String {
-        candidate.id
-    }
-
     private static func reminderLabel(for offset: Int) -> String {
         switch offset {
         case 7 * 24 * 60 * 60: return "om en vecka"

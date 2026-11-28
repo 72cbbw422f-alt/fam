@@ -143,13 +143,13 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertEqual(candidates[0].item.title, "Veckomöte – flyttat 1")
         XCTAssertEqual(candidates[0].item.recurrenceOccurrenceDate, firstOriginal)
         XCTAssertEqual(candidates[0].item.startsAt, firstMoved)
-        XCTAssertEqual(candidates[1].item.title, "Veckomöte")
-        XCTAssertEqual(candidates[1].item.startsAt, try XCTUnwrap(calendar.date(
-            from: DateComponents(year: 2026, month: 11, day: 30, hour: 9)
+        XCTAssertEqual(candidates[1].item.title, "Veckomöte – flyttat 2")
+        XCTAssertEqual(candidates[1].item.recurrenceOccurrenceDate, secondOriginal)
+        XCTAssertEqual(candidates[1].item.startsAt, secondMoved)
+        XCTAssertEqual(candidates[2].item.title, "Veckomöte")
+        XCTAssertEqual(candidates[2].item.startsAt, try XCTUnwrap(calendar.date(
+            from: DateComponents(year: 2026, month: 12, day: 7, hour: 9)
         )))
-        XCTAssertEqual(candidates[2].item.title, "Veckomöte – flyttat 2")
-        XCTAssertEqual(candidates[2].item.recurrenceOccurrenceDate, secondOriginal)
-        XCTAssertEqual(candidates[2].item.startsAt, secondMoved)
     }
 
     func testDuplicateReminderOffsetsProduceOnlyOneCandidatePerOffset() throws {
@@ -177,7 +177,7 @@ final class LocalReminderSchedulerTests: XCTestCase {
             desiredIdentifiers: [desiredCalendar]
         )
 
-        XCTAssertEqual(obsolete, [staleCalendar, staleHealth])
+        XCTAssertEqual(obsolete, [staleHealth, staleCalendar])
     }
 
     func testObsoleteCleanupIsStableAndDoesNotRemoveDesiredHealthReminder() {
@@ -418,7 +418,7 @@ final class LocalReminderSchedulerTests: XCTestCase {
         }
         XCTAssertEqual(components.map(\.year), Array(2027...2038))
         XCTAssertEqual(components.map(\.month), Array(repeating: 2, count: 12))
-        XCTAssertEqual(components.map(\.day), [28, 29] + Array(repeating: 28, count: 10))
+        XCTAssertEqual(components.map(\.day), [28, 29, 28, 28, 28, 29, 28, 28, 28, 29, 28, 28])
     }
 
 }

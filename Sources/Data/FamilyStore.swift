@@ -148,7 +148,12 @@ final class FamilyStore: ObservableObject {
         rescheduleHealthReminders()
     }
 
+    static func shouldRescheduleReminders(afterPersistenceError error: String?) -> Bool {
+        error == nil
+    }
+
     private func rescheduleHealthReminders() {
+        guard Self.shouldRescheduleReminders(afterPersistenceError: persistenceError) else { return }
         guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
         Task {
             await LocalReminderScheduler.schedule(

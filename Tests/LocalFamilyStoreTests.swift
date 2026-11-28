@@ -536,6 +536,76 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(series.recurrenceFrequency, .weekly)
     }
 
+
+    func testSkippingMovedRecurringOccurrenceUsesOriginalSeriesDate() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let originalDate = Date(timeIntervalSince1970: 1_800_000_000)
+        store.saveCalendarItem(
+            id: nil, title: "Veckomöte", details: nil, startsAt: originalDate,
+            kind: .event, memberIDs: [], isForEveryone: true,
+            responsibleMemberID: nil, recurring: false, reminderOffsets: [],
+            recurrenceFrequency: .weekly
+        )
+        let series = try XCTUnwrap(store.items.first)
+        let movedDate = originalDate.addingTimeInterval(2 * 86_400)
+        var movedOccurrence = series
+        movedOccurrence.title = "Veckomöte – flyttat"
+        movedOccurrence.startsAt = movedDate
+        store.saveOccurrenceOverride(
+            seriesID: series.id, occurrenceDate: originalDate, item: movedOccurrence
+        )
+
+        store.skipOccurrence(of: movedOccurrence)
+
+        XCTAssertTrue(store.occurrenceOverrides.isEmpty)
+        XCTAssertEqual(store.skippedOccurrences.count, 1)
+        XCTAssertEqual(store.skippedOccurrences.first?.seriesID, series.id)
+        XCTAssertEqual(store.skippedOccurrences.first?.occurrenceDate, originalDate)
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.occurrenceOverrides.isEmpty)
+        XCTAssertEqual(reloaded.skippedOccurrences.first?.occurrenceDate, originalDate)
+        let projected = DashboardViewModel.project(
+            reloaded.items, from: originalDate,
+            skipping: reloaded.skippedOccurrences, overrides: reloaded.occurrenceOverrides
+        )
+        XCTAssertNotEqual(projected.first?.startsAt, movedDate)
+        XCTAssertEqual(projected.first?.startsAt, originalDate.addingTimeInterval(7 * 86_400))
+    }
+
+    func testFailedSkipOfMovedOccurrenceRollsBackSkipAndOverride() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let originalDate = Date(timeIntervalSince1970: 1_800_000_000)
+        store.saveCalendarItem(
+            id: nil, title: "Veckomöte", details: nil, startsAt: originalDate,
+            kind: .event, memberIDs: [], isForEveryone: true,
+            responsibleMemberID: nil, recurring: false, reminderOffsets: [],
+            recurrenceFrequency: .weekly
+        )
+        let series = try XCTUnwrap(store.items.first)
+        let movedDate = originalDate.addingTimeInterval(2 * 86_400)
+        var movedOccurrence = series
+        movedOccurrence.title = "Veckomöte – flyttat"
+        movedOccurrence.startsAt = movedDate
+        store.saveOccurrenceOverride(
+            seriesID: series.id, occurrenceDate: originalDate, item: movedOccurrence
+        )
+        let originalOverrides = store.occurrenceOverrides
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+        store.skipOccurrence(of: movedOccurrence)
+
+        XCTAssertTrue(store.skippedOccurrences.isEmpty)
+        XCTAssertEqual(store.occurrenceOverrides, originalOverrides)
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
+    }
+
     func testCorruptedSnapshotIsPreservedForRecovery() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("FamiljenCorruptTests-\(UUID().uuidString)", isDirectory: true)

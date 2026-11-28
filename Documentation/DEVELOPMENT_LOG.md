@@ -1247,3 +1247,13 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till regressionstester för deterministisk identifierarsortering vid lika utskickstid och för att de närmaste kandidaterna väljs även när indata kommer i omvänd ordning.
 - Berörda filer: `Sources/LocalReminderScheduler.swift`, `Tests/LocalReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: ändrade filer återhämtade från GitHub och granskade. Ingen lokal Swift/Xcode-körning; GitHub Actions visar ännu inga statusar eller workflow-runs för aktuell head.
+
+
+
+## 2026-11-28 – omschemaläggning även efter vanlig kalenderredigering
+- Kodgranskningen visade att `FamilyCalendarViewModel.save(...)` skrev kalenderposten direkt via repositoryt och returnerade efter lyckad lagring utan att anropa den lokala påminnelseschemaläggaren.
+- Följden var att ändrade datum, tider eller påminnelseintervall via det vanliga kalenderformuläret kunde lämna kvar gamla lokala notiser. Flödena för förekomstundantag och borttagning hade redan uttrycklig omschemaläggning.
+- Lade därför till samma `rescheduleLocalRemindersIfEnabled()` efter lyckad och beständig vanlig kalenderlagring. Misslyckad lagring returnerar fortsatt innan omschemaläggning, och avstängda lokala påminnelser lämnas orörda.
+- Berörd fil: `Sources/Data/FamilyCalendarViewModel.swift`.
+- Commit: `4a8601d7ffad09a85b111ccdc3cb15dd874034fb`.
+- Verifiering: kodväg granskad och ändringen incheckad på `feature/calendar-reminder-sync`. Ingen Swift/Xcode-körning; CI saknar ännu körning/status för tidigare head och måste kontrolleras mot den nya committen. Fysisk iPhone-verifiering återstår.

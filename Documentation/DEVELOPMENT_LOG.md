@@ -1275,3 +1275,13 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Inställningstexten korrigerad: iOS frågar om notisbehörighet när användaren aktiverar lokala påminnelser första gången, inte vid första appstart.
 - Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Sources/FamilySettingsView.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: ändringarna incheckade på `feature/calendar-reminder-sync`. Ingen Swift/Xcode-körning; CI-status saknas för senaste head. Ingen merge och ingen IPA.
+
+
+
+## 2026-11-28 – kontroll av notisbehörighet när appen återgår till förgrunden
+- Granskningen visade att inställningsvyn schemalade om påminnelser när den öppnades, men inte kontrollerade om användaren hunnit återkalla notisbehörigheten i iOS-inställningarna. Den lokala inställningsflaggan kunde därför fortsätta visa påminnelser som aktiverade trots att iOS inte längre tillät notiser.
+- Inställningsvyn kontrollerar nu den faktiska notisbehörigheten vid öppning och när appen återgår till aktivt läge. Vid tillåten, provisorisk eller tillfällig behörighet synkroniseras schemat om mot aktuell familjedata. Vid nekad eller ännu ej bestämd behörighet stängs den lokala påminnelseflaggan av och Familjens gamla väntande/levererade notiser rensas.
+- Okänd framtida behörighetsstatus lämnar användarens flagga orörd och visar ett kontrollmeddelande.
+- Berörd fil: `Sources/FamilySettingsView.swift`.
+- Commit: `528ee16ff54393ca8298f6e8861912894a11eb74`.
+- Verifiering: kodändringen är incheckad på `feature/calendar-reminder-sync`. Ingen lokal Xcode/Swift-körning; CI för denna commit inväntas. Ingen fysisk iPhone-testning eller IPA.

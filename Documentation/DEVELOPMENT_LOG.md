@@ -1453,3 +1453,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till ett valfritt tidszonsargument i projektionsfunktionen för deterministiska tester och ett regressionstest för 21–28 mars–4 april 2027 i Europe/Stockholm.
 - Berörda filer: `Sources/Data/DashboardViewModel.swift`, `Tests/LocalReminderSchedulerTests.swift`.
 - Verifiering: felet reproducerat med Swift 6.2.1/Foundation på Linux före ändringen. Kod, test och dokumentation incheckade på `feature/calendar-reminder-sync`; fulla iOS/Xcode-tester kan inte köras i denna miljö. CI för aktuell head måste kontrolleras. Ingen IPA och ingen merge.
+
+## 2026-11-28 – omplanera notiser efter tidszonsändring och återgång till appen
+- Granskade `LocalReminderScheduler`: notiser byggs som engångs-`UNCalendarNotificationTrigger` med uttryckliga lokala kalenderkomponenter och aktuell tidszon. En tidszonsändring kräver därför att väntande påminnelser räknas om från familjens sparade kalenderdata.
+- Flyttade inte schemaläggningen till en ny parallell tjänst. Utökade i stället `FamilyTabShell` så att tidigare aktiverade notiser synkroniseras vid appstart, när appen åter blir aktiv och vid `NSSystemTimeZoneDidChange`. Befintlig scheduler serialiserar operationer och behåller sin rollback-/felhantering.
+- Inställningssidans befintliga aktiverings- och behörighetsflöde är oförändrat. Ingen ny behörighetsdialog introduceras.
+- Berörd fil: `Sources/RootView.swift`.
+- Verifiering: källan uppdaterad på `feature/calendar-reminder-sync`. Ingen Xcode-miljö finns tillgänglig här; SwiftUI-livscykel, Foundation-notifikationen och faktisk omplanering måste verifieras i iOS-simulator/enhet. Ingen IPA och ingen merge.

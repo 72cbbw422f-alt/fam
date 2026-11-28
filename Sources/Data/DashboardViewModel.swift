@@ -67,9 +67,10 @@ final class DashboardViewModel: ObservableObject {
     }
 
     static func project(_ source: [FamilyItem], from date: Date, skipping exceptions: [FamilyOccurrenceException] = [],
-                        overrides: [FamilyOccurrenceOverride] = []) -> [FamilyItem] {
+                        overrides: [FamilyOccurrenceOverride] = [],
+                        timeZone: TimeZone = .current) -> [FamilyItem] {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .current
+        calendar.timeZone = timeZone
 
         return source.compactMap { item in
             let frequency = item.recurrenceFrequency == .none && item.isRecurringYearly
@@ -133,7 +134,12 @@ final class DashboardViewModel: ObservableObject {
                 case .none:
                     return nil
                 case .weekly:
-                    return calendar.date(byAdding: .day, value: 7, to: occurrence)
+                    // Always derive the next week from the series anchor. Adding
+                    // seven days to a normalized DST-gap occurrence (for example
+                    // 02:30 becoming 03:30) would otherwise preserve the drift.
+                    let elapsedDays = calendar.dateComponents([.day], from: item.startsAt, to: occurrence).day ?? 0
+                    let nextWeek = max(0, elapsedDays / 7 + 1)
+                    return calendar.date(byAdding: .day, value: nextWeek * 7, to: item.startsAt)
                 case .monthly:
                     guard let firstOfNextMonth = calendar.date(byAdding: .month, value: 1,
                                                                  to: calendar.dateInterval(of: .month, for: occurrence)?.start ?? occurrence) else {

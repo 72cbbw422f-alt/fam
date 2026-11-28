@@ -1314,3 +1314,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till regressionstest som verifierar 12 unika veckoförekomster i kronologisk ordning.
 - Berörda filer: `Sources/LocalReminderScheduler.swift`, `Tests/LocalReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: kod och test är incheckade på `feature/calendar-reminder-sync`. Ingen lokal Swift/Xcode-körning; CI-resultat för aktuell head inväntas. Test på fysisk iPhone och faktisk notisleverans återstår. Ingen IPA byggd och ingen merge genomförd.
+
+## 2026-11-28 – stoppa notisomschemaläggning efter misslyckad lagring
+- Granskning av hälsorepositoryts transaktioner visade att FamilyStore alltid startade notisomschemaläggning efter ett mutationsanrop, även när LocalFamilyStore hade återställt data efter ett skrivfel.
+- Lade ett gemensamt skydd i FamilyStore så att notisomschemaläggning endast startar när repositoryts senaste persistensstatus är felfri. Skyddet gäller de kalender- och hälsomutationer som använder den gemensamma schemaläggningsmetoden.
+- Lade till ett fokuserat regressionstest för både lyckad och misslyckad persistensstatus.
+- Berörda filer: `Sources/Data/FamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: kod och test incheckade på `feature/calendar-reminder-sync`. Ingen lokal Swift/Xcode-körning; CI för senaste head inväntas. Ingen IPA eller fysisk enhetstestning.

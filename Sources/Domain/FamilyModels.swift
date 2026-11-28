@@ -153,6 +153,8 @@ struct FamilyItem: Identifiable, Codable, Equatable {
     var responsibleMemberID: UUID?
     var isRecurringYearly: Bool
     var recurrenceFrequency: FamilyRecurrenceFrequency
+    /// Original scheduled date for a projected occurrence in a recurring series.
+    var recurrenceOccurrenceDate: Date?
     var reminderOffsets: [Int]?
 
     /// Compatibility accessor for older call sites and legacy snapshots.
@@ -166,7 +168,8 @@ struct FamilyItem: Identifiable, Codable, Equatable {
          endsAt: Date?, kind: FamilyItemKind, memberID: UUID?,
          isRecurringYearly: Bool, reminderOffsets: [Int]?,
          memberIDs: [UUID]? = nil, isForEveryone: Bool = false,
-         responsibleMemberID: UUID? = nil, location: String? = nil, latitude: Double? = nil, longitude: Double? = nil, recurrenceFrequency: FamilyRecurrenceFrequency? = nil) {
+         responsibleMemberID: UUID? = nil, location: String? = nil, latitude: Double? = nil, longitude: Double? = nil, recurrenceFrequency: FamilyRecurrenceFrequency? = nil,
+         recurrenceOccurrenceDate: Date? = nil) {
         self.id = id
         self.familyID = familyID
         self.title = title
@@ -182,6 +185,7 @@ struct FamilyItem: Identifiable, Codable, Equatable {
         self.responsibleMemberID = responsibleMemberID
         self.recurrenceFrequency = recurrenceFrequency ?? (isRecurringYearly ? .yearly : .none)
         self.isRecurringYearly = self.recurrenceFrequency == .yearly
+        self.recurrenceOccurrenceDate = recurrenceOccurrenceDate
         self.reminderOffsets = reminderOffsets
     }
 
@@ -197,6 +201,7 @@ struct FamilyItem: Identifiable, Codable, Equatable {
         case responsibleMemberID = "responsible_member_id"
         case isRecurringYearly = "is_recurring_yearly"
         case recurrenceFrequency = "recurrence_frequency"
+        case recurrenceOccurrenceDate = "recurrence_occurrence_date"
         case reminderOffsets = "reminder_offsets"
     }
 
@@ -222,6 +227,7 @@ struct FamilyItem: Identifiable, Codable, Equatable {
         isRecurringYearly = try container.decodeIfPresent(Bool.self, forKey: .isRecurringYearly) ?? false
         recurrenceFrequency = try container.decodeIfPresent(FamilyRecurrenceFrequency.self, forKey: .recurrenceFrequency) ?? (isRecurringYearly ? .yearly : .none)
         isRecurringYearly = recurrenceFrequency == .yearly
+        recurrenceOccurrenceDate = try container.decodeIfPresent(Date.self, forKey: .recurrenceOccurrenceDate)
         reminderOffsets = try container.decodeIfPresent([Int].self, forKey: .reminderOffsets)
     }
 
@@ -244,6 +250,7 @@ struct FamilyItem: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(responsibleMemberID, forKey: .responsibleMemberID)
         try container.encode(isRecurringYearly, forKey: .isRecurringYearly)
         try container.encode(recurrenceFrequency, forKey: .recurrenceFrequency)
+        try container.encodeIfPresent(recurrenceOccurrenceDate, forKey: .recurrenceOccurrenceDate)
         try container.encodeIfPresent(reminderOffsets, forKey: .reminderOffsets)
     }
 }

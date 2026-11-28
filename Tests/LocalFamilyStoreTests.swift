@@ -526,12 +526,16 @@ final class LocalFamilyStoreTests: XCTestCase {
         ).first)
         XCTAssertEqual(edited.title, "Veckomöte – flyttat")
         XCTAssertEqual(edited.startsAt, changedOccurrence.startsAt)
+        XCTAssertEqual(edited.recurrenceFrequency, .weekly)
+        XCTAssertEqual(edited.recurrenceOccurrenceDate, anchor)
 
         let following = try XCTUnwrap(DashboardViewModel.project(
             [series], from: nextWeek, overrides: [override]
         ).first)
         XCTAssertEqual(following.title, "Veckomöte")
         XCTAssertEqual(following.startsAt, nextWeek)
+        XCTAssertEqual(following.recurrenceFrequency, .weekly)
+        XCTAssertEqual(following.recurrenceOccurrenceDate, nextWeek)
         XCTAssertEqual(series.startsAt, anchor)
         XCTAssertEqual(series.recurrenceFrequency, .weekly)
     }

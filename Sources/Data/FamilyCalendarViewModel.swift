@@ -66,6 +66,7 @@ final class FamilyCalendarViewModel: ObservableObject {
             return false
         }
         errorMessage = nil
+        await rescheduleLocalRemindersIfEnabled()
         return true
     }
 

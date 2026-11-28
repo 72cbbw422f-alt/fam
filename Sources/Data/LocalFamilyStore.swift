@@ -278,7 +278,6 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             occurrenceOverrides = previousOccurrenceOverrides
             healthRecords = previousHealthRecords
             healthReminders = previousHealthReminders
-            giftIdeas = previousGiftIdeas
         }
     }
 
@@ -305,6 +304,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         }
         if !saveToDisk() {
             items = previousItems
+            giftIdeas = previousGiftIdeas
             skippedOccurrences = previousSkippedOccurrences
             occurrenceOverrides = previousOccurrenceOverrides
             healthRecords = previousHealthRecords
@@ -415,9 +415,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
               items.contains(where: { $0.id == birthdayItemID && $0.kind == .birthday }),
               !clean.isEmpty, clean.count <= 160 else { return }
         let cleanNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previous = giftIdeas
         giftIdeas.append(GiftIdea(memberID: memberID, birthdayItemID: birthdayItemID,
                                   title: clean, note: cleanNote?.isEmpty == true ? nil : cleanNote))
-        saveToDisk()
+        if !saveToDisk() { giftIdeas = previous }
     }
 
     func updateGiftIdea(_ idea: GiftIdea) {
@@ -449,9 +450,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
               !cleanTitle.isEmpty, cleanTitle.count <= 160 else { return }
         let validResponsibleID = members.first(where: { $0.id == responsibleMemberID })?.id
         let cleanNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previous = christmasGifts
         christmasGifts.append(ChristmasGift(recipient: cleanRecipient, title: cleanTitle,
             note: cleanNote?.isEmpty == true ? nil : cleanNote, responsibleMemberID: validResponsibleID))
-        saveToDisk()
+        if !saveToDisk() { christmasGifts = previous }
     }
 
     func updateChristmasGift(_ gift: ChristmasGift) {

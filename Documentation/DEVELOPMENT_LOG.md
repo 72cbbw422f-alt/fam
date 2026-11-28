@@ -1296,3 +1296,13 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Inga kodändringar gjordes i denna granskning. DST-beteende över verkliga tidsomställningar och resor behöver fortfarande verifieras på enhet/simulator; denna kodläsning är inte ett runtime-test.
 - Berörda filer granskade: `Sources/LocalReminderScheduler.swift`, `Sources/Data/DashboardViewModel.swift`, `Tests/LocalReminderSchedulerTests.swift`.
 - Verifiering: endast källkodsgranskning. Ingen Swift/Xcode-körning; CI saknar fortfarande körning/status för aktuell head.
+
+
+
+## 2026-11-28 – notisbehörighet begärs först efter aktivt val
+- Fortsatt granskning av appens startflöde visade att `RootView` fortfarande begärde notisbehörighet automatiskt vid första appstart och slog på lokala påminnelser direkt om iOS gav tillstånd. Det stämde inte med inställningstexten eller det avsedda opt-in-flödet där användaren själv aktiverar påminnelser.
+- Tog bort den automatiska behörighetsbegäran från appstart. Behörighetsfrågan visas nu först när användaren slår på lokala påminnelser i Inställningar.
+- Appstarten behåller däremot en tyst avstämning för användare som redan aktiverat påminnelser: vid tillåten/provisorisk/tillfällig behörighet synkroniseras schemat, och vid nekad/ej bestämd behörighet stängs flaggan av och gamla Familjen-notiser rensas.
+- Berörd fil: `Sources/RootView.swift`.
+- Commit: `26ac91f40fb0de8132096a177ccf0d622734e299`.
+- Verifiering: kodväg granskad och filen incheckad. Ingen lokal Xcode/Swift-körning; CI för aktuell head inväntas. Fysisk iPhone-verifiering av att behörighetsdialogen endast visas efter aktivt val återstår.

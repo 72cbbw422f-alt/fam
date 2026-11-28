@@ -3,6 +3,37 @@ import XCTest
 
 @MainActor
 final class HealthReminderSchedulerTests: XCTestCase {
+    func testCompletingHealthRecordRemovesItsRecordReminder() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenHealthReminder-\\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let familyID = try XCTUnwrap(store.family?.id)
+        let memberID = try XCTUnwrap(store.members.first?.id)
+        let record = HealthRecord(
+            familyID: familyID, memberID: memberID, type: .appointment,
+            title: "Läkarbesök", startsAt: Date().addingTimeInterval(86_400)
+        )
+        store.saveHealthRecord(record)
+        let saved = try XCTUnwrap(store.healthRecords.first)
+        let reminder = HealthReminder(
+            familyID: familyID, memberID: memberID, targetType: .record,
+            targetID: saved.id, title: "Läkarbesök", firesAt: Date().addingTimeInterval(3_600)
+        )
+        store.saveHealthReminder(reminder)
+        XCTAssertTrue(store.healthReminders.contains(where: { $0.id == reminder.id }))
+
+        var completed = saved
+        completed.status = .completed
+        store.saveHealthRecord(completed)
+
+        XCTAssertFalse(store.healthReminders.contains(where: { $0.id == reminder.id }))
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertFalse(reloaded.healthReminders.contains(where: { $0.id == reminder.id }))
+    }
+
     func testCompletedOrCancelledAppointmentIsRemovedFromCalendar() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("FamiljenHealthStatus-\(UUID().uuidString)", isDirectory: true)

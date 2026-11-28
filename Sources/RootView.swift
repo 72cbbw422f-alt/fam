@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct RootView: View {
     @StateObject private var store = FamilyStore.shared
@@ -79,26 +80,33 @@ private struct FamilyTabShell: View {
         .background(FamiljenTheme.paper.ignoresSafeArea())
         .tint(FamiljenTheme.navy)
         .task {
-            await requestNotificationPermissionOnFirstLaunch()
+            await reconcileLocalRemindersOnLaunch()
         }
     }
 
+    /// Reconcile previously enabled reminders without prompting on app launch.
+    /// Permission is requested only after the user explicitly enables reminders in Settings.
     @MainActor
-    private func requestNotificationPermissionOnFirstLaunch() async {
-        let key = "familjen.didAskForNotificationPermission"
-        let store = FamilyStore.shared
-        if !UserDefaults.standard.bool(forKey: key) {
-            UserDefaults.standard.set(true, forKey: key)
-            let granted = await LocalReminderScheduler.requestPermission()
-            UserDefaults.standard.set(granted, forKey: "familjen.localRemindersEnabled")
-        }
+    private func reconcileLocalRemindersOnLaunch() async {
         guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
-        await LocalReminderScheduler.schedule(
-            for: store.items,
-            skipping: store.skippedOccurrences,
-            overrides: store.occurrenceOverrides,
-            healthReminders: store.healthReminders
-        )
+
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        switch settings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            let store = FamilyStore.shared
+            await LocalReminderScheduler.schedule(
+                for: store.items,
+                skipping: store.skippedOccurrences,
+                overrides: store.occurrenceOverrides,
+                healthReminders: store.healthReminders
+            )
+        case .denied, .notDetermined:
+            UserDefaults.standard.set(false, forKey: "familjen.localRemindersEnabled")
+            await LocalReminderScheduler.clearAll()
+        @unknown default:
+            // Preserve the user's setting if iOS introduces a new authorization state.
+            break
+        }
     }
 
     private var tabBar: some View {

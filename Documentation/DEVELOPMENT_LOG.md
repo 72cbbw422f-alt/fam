@@ -1366,3 +1366,11 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Korrigerade uttrycket till `candidates.map(\\.id)` i `Tests/LocalReminderSchedulerTests.swift`.
 - Commit: `9dafbd77e10abc396e4541ec2f2a748310e85393`.
 - Verifiering: uppdaterad fil återhämtas och kontrolleras från GitHub. Ingen lokal Swift/Xcode-körning; CI för den nya head-commiten måste inväntas. Ingen IPA och ingen merge.
+
+## 2026-11-28 – städa presentkopplingar vid borttagning av familjemedlem
+- Granskningen av profilborttagning hittade två kvarvarande referensproblem: presentidéer kunde ligga kvar med ett borttaget memberID, och julklappar kunde behålla en ansvarig person som inte längre fanns.
+- Vid borttagning tas nu presentidéer för profilen bort. Julklapparnas historik och mottagare bevaras, men ansvarig koppling nollställs när den pekar på den borttagna profilen.
+- Båda samlingarna ingår nu i samma rollback-snapshot som övrig medlemsdata. Ett misslyckat skrivförsök återställer presentidéer och julklappsansvar tillsammans med profilen.
+- Lade till regressionstest för lyckad borttagning/omladdning samt separat test för rollback vid persistensfel.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/LocalFamilyStoreTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: källkod och test har uppdaterats via GitHub och ska återhämtas för kontroll. Ingen lokal Swift/Xcode-körning; CI för senaste head inväntas. Ingen IPA och ingen merge.

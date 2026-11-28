@@ -255,4 +255,23 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertTrue(selected.isEmpty)
     }
 
+
+    func testWeeklyRecurringItemSchedulesMultipleUpcomingOccurrences() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 9)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 17, hour: 8)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Veckomöte", details: nil,
+            startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3600], recurrenceFrequency: .weekly)
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
+
+        XCTAssertEqual(candidates.count, 12)
+        XCTAssertEqual(Set(candidates.map(\\.id)).count, 12)
+        let days = candidates.map { calendar.component(.day, from: $0.item.startsAt) }
+        XCTAssertEqual(days, [23, 30, 7, 14, 21, 28, 5, 12, 19, 26, 2, 9])
+        XCTAssertTrue(candidates.allSatisfy { $0.fireDate > now })
+    }
+
 }

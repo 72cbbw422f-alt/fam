@@ -655,15 +655,23 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         switch reminder.targetType {
         case .record:
             linkedTargetIsValid = reminder.targetID.map { targetID in
-                healthRecords.contains { $0.id == targetID && $0.memberID == reminder.memberID }
+                healthRecords.contains {
+                    $0.id == targetID && $0.memberID == reminder.memberID
+                        && ($0.status == .planned || $0.status == .awaiting)
+                }
             } ?? false
         case .prescriptionRenewal:
             linkedTargetIsValid = reminder.targetID.map { targetID in
-                healthPrescriptions.contains { $0.id == targetID && $0.memberID == reminder.memberID }
+                healthPrescriptions.contains {
+                    $0.id == targetID && $0.memberID == reminder.memberID
+                        && ($0.renewalStatus == .due || $0.renewalStatus == .requested)
+                }
             } ?? false
         case .medicationPickup:
             linkedTargetIsValid = reminder.targetID.map { targetID in
-                medicationPickups.contains { $0.id == targetID && $0.memberID == reminder.memberID }
+                medicationPickups.contains {
+                    $0.id == targetID && $0.memberID == reminder.memberID && $0.status == .planned
+                }
             } ?? false
         case .custom:
             linkedTargetIsValid = true

@@ -43,6 +43,7 @@ enum LocalReminderScheduler {
     private static let identifierPrefix = "familjen-item-"
     private static let healthIdentifierPrefix = "familjen-health-"
     private static let maximumPendingReminders = 60
+    private static let maximumUpcomingOccurrencesPerSeries = 12
     private static let defaultOffsets = [24 * 60 * 60, 60 * 60]
     private static var operationTask: Task<Void, Never>?
 
@@ -60,8 +61,30 @@ enum LocalReminderScheduler {
                                overrides: [FamilyOccurrenceOverride] = []) -> [ReminderCandidate] {
         var candidates: [ReminderCandidate] = []
 
-        // Project recurring items to their next occurrence before calculating reminders.
-        let upcomingItems = DashboardViewModel.project(items, from: now, skipping: exceptions, overrides: overrides)
+        // Keep a rolling queue of upcoming occurrences for each recurring series.
+        // iOS does not provide a reliable callback to refill a notification as soon
+        // as it fires, so scheduling only the next occurrence can leave later weeks
+        // without reminders while the app remains unopened.
+        let upcomingItems = items.flatMap { sourceItem -> [FamilyItem] in
+            let frequency = sourceItem.recurrenceFrequency == .none && sourceItem.isRecurringYearly
+                ? FamilyRecurrenceFrequency.yearly : sourceItem.recurrenceFrequency
+            guard frequency != .none else {
+                return sourceItem.startsAt >= now ? [sourceItem] : []
+            }
+
+            var projected: [FamilyItem] = []
+            var cursor = now
+            for _ in 0..<maximumUpcomingOccurrencesPerSeries {
+                guard let occurrence = DashboardViewModel.project(
+                    [sourceItem], from: cursor, skipping: exceptions, overrides: overrides
+                ).first else { break }
+                guard occurrence.startsAt >= cursor else { break }
+                projected.append(occurrence)
+                cursor = occurrence.startsAt.addingTimeInterval(1)
+            }
+            return projected
+        }
+
         for item in upcomingItems {
             let offsets = item.reminderOffsets ?? defaultOffsets
             for offset in Set(offsets) where offset >= 0 {

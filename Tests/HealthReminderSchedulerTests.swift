@@ -201,7 +201,7 @@ final class HealthReminderSchedulerTests: XCTestCase {
 
     func testDeletingLinkedCalendarItemRemovesRecordReminder() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FamiljenHealthDelete-\\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("FamiljenHealthDelete-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
@@ -233,7 +233,7 @@ final class HealthReminderSchedulerTests: XCTestCase {
 
     func testChangingLinkedAppointmentToOrdinaryEventRemovesRecordReminder() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FamiljenHealthEdit-\\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("FamiljenHealthEdit-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))

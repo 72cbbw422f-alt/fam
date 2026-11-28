@@ -312,4 +312,99 @@ final class HealthReminderSchedulerTests: XCTestCase {
         })
     }
 
+
+    func testCompletedOrCancelledMedicationPickupRemovesLinkedReminder() throws {
+        for status in [MedicationPickupStatus.collected, .cancelled] {
+            let directory = FileManager.default.temporaryDirectory
+                .appendingPathComponent("FamiljenPickupStatus-\\(UUID().uuidString)", isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+            store.createFamily(name: "Familjen", ownerName: "Niklas")
+            let familyID = try XCTUnwrap(store.family?.id)
+            let memberID = try XCTUnwrap(store.members.first?.id)
+            let pickup = MedicationPickup(
+                familyID: familyID, memberID: memberID, medicationName: "Läkemedel",
+                dueAt: Date().addingTimeInterval(86_400)
+            )
+            store.saveMedicationPickup(pickup)
+            let reminder = try XCTUnwrap(store.healthReminders.first {
+                $0.targetType == .medicationPickup && $0.targetID == pickup.id
+            })
+            var updated = try XCTUnwrap(store.medicationPickups.first)
+            updated.status = status
+            store.saveMedicationPickup(updated)
+
+            XCTAssertFalse(store.healthReminders.contains { $0.id == reminder.id })
+            XCTAssertEqual(store.medicationPickups.first?.status, status)
+            let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+            XCTAssertFalse(reloaded.healthReminders.contains { $0.id == reminder.id })
+        }
+    }
+
+    func testDeletingMedicationPickupRemovesLinkedReminder() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenPickupDelete-\\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let familyID = try XCTUnwrap(store.family?.id)
+        let memberID = try XCTUnwrap(store.members.first?.id)
+        let pickup = MedicationPickup(
+            familyID: familyID, memberID: memberID, medicationName: "Läkemedel",
+            dueAt: Date().addingTimeInterval(86_400)
+        )
+        store.saveMedicationPickup(pickup)
+        let reminder = try XCTUnwrap(store.healthReminders.first {
+            $0.targetType == .medicationPickup && $0.targetID == pickup.id
+        })
+
+        store.deleteMedicationPickup(pickup.id)
+
+        XCTAssertFalse(store.healthReminders.contains { $0.id == reminder.id })
+        XCTAssertFalse(store.medicationPickups.contains { $0.id == pickup.id })
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertFalse(reloaded.healthReminders.contains { $0.id == reminder.id })
+    }
+
+    func testDeletingPrescriptionPreservesPickupHistoryAndRemovesRenewalReminder() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenPrescriptionDelete-\\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let familyID = try XCTUnwrap(store.family?.id)
+        let memberID = try XCTUnwrap(store.members.first?.id)
+        let prescription = HealthPrescription(
+            familyID: familyID, memberID: memberID, medicationName: "Läkemedel",
+            renewalDueAt: Date().addingTimeInterval(86_400), renewalStatus: .due
+        )
+        store.saveHealthPrescription(prescription)
+        let pickup = MedicationPickup(
+            familyID: familyID, memberID: memberID, prescriptionID: prescription.id,
+            medicationName: "Läkemedel", dueAt: Date().addingTimeInterval(172_800)
+        )
+        store.saveMedicationPickup(pickup)
+        let renewalReminder = try XCTUnwrap(store.healthReminders.first {
+            $0.targetType == .prescriptionRenewal && $0.targetID == prescription.id
+        })
+        let pickupReminder = try XCTUnwrap(store.healthReminders.first {
+            $0.targetType == .medicationPickup && $0.targetID == pickup.id
+        })
+
+        store.deleteHealthPrescription(prescription.id)
+
+        XCTAssertFalse(store.healthReminders.contains { $0.id == renewalReminder.id })
+        XCTAssertTrue(store.healthReminders.contains { $0.id == pickupReminder.id })
+        XCTAssertEqual(store.medicationPickups.first?.id, pickup.id)
+        XCTAssertNil(store.medicationPickups.first?.prescriptionID)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertEqual(reloaded.medicationPickups.first?.id, pickup.id)
+        XCTAssertNil(reloaded.medicationPickups.first?.prescriptionID)
+        XCTAssertFalse(reloaded.healthReminders.contains { $0.id == renewalReminder.id })
+        XCTAssertTrue(reloaded.healthReminders.contains { $0.id == pickupReminder.id })
+    }
+
 }

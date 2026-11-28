@@ -132,7 +132,8 @@ final class FamilyCalendarViewModel: ObservableObject {
             for: store.items,
             skipping: store.skippedOccurrences,
             overrides: store.occurrenceOverrides,
-            healthReminders: store.healthReminders
+            healthReminders: store.healthReminders,
+            privateHealthCalendarIDs: Set(store.healthRecords.filter { $0.visibility == .personal }.compactMap(\.calendarItemID))
         )
     }
 

@@ -160,11 +160,18 @@ final class DashboardViewModel: ObservableObject {
 
                 if let matchingOverride {
                     if matchingOverride.item.startsAt >= date {
-                        projectedCandidates.append(matchingOverride.item)
+                        var projectedOverride = matchingOverride.item
+                        projectedOverride.recurrenceFrequency = frequency
+                        projectedOverride.isRecurringYearly = frequency == .yearly
+                        projectedOverride.recurrenceOccurrenceDate = matchingOverride.occurrenceDate
+                        projectedCandidates.append(projectedOverride)
                     }
                 } else if !isSkipped {
                     var projected = item
                     projected.startsAt = occurrence
+                    projected.recurrenceFrequency = frequency
+                    projected.isRecurringYearly = frequency == .yearly
+                    projected.recurrenceOccurrenceDate = occurrence
                     projectedCandidates.append(projected)
                     break
                 }

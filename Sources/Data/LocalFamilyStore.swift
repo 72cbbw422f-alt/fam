@@ -697,20 +697,28 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         firesAt: Date?,
         visibility: HealthVisibility
     ) {
-        if let index = healthReminders.firstIndex(where: {
-            $0.targetType == targetType && $0.targetID == targetID
-        }) {
-            guard let firesAt else {
+        let matchingIndices = healthReminders.indices.filter {
+            healthReminders[$0].targetType == targetType && healthReminders[$0].targetID == targetID
+        }
+        guard let firesAt else {
+            for index in matchingIndices.reversed() {
                 healthReminders.remove(at: index)
-                return
             }
-            healthReminders[index].memberID = memberID
-            healthReminders[index].title = title
-            healthReminders[index].firesAt = firesAt
-            healthReminders[index].isEnabled = true
-            healthReminders[index].visibility = visibility
-            healthReminders[index].updatedAt = .now
-        } else if let firesAt {
+            return
+        }
+
+        if let primaryIndex = matchingIndices.first {
+            healthReminders[primaryIndex].memberID = memberID
+            healthReminders[primaryIndex].title = title
+            healthReminders[primaryIndex].firesAt = firesAt
+            healthReminders[primaryIndex].isEnabled = true
+            healthReminders[primaryIndex].visibility = visibility
+            healthReminders[primaryIndex].updatedAt = .now
+            // Normalize legacy/imported duplicate links to one reminder per target.
+            for index in matchingIndices.dropFirst().reversed() {
+                healthReminders.remove(at: index)
+            }
+        } else {
             healthReminders.append(HealthReminder(
                 familyID: family?.id ?? UUID(), memberID: memberID,
                 targetType: targetType, targetID: targetID, title: title,

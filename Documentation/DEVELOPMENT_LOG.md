@@ -1336,3 +1336,11 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till regressionstest som skapar en dubblett, verifierar att uppdatering lämnar en enda schemalagd påminnelse och att statusen förnyat tar bort den helt.
 - Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: kod och test incheckade och återhämtade från GitHub; interpolation kontrollerad. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head ännu.
+
+## 2026-11-28 – verifiering av recept- och läkemedelshämtningars livscykel
+- Granskade statusövergångar för receptförnyelse och läkemedelshämtning. Befintlig lagringslogik tar bort receptpåminnelser när status inte längre är aktiv och tar bort hämtningspåminnelser när uthämtningen markeras hämtad eller avbokad.
+- Bekräftade att borttagning av en läkemedelshämtning tar bort dess länkade påminnelser, medan borttagning av ett recept bevarar hämtningshistoriken genom att koppla loss den från receptet.
+- Lade till regressionstester för hämtad/avbokad läkemedelshämtning, borttagning av hämtning samt receptborttagning med bevarad uthämtningshistorik. Det tidigare testet för receptförnyelse verifierar också att länkade dubbletter normaliseras.
+- Inga produktionsändringar behövdes i dessa statusflöden efter granskningen; den enda produktionsändringen i denna del är normalisering av dubbletter per länkad target.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: testkällan återhämtad från GitHub och Swift-interpolation kontrollerad. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head ännu.

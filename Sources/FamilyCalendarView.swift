@@ -697,12 +697,7 @@ struct FamilyCalendarView: View {
     }
 
     private func refreshLocalReminders() async {
-        guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
-        await LocalReminderScheduler.schedule(
-            for: model.sourceItems,
-            skipping: model.skippedOccurrences,
-            overrides: model.occurrenceOverrides
-        )
+        await model.rescheduleLocalRemindersIfEnabled()
     }
 
     private func filterChip(_ title: String, kind: FamilyItemKind?) -> some View {

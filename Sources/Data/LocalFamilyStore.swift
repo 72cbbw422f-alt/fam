@@ -469,7 +469,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         updated.updatedAt = .now
         let previousRecords = healthRecords
         let previousItems = items
-        if updated.type == .appointment || updated.type == .followUp {
+        if (updated.type == .appointment || updated.type == .followUp)
+            && updated.status != .completed && updated.status != .cancelled {
             let calendarID = updated.calendarItemID ?? UUID()
             updated.calendarItemID = calendarID
             let calendarItem = FamilyItem(

@@ -1403,4 +1403,37 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
     }
 
+
+    func testChangingBirthdayMemberRemovesGiftIdeasForPreviousMember() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        store.addChild(name: "Tuva-Li")
+        let children = store.members.filter { $0.role == .child }
+        let first = try XCTUnwrap(children.first)
+        let second = try XCTUnwrap(children.last)
+        let date = Date().addingTimeInterval(86_400)
+        store.saveCalendarItem(
+            id: nil, title: "Cleo", details: nil, startsAt: date,
+            kind: .birthday, memberIDs: [first.id], isForEveryone: false,
+            responsibleMemberID: nil, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+        store.addGiftIdea(memberID: first.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+        XCTAssertEqual(store.giftIdeas.count, 1)
+
+        store.saveCalendarItem(
+            id: birthday.id, title: "Tuva-Li", details: nil, startsAt: date,
+            kind: .birthday, memberIDs: [second.id], isForEveryone: false,
+            responsibleMemberID: nil, recurring: true, reminderOffsets: []
+        )
+
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        store.addGiftIdea(memberID: first.id, birthdayItemID: birthday.id, title: "Fel person", note: nil)
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        store.addGiftIdea(memberID: second.id, birthdayItemID: birthday.id, title: "Rätt person", note: nil)
+        XCTAssertEqual(store.giftIdeas.map(\\.memberID), [second.id])
+    }
+
 }

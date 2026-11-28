@@ -1405,3 +1405,9 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till regressionstest för lyckad uppdatering och rollback av både namn och ikon vid skrivfel.
 - Berörda filer: Sources/Data/LocalFamilyStore.swift, Sources/FamilyMembersView.swift, Tests/LocalFamilyStoreTests.swift, Documentation/DEVELOPMENT_LOG.md.
 - Verifiering: filer hämtas och granskas via GitHub. Ingen lokal Xcode/Swift-körning; aktuell CI är inte verifierad. Ingen IPA och ingen merge.
+
+## 2026-11-28 – koppla atomisk profilredigering genom repository-lagret
+- Granskning av lagergränsen visade att den nya atomiska updateMemberProfile-metoden först fanns i LocalFamilyStore men saknades i FamilyRepository-kontraktet och FamilyStore-fasaden. Det hade orsakat ett kompileringsfel i profilvyn.
+- Lade till metoden i FamilyRepository och exponerade den via FamilyStore, som därefter uppdaterar publicerat UI-tillstånd genom refresh.
+- Berörda filer: Sources/Data/FamilyRepository.swift, Sources/Data/FamilyStore.swift, Sources/Data/LocalFamilyStore.swift, Sources/FamilyMembersView.swift, Tests/LocalFamilyStoreTests.swift, Documentation/DEVELOPMENT_LOG.md.
+- Verifiering: kontrakt, fasad och anrop har hämtats tillbaka från GitHub och jämförts. Ingen lokal Xcode/Swift-körning; CI för senaste head inväntas. Ingen IPA och ingen merge.

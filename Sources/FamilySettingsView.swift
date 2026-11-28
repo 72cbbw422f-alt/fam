@@ -149,7 +149,8 @@ struct FamilySettingsView: View {
                 for: store.items,
                 skipping: store.skippedOccurrences,
                 overrides: store.occurrenceOverrides,
-                healthReminders: store.healthReminders
+                healthReminders: store.healthReminders,
+                privateHealthCalendarIDs: Set(store.healthRecords.filter { $0.visibility == .personal }.compactMap(\.calendarItemID))
             )
             reminderStatus = "Påminnelser är aktiverade på den här enheten."
         case .denied, .notDetermined:
@@ -179,7 +180,8 @@ struct FamilySettingsView: View {
                 for: store.items,
                 skipping: store.skippedOccurrences,
                 overrides: store.occurrenceOverrides,
-                healthReminders: store.healthReminders
+                healthReminders: store.healthReminders,
+                privateHealthCalendarIDs: Set(store.healthRecords.filter { $0.visibility == .personal }.compactMap(\.calendarItemID))
             )
             reminderStatus = "Påminnelser är aktiverade på den här enheten."
         } else {

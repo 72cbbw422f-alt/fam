@@ -112,6 +112,46 @@ final class LocalReminderSchedulerTests: XCTestCase {
     }
 
 
+    func testMultipleMovedOccurrencesKeepTheirOwnSeriesIdentityInReminderQueue() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 9)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 17, hour: 8)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Veckomöte", details: nil,
+            startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3600], recurrenceFrequency: .weekly)
+        let firstOriginal = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 23, hour: 9)))
+        let secondOriginal = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 30, hour: 9)))
+        let firstMoved = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 25, hour: 11)))
+        let secondMoved = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 12, day: 2, hour: 13)))
+        var firstItem = item
+        firstItem.title = "Veckomöte – flyttat 1"
+        firstItem.startsAt = firstMoved
+        var secondItem = item
+        secondItem.title = "Veckomöte – flyttat 2"
+        secondItem.startsAt = secondMoved
+        let overrides = [
+            FamilyOccurrenceOverride(seriesID: item.id, occurrenceDate: firstOriginal, item: firstItem),
+            FamilyOccurrenceOverride(seriesID: item.id, occurrenceDate: secondOriginal, item: secondItem)
+        ]
+
+        let candidates = LocalReminderScheduler.makeCandidates(
+            for: [item], now: now, overrides: overrides
+        )
+
+        XCTAssertEqual(candidates.count, 12)
+        XCTAssertEqual(candidates[0].item.title, "Veckomöte – flyttat 1")
+        XCTAssertEqual(candidates[0].item.recurrenceOccurrenceDate, firstOriginal)
+        XCTAssertEqual(candidates[0].item.startsAt, firstMoved)
+        XCTAssertEqual(candidates[1].item.title, "Veckomöte")
+        XCTAssertEqual(candidates[1].item.startsAt, try XCTUnwrap(calendar.date(
+            from: DateComponents(year: 2026, month: 11, day: 30, hour: 9)
+        )))
+        XCTAssertEqual(candidates[2].item.title, "Veckomöte – flyttat 2")
+        XCTAssertEqual(candidates[2].item.recurrenceOccurrenceDate, secondOriginal)
+        XCTAssertEqual(candidates[2].item.startsAt, secondMoved)
+    }
+
     func testDuplicateReminderOffsetsProduceOnlyOneCandidatePerOffset() throws {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Dubbeltest",

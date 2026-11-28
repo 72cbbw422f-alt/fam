@@ -5,7 +5,7 @@ import XCTest
 final class HealthReminderSchedulerTests: XCTestCase {
     func testCompletingHealthRecordRemovesItsRecordReminder() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FamiljenHealthReminder-\\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("FamiljenHealthReminder-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))

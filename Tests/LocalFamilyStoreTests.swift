@@ -1305,4 +1305,51 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
     }
 
+
+    func testDeletingBirthdayRemovesItsGiftIdeas() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+        store.saveItem(
+            id: nil, title: "Cleo", details: nil, startsAt: Date().addingTimeInterval(86_400),
+            kind: .birthday, memberID: child.id, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+        store.addGiftIdea(memberID: child.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+        XCTAssertEqual(store.giftIdeas.count, 1)
+
+        store.deleteItem(birthday)
+
+        XCTAssertFalse(store.items.contains { $0.id == birthday.id })
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.giftIdeas.isEmpty)
+    }
+
+    func testConvertingBirthdayToOrdinaryEventRemovesItsGiftIdeas() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+        let date = Date().addingTimeInterval(86_400)
+        store.saveItem(
+            id: nil, title: "Cleo", details: nil, startsAt: date,
+            kind: .birthday, memberID: child.id, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+        store.addGiftIdea(memberID: child.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+
+        store.saveCalendarItem(
+            id: birthday.id, title: "Familjeträff", details: nil, startsAt: date,
+            kind: .event, memberIDs: [child.id], isForEveryone: false,
+            responsibleMemberID: nil, recurring: false, reminderOffsets: []
+        )
+
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        XCTAssertEqual(store.items.first?.kind, .event)
+    }
+
 }

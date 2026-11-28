@@ -104,6 +104,14 @@ enum LocalReminderScheduler {
         return candidates
     }
 
+    /// Personal health appointments are excluded from local calendar notifications.
+    /// Their linked calendar rows may exist in storage, but must never leak through
+    /// a notification generated from the shared calendar collection.
+    static func excludingPrivateHealthItems(_ items: [FamilyItem],
+                                            privateHealthCalendarIDs: Set<UUID>) -> [FamilyItem] {
+        items.filter { !privateHealthCalendarIDs.contains($0.id) }
+    }
+
     static func makeHealthCandidates(for reminders: [HealthReminder], now: Date) -> [HealthReminderCandidate] {
         reminders
             .filter { $0.isEnabled && $0.firesAt > now }
@@ -150,12 +158,14 @@ enum LocalReminderScheduler {
     static func schedule(for items: [FamilyItem],
                          skipping exceptions: [FamilyOccurrenceException] = [],
                          overrides: [FamilyOccurrenceOverride] = [],
-                         healthReminders: [HealthReminder] = []) async {
+                         healthReminders: [HealthReminder] = [],
+                         privateHealthCalendarIDs: Set<UUID> = []) async {
         let previous = operationTask
         let current = Task { @MainActor in
             await previous?.value
             await performSchedule(for: items, skipping: exceptions, overrides: overrides,
-                                  healthReminders: healthReminders)
+                                  healthReminders: healthReminders,
+                                  privateHealthCalendarIDs: privateHealthCalendarIDs)
         }
         operationTask = current
         await current.value
@@ -164,12 +174,17 @@ enum LocalReminderScheduler {
     private static func performSchedule(for items: [FamilyItem],
                                         skipping exceptions: [FamilyOccurrenceException],
                                         overrides: [FamilyOccurrenceOverride],
-                                        healthReminders: [HealthReminder]) async {
+                                        healthReminders: [HealthReminder],
+                                        privateHealthCalendarIDs: Set<UUID>) async {
         let pending = await center.pendingNotificationRequests()
         let delivered = await deliveredRequests()
         let existingIDs = pending.map(\.identifier) + delivered.map { $0.request.identifier }
-        let calendarCandidates = makeCandidates(for: items, now: .now, skipping: exceptions, overrides: overrides)
-            .map(ManagedReminderCandidate.calendar)
+        let reminderItems = Self.excludingPrivateHealthItems(
+            items, privateHealthCalendarIDs: privateHealthCalendarIDs
+        )
+        let calendarCandidates = makeCandidates(
+            for: reminderItems, now: .now, skipping: exceptions, overrides: overrides
+        ).map(ManagedReminderCandidate.calendar)
         let healthCandidates = makeHealthCandidates(for: healthReminders, now: .now)
             .map(ManagedReminderCandidate.health)
         let candidates = Self.selectCandidates(

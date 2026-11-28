@@ -320,8 +320,8 @@ final class LocalReminderSchedulerTests: XCTestCase {
         let components = candidates.map {
             calendar.dateComponents([.year, .month, .day], from: $0.item.startsAt)
         }
-        XCTAssertEqual(components.map(\\.month), Array(1...12))
-        XCTAssertEqual(components.map(\\.day), [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+        XCTAssertEqual(components.map(\.month), Array(1...12))
+        XCTAssertEqual(components.map(\.day), [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
     }
 
     func testYearlyLeapDayRecurrenceReturnsToFebruary29InLeapYear() throws {
@@ -339,9 +339,9 @@ final class LocalReminderSchedulerTests: XCTestCase {
         let components = candidates.map {
             calendar.dateComponents([.year, .month, .day], from: $0.item.startsAt)
         }
-        XCTAssertEqual(components.map(\\.year), [2027, 2028])
-        XCTAssertEqual(components.map(\\.month), [2, 2])
-        XCTAssertEqual(components.map(\\.day), [28, 29])
+        XCTAssertEqual(components.map(\.year), [2027, 2028])
+        XCTAssertEqual(components.map(\.month), [2, 2])
+        XCTAssertEqual(components.map(\.day), [28, 29])
     }
 
 }

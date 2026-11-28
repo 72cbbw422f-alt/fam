@@ -164,7 +164,8 @@ final class FamilyStore: ObservableObject {
                 for: items,
                 skipping: skippedOccurrences,
                 overrides: occurrenceOverrides,
-                healthReminders: healthReminders
+                healthReminders: healthReminders,
+                privateHealthCalendarIDs: Set(healthRecords.filter { $0.visibility == .personal }.compactMap(\.calendarItemID))
             )
         }
     }

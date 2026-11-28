@@ -1238,3 +1238,12 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Prevented occurrence skip/delete flows from scheduling reminders after a failed repository persistence operation. The repository's rollback state is retained and no unnecessary notification reconciliation is started.
 - Verification: source review and GitHub content updates only. No local Xcode/Swift test run was available; latest CI status remains to be checked.
 - Files: `Tests/LocalReminderSchedulerTests.swift`, `Sources/Data/FamilyCalendarViewModel.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+
+
+## 2026-11-28 – deterministisk urval och granskning av notifieringsfel
+- Granskade schemaläggarens serialisering: varje `schedule`-/`clearAll`-operation väntar på föregående operation innan den läser/ändrar notifieringscentret. Behöll denna ordning.
+- Bekräftade att schemaläggaren försöker lägga till/uppdatera önskade notiser innan inaktuella Familjen-notiser tas bort. Om minst ett tillägg misslyckas avbryts städningen, så gamla fungerande notiser inte rensas bort i ett partiellt misslyckat varv.
+- Tog bort en oanvänd identifierarhjälpare.
+- Lade till regressionstester för deterministisk identifierarsortering vid lika utskickstid och för att de närmaste kandidaterna väljs även när indata kommer i omvänd ordning.
+- Berörda filer: `Sources/LocalReminderScheduler.swift`, `Tests/LocalReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: ändrade filer återhämtade från GitHub och granskade. Ingen lokal Swift/Xcode-körning; GitHub Actions visar ännu inga statusar eller workflow-runs för aktuell head.

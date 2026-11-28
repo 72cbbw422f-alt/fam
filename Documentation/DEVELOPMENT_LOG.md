@@ -1351,3 +1351,12 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till regressionstest som försöker skapa alla tre inaktiva länktyperna och verifierar att ingen sparas, inte heller efter omladdning.
 - Berörda filer: Sources/Data/LocalFamilyStore.swift, Tests/HealthReminderSchedulerTests.swift, Documentation/DEVELOPMENT_LOG.md.
 - Verifiering: kod och test återhämtade från GitHub; testets Swift-interpolation kontrollerad. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head.
+
+## 2026-11-28 – konsekvent borttagning av familjemedlem och hälsodata
+- Dataintegritetsgranskningen hittade att borttagning av en familjemedlem endast tog bort medlemsprofilen och rensade kalenderns personkopplingar. Hälsoposter, recept, läkemedelshämtningar, hälsoprofilinformation och påminnelser kunde därför ligga kvar med ett memberID som inte längre fanns.
+- Borttagning av en icke-ägande medlem tar nu bort den medlemmens personliga hälsodata och tillhörande påminnelser i samma persistenta transaktion. Kalenderhistorik som inte är ett länkat vårdbesök bevaras, men personkoppling och ansvarig tas bort. Kalenderposten som endast skapats av ett länkat vårdbesök tas bort tillsammans med hälsoposten.
+- Rollback vid misslyckad lagring återställer alla berörda samlingar. FamilyStore schemalägger om lokala notiser efter medlemsborttagning så att gamla notiser försvinner.
+- Bekräftelsedialogen beskriver nu uttryckligen att personens hälsouppgifter, vårdbesök, recept och läkemedelshämtningar också tas bort.
+- Lade till regressionstest som verifierar borttagning av personliga hälsodata och notiser, bevarad övrig kalenderhistorik samt resultat efter omladdning.
+- Berörda filer: Sources/Data/LocalFamilyStore.swift, Sources/Data/FamilyStore.swift, Sources/FamilyMembersView.swift, Tests/LocalFamilyStoreTests.swift, Documentation/DEVELOPMENT_LOG.md.
+- Verifiering: kod/test/dokumentation återhämtade och kontrollerade via GitHub. Ingen lokal Swift/Xcode-körning; CI för aktuell head inväntas.

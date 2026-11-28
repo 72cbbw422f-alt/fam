@@ -3,6 +3,40 @@ import XCTest
 
 @MainActor
 final class HealthReminderSchedulerTests: XCTestCase {
+    func testCompletedOrCancelledAppointmentIsRemovedFromCalendar() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenHealthStatus-\\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let familyID = try XCTUnwrap(store.family?.id)
+        let memberID = try XCTUnwrap(store.members.first?.id)
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+
+        let record = HealthRecord(
+            familyID: familyID, memberID: memberID, type: .appointment,
+            title: "Vårdbesök", startsAt: date, status: .planned,
+            reminderOffsets: [3600]
+        )
+        store.saveHealthRecord(record)
+        let linkedCalendarID = try XCTUnwrap(store.healthRecords.first?.calendarItemID)
+        XCTAssertTrue(store.items.contains(where: { $0.id == linkedCalendarID }))
+
+        var completed = try XCTUnwrap(store.healthRecords.first)
+        completed.status = .completed
+        store.saveHealthRecord(completed)
+        XCTAssertFalse(store.items.contains(where: { $0.id == linkedCalendarID }))
+        XCTAssertEqual(store.healthRecords.first?.status, .completed)
+        XCTAssertNil(store.healthRecords.first?.calendarItemID)
+
+        var cancelled = try XCTUnwrap(store.healthRecords.first)
+        cancelled.status = .cancelled
+        store.saveHealthRecord(cancelled)
+        XCTAssertFalse(store.items.contains(where: { $0.id == linkedCalendarID }))
+        XCTAssertNil(store.healthRecords.first?.calendarItemID)
+    }
+
     func testFailedReminderAddPreservesObsoleteNotificationsForRetry() {
         XCTAssertFalse(LocalReminderScheduler.shouldRemoveObsoleteReminders(afterSuccessfulAdds: false))
         XCTAssertTrue(LocalReminderScheduler.shouldRemoveObsoleteReminders(afterSuccessfulAdds: true))

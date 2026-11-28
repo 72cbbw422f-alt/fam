@@ -365,10 +365,15 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         // A moved occurrence is displayed at its new date, but its exception
         // must be stored against the original date in the recurring series.
         let matchingOverride = occurrenceOverrides.first {
-            $0.seriesID == item.id
-                && calendar.isDate($0.item.startsAt, inSameDayAs: item.startsAt)
+            guard $0.seriesID == item.id else { return false }
+            if let originalDate = item.recurrenceOccurrenceDate {
+                return calendar.isDate($0.occurrenceDate, inSameDayAs: originalDate)
+            }
+            return calendar.isDate($0.item.startsAt, inSameDayAs: item.startsAt)
         }
-        let originalOccurrenceDate = matchingOverride?.occurrenceDate ?? item.startsAt
+        let originalOccurrenceDate = item.recurrenceOccurrenceDate
+            ?? matchingOverride?.occurrenceDate
+            ?? item.startsAt
         let alreadySkipped = skippedOccurrences.contains {
             $0.seriesID == item.id
                 && calendar.isDate($0.occurrenceDate, inSameDayAs: originalOccurrenceDate)

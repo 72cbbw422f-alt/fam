@@ -176,7 +176,7 @@ final class LocalReminderSchedulerTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let calendarCandidates = (0..<75).map { index in
             (
-                identifier: "familjen-item-\\(index)",
+                identifier: "familjen-item-\(index)",
                 fireDate: now.addingTimeInterval(TimeInterval(3600 + index))
             )
         }

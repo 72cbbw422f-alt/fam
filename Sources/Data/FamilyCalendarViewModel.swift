@@ -111,6 +111,7 @@ final class FamilyCalendarViewModel: ObservableObject {
         store.skipOccurrence(of: item)
         await load()
         errorMessage = store.persistenceError
+        guard store.persistenceError == nil else { return }
         await rescheduleLocalRemindersIfEnabled()
     }
 
@@ -118,6 +119,7 @@ final class FamilyCalendarViewModel: ObservableObject {
         store.deleteItem(item)
         await load()
         errorMessage = store.persistenceError
+        guard store.persistenceError == nil else { return }
         await rescheduleLocalRemindersIfEnabled()
     }
 

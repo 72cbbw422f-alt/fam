@@ -70,10 +70,10 @@ struct FamilyMembersView: View {
         .sheet(isPresented: $showingEditor, onDismiss: { editingChild = nil }) {
             if let editingChild {
                 MemberProfileEditor(member: editingChild) { newName, symbolName in
-                    FamilyStore.shared.renameMember(id: editingChild.id, name: newName)
-                    FamilyStore.shared.updateMemberSymbol(id: editingChild.id, symbolName: symbolName)
+                    let store = FamilyStore.shared
+                    store.updateMemberProfile(id: editingChild.id, name: newName, symbolName: symbolName)
                     loadMembers()
-                    return FamilyStore.shared.persistenceError == nil
+                    return store.persistenceError == nil
                 }
             }
         }

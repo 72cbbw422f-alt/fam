@@ -198,4 +198,71 @@ final class HealthReminderSchedulerTests: XCTestCase {
         ))
     }
 
+
+    func testDeletingLinkedCalendarItemRemovesRecordReminder() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenHealthDelete-\\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let familyID = try XCTUnwrap(store.family?.id)
+        let memberID = try XCTUnwrap(store.members.first?.id)
+        let record = HealthRecord(
+            familyID: familyID, memberID: memberID, type: .appointment,
+            title: "Läkarbesök", startsAt: Date().addingTimeInterval(86_400)
+        )
+        store.saveHealthRecord(record)
+        let saved = try XCTUnwrap(store.healthRecords.first)
+        let calendarID = try XCTUnwrap(saved.calendarItemID)
+        let reminder = HealthReminder(
+            familyID: familyID, memberID: memberID, targetType: .record,
+            targetID: saved.id, title: "Läkarbesök", firesAt: Date().addingTimeInterval(3_600)
+        )
+        store.saveHealthReminder(reminder)
+
+        let calendarItem = try XCTUnwrap(store.items.first(where: { $0.id == calendarID }))
+        store.deleteItem(calendarItem)
+
+        XCTAssertEqual(store.healthRecords.first?.status, .cancelled)
+        XCTAssertNil(store.healthRecords.first?.calendarItemID)
+        XCTAssertFalse(store.healthReminders.contains(where: { $0.id == reminder.id }))
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertFalse(reloaded.healthReminders.contains(where: { $0.id == reminder.id }))
+    }
+
+    func testChangingLinkedAppointmentToOrdinaryEventRemovesRecordReminder() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenHealthEdit-\\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let familyID = try XCTUnwrap(store.family?.id)
+        let memberID = try XCTUnwrap(store.members.first?.id)
+        let record = HealthRecord(
+            familyID: familyID, memberID: memberID, type: .appointment,
+            title: "Läkarbesök", startsAt: Date().addingTimeInterval(86_400)
+        )
+        store.saveHealthRecord(record)
+        let saved = try XCTUnwrap(store.healthRecords.first)
+        let calendarID = try XCTUnwrap(saved.calendarItemID)
+        let reminder = HealthReminder(
+            familyID: familyID, memberID: memberID, targetType: .record,
+            targetID: saved.id, title: "Läkarbesök", firesAt: Date().addingTimeInterval(3_600)
+        )
+        store.saveHealthReminder(reminder)
+
+        store.saveCalendarItem(
+            id: calendarID, title: "Privat händelse", details: nil,
+            startsAt: Date().addingTimeInterval(172_800), kind: .event,
+            memberIDs: [], isForEveryone: true, responsibleMemberID: nil,
+            recurring: false, reminderOffsets: []
+        )
+
+        XCTAssertEqual(store.healthRecords.first?.status, .cancelled)
+        XCTAssertNil(store.healthRecords.first?.calendarItemID)
+        XCTAssertFalse(store.healthReminders.contains(where: { $0.id == reminder.id }))
+    }
+
 }

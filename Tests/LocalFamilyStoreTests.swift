@@ -1454,4 +1454,27 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
     }
 
+
+    func testMemberProfileNameAndSymbolUpdateAtomicallyAndRollBackOnFailure() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+
+        store.updateMemberProfile(id: child.id, name: "Cleo Andersson", symbolName: "star.fill")
+        let updated = try XCTUnwrap(store.members.first { $0.id == child.id })
+        XCTAssertEqual(updated.displayName, "Cleo Andersson")
+        XCTAssertEqual(updated.symbolName, "star.fill")
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+        store.updateMemberProfile(id: child.id, name: "Nytt namn", symbolName: "heart.fill")
+
+        let rolledBack = try XCTUnwrap(store.members.first { $0.id == child.id })
+        XCTAssertEqual(rolledBack.displayName, "Cleo Andersson")
+        XCTAssertEqual(rolledBack.symbolName, "star.fill")
+        XCTAssertNotNil(store.persistenceError)
+    }
+
 }

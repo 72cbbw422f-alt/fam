@@ -91,19 +91,21 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func addChild(name: String) {
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let family, !clean.isEmpty, clean.count <= 80 else { return }
+        let previous = members
         members.append(FamilyMember(id: UUID(), familyID: family.id,
                                     displayName: clean,
                                     role: .child, linkedUserID: nil))
-        saveToDisk()
+        if !saveToDisk() { members = previous }
     }
 
     func addMember(name: String, role: MemberRole = .member) {
         guard let family else { return }
         let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 80, role != .owner else { return }
+        let previous = members
         members.append(FamilyMember(id: UUID(), familyID: family.id,
                                     displayName: clean, role: role, linkedUserID: nil))
-        saveToDisk()
+        if !saveToDisk() { members = previous }
     }
 
     func renameMember(id: UUID, name: String) {

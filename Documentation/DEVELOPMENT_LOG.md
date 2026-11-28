@@ -1477,3 +1477,11 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Gjorde view model-metoden tillgänglig för kalender-vyn i stället för att duplicera scheduler-anrop och riskera att nya obligatoriska argument missas igen.
 - Berörda filer: `Sources/Data/FamilyCalendarViewModel.swift`, `Sources/FamilyCalendarView.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: GitHub Actions-run 932 reproducerade felet på exakt head; båda jobbloggarna pekade på samma saknade argument på rad 704. Korrigeringen är incheckad men ännu inte verifierad av en ny CI-körning. Ingen IPA och ingen merge.
+
+
+## 2026-11-28 – komplettera och verifiera anropskedjan för kalendernotiser
+- Slutförde korrigeringen efter CI-fyndet: kalender-vyn använder nu FamilyCalendarViewModels gemensamma `rescheduleLocalRemindersIfEnabled()` i stället för att anropa schedulern direkt.
+- Den gemensamma vägen inkluderar kalenderposter, health reminders och privata hälso-ID:n. Det förhindrar att kalenderredigering oavsiktligt ersätter hela kön med enbart kalendernotiser eller kringgår integritetsfiltret.
+- Ändrade metodens åtkomst från private till intern så att vyn kan återanvända den.
+- Berörda filer: `Sources/FamilyCalendarView.swift`, `Sources/Data/FamilyCalendarViewModel.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: båda uppdaterade källfilerna återhämtade från aktuell branch och kontrollerade; det gamla direkta anropet är ersatt. En ny CI-körning behövs för att verifiera kompilering och tester. Ingen IPA och ingen merge.

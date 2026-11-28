@@ -43,6 +43,7 @@ enum LocalReminderScheduler {
     private static let identifierPrefix = "familjen-item-"
     private static let healthIdentifierPrefix = "familjen-health-"
     private static let maximumPendingReminders = 60
+    private static let maximumUpcomingOccurrencesPerSeries = 12
     private static let defaultOffsets = [24 * 60 * 60, 60 * 60]
     private static var operationTask: Task<Void, Never>?
 
@@ -60,8 +61,30 @@ enum LocalReminderScheduler {
                                overrides: [FamilyOccurrenceOverride] = []) -> [ReminderCandidate] {
         var candidates: [ReminderCandidate] = []
 
-        // Project recurring items to their next occurrence before calculating reminders.
-        let upcomingItems = DashboardViewModel.project(items, from: now, skipping: exceptions, overrides: overrides)
+        // Keep a rolling queue of upcoming occurrences for each recurring series.
+        // iOS does not provide a reliable callback to refill a notification as soon
+        // as it fires, so scheduling only the next occurrence can leave later weeks
+        // without reminders while the app remains unopened.
+        let upcomingItems = items.flatMap { sourceItem -> [FamilyItem] in
+            let frequency = sourceItem.recurrenceFrequency == .none && sourceItem.isRecurringYearly
+                ? FamilyRecurrenceFrequency.yearly : sourceItem.recurrenceFrequency
+            guard frequency != .none else {
+                return sourceItem.startsAt >= now ? [sourceItem] : []
+            }
+
+            var projected: [FamilyItem] = []
+            var cursor = now
+            for _ in 0..<maximumUpcomingOccurrencesPerSeries {
+                guard let occurrence = DashboardViewModel.project(
+                    [sourceItem], from: cursor, skipping: exceptions, overrides: overrides
+                ).first else { break }
+                guard occurrence.startsAt >= cursor else { break }
+                projected.append(occurrence)
+                cursor = occurrence.startsAt.addingTimeInterval(1)
+            }
+            return projected
+        }
+
         for item in upcomingItems {
             let offsets = item.reminderOffsets ?? defaultOffsets
             for offset in Set(offsets) where offset >= 0 {
@@ -78,7 +101,15 @@ enum LocalReminderScheduler {
             }
             return $0.offset < $1.offset
         }
-        return Array(candidates.prefix(maximumPendingReminders))
+        return candidates
+    }
+
+    /// Personal health appointments are excluded from local calendar notifications.
+    /// Their linked calendar rows may exist in storage, but must never leak through
+    /// a notification generated from the shared calendar collection.
+    static func excludingPrivateHealthItems(_ items: [FamilyItem],
+                                            privateHealthCalendarIDs: Set<UUID>) -> [FamilyItem] {
+        items.filter { !privateHealthCalendarIDs.contains($0.id) }
     }
 
     static func makeHealthCandidates(for reminders: [HealthReminder], now: Date) -> [HealthReminderCandidate] {
@@ -92,12 +123,24 @@ enum LocalReminderScheduler {
     }
 
     static func obsoleteManagedIdentifiers(existingIdentifiers: [String], desiredIdentifiers: Set<String>) -> [String] {
-        existingIdentifiers
-            .filter {
-                ($0.hasPrefix(identifierPrefix) || $0.hasPrefix(healthIdentifierPrefix))
-                    && !desiredIdentifiers.contains($0)
-            }
-            .sorted()
+        Array(Set(existingIdentifiers.filter {
+            ($0.hasPrefix(identifierPrefix) || $0.hasPrefix(healthIdentifierPrefix))
+                && !desiredIdentifiers.contains($0)
+        })).sorted()
+    }
+
+    /// Selects the nearest reminders across both sources under one shared capacity limit.
+    /// Kept generic so the ordering/cap policy can be tested without UserNotifications.
+    static func selectCandidates<Candidate>(calendar: [Candidate], health: [Candidate], limit: Int,
+                                            fireDate: (Candidate) -> Date,
+                                            identifier: (Candidate) -> String) -> [Candidate] {
+        guard limit > 0 else { return [] }
+        return (calendar + health).sorted {
+            let lhsDate = fireDate($0)
+            let rhsDate = fireDate($1)
+            if lhsDate != rhsDate { return lhsDate < rhsDate }
+            return identifier($0) < identifier($1)
+        }.prefix(limit).map { $0 }
     }
 
     static func shouldRemoveObsoleteReminders(afterSuccessfulAdds: Bool) -> Bool {
@@ -115,12 +158,14 @@ enum LocalReminderScheduler {
     static func schedule(for items: [FamilyItem],
                          skipping exceptions: [FamilyOccurrenceException] = [],
                          overrides: [FamilyOccurrenceOverride] = [],
-                         healthReminders: [HealthReminder] = []) async {
+                         healthReminders: [HealthReminder] = [],
+                         privateHealthCalendarIDs: Set<UUID>) async {
         let previous = operationTask
         let current = Task { @MainActor in
             await previous?.value
             await performSchedule(for: items, skipping: exceptions, overrides: overrides,
-                                  healthReminders: healthReminders)
+                                  healthReminders: healthReminders,
+                                  privateHealthCalendarIDs: privateHealthCalendarIDs)
         }
         operationTask = current
         await current.value
@@ -129,18 +174,26 @@ enum LocalReminderScheduler {
     private static func performSchedule(for items: [FamilyItem],
                                         skipping exceptions: [FamilyOccurrenceException],
                                         overrides: [FamilyOccurrenceOverride],
-                                        healthReminders: [HealthReminder]) async {
+                                        healthReminders: [HealthReminder],
+                                        privateHealthCalendarIDs: Set<UUID>) async {
         let pending = await center.pendingNotificationRequests()
         let delivered = await deliveredRequests()
         let existingIDs = pending.map(\.identifier) + delivered.map { $0.request.identifier }
-        let calendarCandidates = makeCandidates(for: items, now: .now, skipping: exceptions, overrides: overrides)
-            .map(ManagedReminderCandidate.calendar)
+        let reminderItems = Self.excludingPrivateHealthItems(
+            items, privateHealthCalendarIDs: privateHealthCalendarIDs
+        )
+        let calendarCandidates = makeCandidates(
+            for: reminderItems, now: .now, skipping: exceptions, overrides: overrides
+        ).map(ManagedReminderCandidate.calendar)
         let healthCandidates = makeHealthCandidates(for: healthReminders, now: .now)
             .map(ManagedReminderCandidate.health)
-        let candidates = (calendarCandidates + healthCandidates).sorted {
-            if $0.fireDate != $1.fireDate { return $0.fireDate < $1.fireDate }
-            return $0.identifier < $1.identifier
-        }.prefix(maximumPendingReminders)
+        let candidates = Self.selectCandidates(
+            calendar: calendarCandidates,
+            health: healthCandidates,
+            limit: maximumPendingReminders,
+            fireDate: { $0.fireDate },
+            identifier: { $0.identifier }
+        )
         let desiredIDs = Set(candidates.map(\.identifier))
 
         // Add/update desired reminders before removing obsolete ones. Calendar and
@@ -197,10 +250,6 @@ enum LocalReminderScheduler {
         )
         center.removePendingNotificationRequests(withIdentifiers: obsoleteIDs)
         center.removeDeliveredNotifications(withIdentifiers: obsoleteIDs)
-    }
-
-    private static func identifier(for candidate: ReminderCandidate) -> String {
-        candidate.id
     }
 
     private static func reminderLabel(for offset: Int) -> String {

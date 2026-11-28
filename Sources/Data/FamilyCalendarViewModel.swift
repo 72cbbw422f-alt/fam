@@ -66,6 +66,7 @@ final class FamilyCalendarViewModel: ObservableObject {
             return false
         }
         errorMessage = nil
+        await rescheduleLocalRemindersIfEnabled()
         return true
     }
 
@@ -96,6 +97,7 @@ final class FamilyCalendarViewModel: ObservableObject {
             return false
         }
         errorMessage = nil
+        await rescheduleLocalRemindersIfEnabled()
         return true
     }
 
@@ -110,12 +112,29 @@ final class FamilyCalendarViewModel: ObservableObject {
         store.skipOccurrence(of: item)
         await load()
         errorMessage = store.persistenceError
+        guard store.persistenceError == nil else { return }
+        await rescheduleLocalRemindersIfEnabled()
     }
 
     func delete(_ item: FamilyItem) async {
         store.deleteItem(item)
         await load()
         errorMessage = store.persistenceError
+        guard store.persistenceError == nil else { return }
+        await rescheduleLocalRemindersIfEnabled()
+    }
+
+    /// Occurrence edits and exceptions are written directly through the repository,
+    /// so they must explicitly refresh the device's pending local reminders.
+    func rescheduleLocalRemindersIfEnabled() async {
+        guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
+        await LocalReminderScheduler.schedule(
+            for: store.items,
+            skipping: store.skippedOccurrences,
+            overrides: store.occurrenceOverrides,
+            healthReminders: store.healthReminders,
+            privateHealthCalendarIDs: Set(store.healthRecords.filter { $0.visibility == .personal }.compactMap(\.calendarItemID))
+        )
     }
 
     // Keep the series anchor stable when the user only changes the time

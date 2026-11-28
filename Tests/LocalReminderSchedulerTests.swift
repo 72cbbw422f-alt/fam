@@ -111,4 +111,314 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertEqual(candidate.fireDate, movedDate.addingTimeInterval(-3600))
     }
 
+
+    func testMultipleMovedOccurrencesKeepTheirOwnSeriesIdentityInReminderQueue() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 9)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 17, hour: 8)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Veckomöte", details: nil,
+            startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3600], recurrenceFrequency: .weekly)
+        let firstOriginal = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 23, hour: 9)))
+        let secondOriginal = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 30, hour: 9)))
+        let firstMoved = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 25, hour: 11)))
+        let secondMoved = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 12, day: 2, hour: 13)))
+        var firstItem = item
+        firstItem.title = "Veckomöte – flyttat 1"
+        firstItem.startsAt = firstMoved
+        var secondItem = item
+        secondItem.title = "Veckomöte – flyttat 2"
+        secondItem.startsAt = secondMoved
+        let overrides = [
+            FamilyOccurrenceOverride(seriesID: item.id, occurrenceDate: firstOriginal, item: firstItem),
+            FamilyOccurrenceOverride(seriesID: item.id, occurrenceDate: secondOriginal, item: secondItem)
+        ]
+
+        let candidates = LocalReminderScheduler.makeCandidates(
+            for: [item], now: now, overrides: overrides
+        )
+
+        XCTAssertEqual(candidates.count, 12)
+        XCTAssertEqual(candidates[0].item.title, "Veckomöte – flyttat 1")
+        XCTAssertEqual(candidates[0].item.recurrenceOccurrenceDate, firstOriginal)
+        XCTAssertEqual(candidates[0].item.startsAt, firstMoved)
+        XCTAssertEqual(candidates[1].item.title, "Veckomöte – flyttat 2")
+        XCTAssertEqual(candidates[1].item.recurrenceOccurrenceDate, secondOriginal)
+        XCTAssertEqual(candidates[1].item.startsAt, secondMoved)
+        XCTAssertEqual(candidates[2].item.title, "Veckomöte")
+        XCTAssertEqual(candidates[2].item.startsAt, try XCTUnwrap(calendar.date(
+            from: DateComponents(year: 2026, month: 12, day: 7, hour: 9)
+        )))
+    }
+
+    func testDuplicateReminderOffsetsProduceOnlyOneCandidatePerOffset() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Dubbeltest",
+            details: nil, startsAt: now.addingTimeInterval(3 * 60 * 60), endsAt: nil,
+            kind: .event, memberID: nil, isRecurringYearly: false,
+            reminderOffsets: [3600, 3600, 900, 900])
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
+
+        XCTAssertEqual(candidates.count, 2)
+        XCTAssertEqual(Set(candidates.map(\.offset)), Set([3600, 900]))
+        XCTAssertEqual(Set(candidates.map(\.id)).count, candidates.count)
+    }
+
+    func testObsoleteCleanupOnlySelectsStaleFamiljenIdentifiers() {
+        let staleCalendar = "familjen-item-old-calendar"
+        let staleHealth = "familjen-health-old-health"
+        let desiredCalendar = "familjen-item-current"
+        let unrelated = ["other-app-reminder", "calendar-event-123"]
+
+        let obsolete = LocalReminderScheduler.obsoleteManagedIdentifiers(
+            existingIdentifiers: [staleCalendar, desiredCalendar, staleHealth] + unrelated,
+            desiredIdentifiers: [desiredCalendar]
+        )
+
+        XCTAssertEqual(obsolete, [staleHealth, staleCalendar])
+    }
+
+    func testObsoleteCleanupIsStableAndDoesNotRemoveDesiredHealthReminder() {
+        let stale = "familjen-health-stale"
+        let desired = "familjen-health-current"
+
+        let obsolete = LocalReminderScheduler.obsoleteManagedIdentifiers(
+            existingIdentifiers: [desired, stale, stale],
+            desiredIdentifiers: [desired]
+        )
+
+        XCTAssertEqual(obsolete, [stale])
+        XCTAssertFalse(obsolete.contains(desired))
+    }
+
+
+    func testCalendarCandidateGenerationDoesNotConsumeSharedCapBeforeHealthMerge() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let items = (0..<75).map { index in
+            FamilyItem(
+                id: UUID(), familyID: UUID(), title: "Aktivitet \(index)",
+                details: nil, startsAt: now.addingTimeInterval(TimeInterval(3600 + index * 60)),
+                endsAt: nil, kind: .event, memberID: nil,
+                isRecurringYearly: false, reminderOffsets: [0]
+            )
+        }
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: items, now: now)
+
+        // The 60-request limit is shared with health reminders and must be applied
+        // only after both candidate types have been merged by fire date.
+        XCTAssertEqual(candidates.count, 75)
+    }
+
+    func testSharedCapacitySelectionKeepsEarlierHealthReminderAheadOfCalendarBacklog() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let calendarCandidates = (0..<75).map { index in
+            (
+                identifier: "familjen-item-\(index)",
+                fireDate: now.addingTimeInterval(TimeInterval(3600 + index))
+            )
+        }
+        let healthCandidates = [
+            (
+                identifier: "familjen-health-urgent",
+                fireDate: now.addingTimeInterval(60)
+            )
+        ]
+
+        let selected = LocalReminderScheduler.selectCandidates(
+            calendar: calendarCandidates,
+            health: healthCandidates,
+            limit: 60,
+            fireDate: { $0.fireDate },
+            identifier: { $0.identifier }
+        )
+
+        XCTAssertEqual(selected.count, 60)
+        XCTAssertEqual(selected.first?.identifier, "familjen-health-urgent")
+        XCTAssertTrue(selected.contains { $0.identifier == "familjen-health-urgent" })
+        XCTAssertEqual(selected.filter { $0.identifier.hasPrefix("familjen-item-") }.count, 59)
+    }
+
+    func testSharedCapacitySelectionUsesIdentifierAsDeterministicTieBreaker() {
+        let fireDate = Date(timeIntervalSince1970: 1_800_000_060)
+        let calendarCandidates = [
+            (identifier: "calendar-c", fireDate: fireDate),
+            (identifier: "calendar-a", fireDate: fireDate)
+        ]
+        let healthCandidates = [
+            (identifier: "health-b", fireDate: fireDate)
+        ]
+
+        let selected = LocalReminderScheduler.selectCandidates(
+            calendar: calendarCandidates,
+            health: healthCandidates,
+            limit: 3,
+            fireDate: { $0.fireDate },
+            identifier: { $0.identifier }
+        )
+
+        XCTAssertEqual(selected.map(\.identifier), ["calendar-a", "calendar-c", "health-b"])
+    }
+
+    func testSharedCapacitySelectionKeepsNearestCandidatesRegardlessOfInputOrder() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let calendarCandidates = (0..<70).reversed().map { index in
+            (identifier: "calendar-\(index)", fireDate: now.addingTimeInterval(TimeInterval(index + 10)))
+        }
+        let selected = LocalReminderScheduler.selectCandidates(
+            calendar: calendarCandidates,
+            health: [],
+            limit: 5,
+            fireDate: { $0.fireDate },
+            identifier: { $0.identifier }
+        )
+
+        XCTAssertEqual(selected.map(\.identifier), [
+            "calendar-0", "calendar-1", "calendar-2", "calendar-3", "calendar-4"
+        ])
+    }
+
+    func testSharedCapacitySelectionReturnsNoCandidatesForZeroLimit() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let candidates = [(identifier: "candidate", fireDate: now.addingTimeInterval(60))]
+
+        let selected = LocalReminderScheduler.selectCandidates(
+            calendar: candidates,
+            health: [],
+            limit: 0,
+            fireDate: { $0.fireDate },
+            identifier: { $0.identifier }
+        )
+
+        XCTAssertTrue(selected.isEmpty)
+    }
+
+
+    func testWeeklyRecurringItemSchedulesMultipleUpcomingOccurrences() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 9)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 17, hour: 8)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Veckomöte", details: nil,
+            startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [3600], recurrenceFrequency: .weekly)
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
+
+        XCTAssertEqual(candidates.count, 12)
+        XCTAssertEqual(Set(candidates.map(\.id)).count, 12)
+        let days = candidates.map { calendar.component(.day, from: $0.item.startsAt) }
+        XCTAssertEqual(days, [23, 30, 7, 14, 21, 28, 4, 11, 18, 25, 1, 8])
+        XCTAssertTrue(candidates.allSatisfy { $0.fireDate > now })
+    }
+
+
+    func testPersonalHealthCalendarItemsAreExcludedFromLocalReminderCandidates() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let privateID = UUID()
+        let sharedID = UUID()
+        let familyID = UUID()
+        let items = [
+            FamilyItem(
+                id: privateID, familyID: familyID, title: "Privat läkarbesök",
+                details: nil, startsAt: now.addingTimeInterval(3_600), endsAt: nil,
+                kind: .healthVisit, memberID: nil, isRecurringYearly: false,
+                reminderOffsets: [0]
+            ),
+            FamilyItem(
+                id: sharedID, familyID: familyID, title: "Gemensam aktivitet",
+                details: nil, startsAt: now.addingTimeInterval(7_200), endsAt: nil,
+                kind: .event, memberID: nil, isRecurringYearly: false,
+                reminderOffsets: [0]
+            )
+        ]
+
+        let visible = LocalReminderScheduler.excludingPrivateHealthItems(
+            items, privateHealthCalendarIDs: [privateID]
+        )
+        let candidates = LocalReminderScheduler.makeCandidates(for: visible, now: now)
+
+        XCTAssertEqual(visible.map(\.id), [sharedID])
+        XCTAssertEqual(candidates.map(\.item.id), [sharedID])
+        XCTAssertFalse(candidates.contains { $0.item.title == "Privat läkarbesök" })
+    }
+
+    func testWeeklyRecurrenceReturnsToAnchorWallTimeAfterSpringDSTGap() throws {
+        let stockholm = try XCTUnwrap(TimeZone(identifier: "Europe/Stockholm"))
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = stockholm
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(
+            year: 2027, month: 3, day: 21, hour: 2, minute: 30
+        )))
+        let firstSearch = anchor.addingTimeInterval(1)
+        let first = try XCTUnwrap(DashboardViewModel.project(
+            [FamilyItem(id: UUID(), familyID: UUID(), title: "Söndagsmöte", details: nil,
+                startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+                isRecurringYearly: false, reminderOffsets: [0],
+                recurrenceFrequency: .weekly)],
+            from: firstSearch,
+            timeZone: stockholm
+        ).first)
+        let firstComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute],
+                                                        from: first.startsAt)
+        XCTAssertEqual(firstComponents.day, 28)
+        XCTAssertEqual(firstComponents.hour, 3) // 02:30 does not exist on spring-forward day.
+
+        let second = try XCTUnwrap(DashboardViewModel.project(
+            [FamilyItem(id: first.id, familyID: first.familyID, title: "Söndagsmöte", details: nil,
+                startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+                isRecurringYearly: false, reminderOffsets: [0],
+                recurrenceFrequency: .weekly)],
+            from: first.startsAt.addingTimeInterval(1),
+            timeZone: stockholm
+        ).first)
+        let secondComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute],
+                                                         from: second.startsAt)
+        XCTAssertEqual(secondComponents.day, 4)
+        XCTAssertEqual(secondComponents.month, 4)
+        XCTAssertEqual(secondComponents.hour, 2)
+        XCTAssertEqual(secondComponents.minute, 30)
+    }
+
+    func testMonthlyRecurringItemReturnsToAnchorDayAfterShortMonths() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 1, day: 31, hour: 8)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 1, day: 1, hour: 7)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Månadsrutin",
+            details: nil, startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [0], recurrenceFrequency: .monthly)
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
+
+        XCTAssertEqual(candidates.count, 12)
+        let components = candidates.map {
+            calendar.dateComponents([.year, .month, .day], from: $0.item.startsAt)
+        }
+        XCTAssertEqual(components.map(\.month), Array(1...12))
+        XCTAssertEqual(components.map(\.day), [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+    }
+
+    func testYearlyLeapDayRecurrenceReturnsToFebruary29InLeapYear() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2024, month: 2, day: 29, hour: 9)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 1, day: 1, hour: 8)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Årsdag",
+            details: nil, startsAt: anchor, endsAt: nil, kind: .birthday, memberID: nil,
+            isRecurringYearly: true, reminderOffsets: [0], recurrenceFrequency: .yearly)
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
+
+        XCTAssertEqual(candidates.count, 12)
+        let components = candidates.map {
+            calendar.dateComponents([.year, .month, .day], from: $0.item.startsAt)
+        }
+        XCTAssertEqual(components.map(\.year), Array(2027...2038))
+        XCTAssertEqual(components.map(\.month), Array(repeating: 2, count: 12))
+        XCTAssertEqual(components.map(\.day), [28, 29, 28, 28, 28, 29, 28, 28, 28, 29, 28, 28])
+    }
+
 }

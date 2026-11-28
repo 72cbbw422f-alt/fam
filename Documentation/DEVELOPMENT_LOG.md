@@ -1117,3 +1117,381 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - CI körs på grenen efter att push-triggern lagts till; verifiering av den slutliga commiten inväntas.
 - Interaktionerna är inte fysiskt verifierade på iPhone i denna arbetsinsats; särskilt långtryck/context menu, listscroll och månadsväljaren behöver kontrolleras på enheten.
 - Arbetsgren: `feature/calendar-event-details`.
+
+## 2026-11-26 – synkronisera lokala påminnelser efter kalenderundantag
+
+**Fynd**
+- Vanlig kalenderredigering och borttagning via `FamilyStore` schemalägger om lokala påminnelser.
+- Redigering av ett enskilt återkommande tillfälle (`saveOccurrenceOverride`) och avbokning av en förekomst (`skipOccurrence`) går direkt via repository i `FamilyCalendarViewModel` och utlöste inte motsvarande omschemaläggning.
+- Det kunde lämna kvar en påminnelse för gammalt datum eller sakna en påminnelse för det flyttade tillfället tills nästa fullständiga schemaläggning.
+
+**Ändrat**
+- Lade till en gemensam metod som omschemalägger enhetens kalender- och hälsopåminnelser när lokala påminnelser är aktiverade.
+- Anropar metoden efter lyckad sparning av ett enskilt tillfälles override, efter att en förekomst hoppats över och efter kalenderpost tagits bort.
+- Använder repositoryts uppdaterade poster, undantag och overrides som underlag. Funktionen lämnar schemaläggningen orörd om användaren har stängt av lokala påminnelser.
+- Berörd kodfil: `Sources/Data/FamilyCalendarViewModel.swift`.
+- Befintliga scheduler-tester täcker redan flyttad förekomst, överhoppad förekomst och nästa giltiga återkomst. De körs på nytt i CI för denna gren.
+
+**GitHub och verifiering**
+- Gren: `feature/calendar-reminder-sync`, baserad på `feature/calendar-event-details`.
+- Kodcommit: `01faf2a546f464e30de0a78d2f490801ddd1f45c`.
+- CI och fysisk iPhone-verifiering inväntar resultat. Ingen merge har gjorts.
+
+
+## 2026-11-26 – deduplicering och städning av lokala påminnelser
+
+**Granskning**
+- Den första CI-körningen för kalenderändringarna är grön: 98 tester passerade utan fel, simulatorbygget lyckades och osignerad iPhone-IPA paketerades.
+- Granskningen av påminnelseschemaläggaren visade att upprepade påminnelseintervall redan dedupliceras vid kandidatgenerering, men detta saknade ett direkt regressionstest.
+- Städningen av gamla notiser filtrerade bort främmande appar och behöll önskade Familjen-ID:n. Samma identifierare kunde dock förekomma mer än en gång i indata och därmed skickas upprepade gånger till borttagningsanropet.
+
+**Ändrat**
+- Gjorde listan över inaktuella Familjen-notis-ID:n unik och deterministiskt sorterad.
+- Lade till tester för dubbla påminnelseintervall, skydd av notiser som tillhör andra appar, bibehållna önskade hälsopåminnelser samt unik städlista.
+- Berörda filer:
+  - `Sources/LocalReminderScheduler.swift`
+  - `Tests/LocalReminderSchedulerTests.swift`
+
+**Verifiering**
+- De nya testerna är incheckade men ännu inte körda. En ny GitHub Actions-körning inväntas.
+- Senaste gröna bas före dessa tester: 98 tester, 0 fel; iPhone unsigned-build och IPA-paketering lyckades.
+- Fysisk iPhone-verifiering av att flyttade, avbokade och borttagna händelser ger rätt notiser återstår.
+
+**GitHub**
+- Gren: `feature/calendar-reminder-sync`.
+- Ingen merge genomförd.
+
+
+## 2026-11-26 – regressionstester för avbokning av en kalenderförekomst
+
+**Granskning**
+- Genomgång av repositoryns återkomsthantering bekräftade att avbokning av en enskild förekomst ska vara idempotent och transaktionell.
+- Implementationen hade redan skydd mot dubbla undantag och återställning vid skrivfel, men dessa två egenskaper saknade direkta tester i den dedikerade återkomsttestsviten.
+
+**Ändrat**
+- Lade till test som avbokar samma veckoförekomst två gånger och verifierar att endast ett undantag sparas och överlever omladdning.
+- Lade till test som simulerar skrivfel vid avbokning och verifierar att undantaget återställs, att felet exponeras och att blockeringsfilen inte skrivs över.
+- Berörd fil: `Tests/OccurrenceOverrideRestorationTests.swift`.
+
+**Verifiering**
+- Testerna är incheckade men inte körda ännu. CI-resultat inväntas.
+- Tidigare verifierade bas för kalenderpåminnelsegrenen: 98 tester passerade; simulator- och osignerat iPhone-bygge lyckades före de senaste testtilläggen.
+- Fysisk iPhone-verifiering av verklig notisleverans återstår.
+
+**GitHub**
+- Gren: `feature/calendar-reminder-sync`.
+- Ingen merge genomförd.
+
+
+**CI-trigger för senaste regressionstesterna**
+- Uppdaterade workflow-kommentaren på samma arbetsgren för att skapa en ny push-händelse och begära CI på senaste testcommitten.
+- Workflow-commit: `d26168f360153193829f37d1d02e8d207ebea67e`.
+- Workflowen omfattar fortsatt `feature/calendar-reminder-sync`.
+- GitHub Actions-resultat för den nya head-commiten är ännu inte synligt via tillgängliga statuskontroller; därför redovisas de nya testerna fortfarande som ej verifierade.
+
+
+## 2026-11-26 – gemensamt kapacitetstak för kalender- och hälsopåminnelser
+
+**Granskning**
+- Hittade en prioriteringsbugg i `LocalReminderScheduler`: kalenderkandidater begränsades till 60 innan hälsopåminnelser lades till.
+- Om familjekalendern hade minst 60 kommande påminnelser kunde därför hälsopåminnelser helt trängas undan, trots att båda typerna senare sorteras och delar samma systemgräns.
+
+**Ändrat**
+- Tog bort det för tidiga taket i kalenderkandidatgenereringen.
+- Det gemensamma taket på 60 tillämpas nu efter att kalender- och hälsopåminnelser slagits samman och sorterats efter när de ska skickas.
+- Lade till regressionstest som verifierar att kandidatgenereringen inte kapar kalenderlistan innan sammanslagningen.
+- Berörda filer: `Sources/LocalReminderScheduler.swift`, `Tests/LocalReminderSchedulerTests.swift`.
+
+**Verifiering**
+- Nytt test är incheckat men inte kört; CI inväntas.
+- Den faktiska schemaläggningen behåller fortsatt ett totalt tak på 60 väntande Familjen-påminnelser.
+- Fysisk iPhone-verifiering återstår.
+
+
+## 2026-11-26 – verifiera faktiskt urval under gemensamt påminnelsetak
+
+**Fynd och åtgärd**
+- Det tidigare regressionstestet visade att kalenderkandidatgenereringen inte längre kapar listan före sammanslagningen, men bevisade inte direkt att hälsopåminnelser får rätt plats i det slutliga urvalet.
+- Bröt därför ut den faktiska sorterings- och kapacitetslogiken till LocalReminderScheduler.selectCandidates.
+- Produktionsschemaläggningen använder nu samma rena funktion som testerna, vilket undviker att test och produktionskod provar två olika urvalsalgoritmer.
+- Lade till test med 75 senare kalenderpåminnelser och en tidigare hälsopåminnelse. Testet förväntar 60 valda kandidater, inklusive hälsopåminnelsen och 59 kalenderpåminnelser.
+- Lade även till test för gränsfallet kapacitet 0.
+
+**Berörda filer**
+- Sources/LocalReminderScheduler.swift
+- Tests/LocalReminderSchedulerTests.swift
+- Documentation/DEVELOPMENT_LOG.md
+
+**Commits**
+- Produktionskod: 821c55798bfe10ce3f7108d7516e966fab371118.
+- Regressionstester: 606510c9a869210ce6f62a5e04b3a7c9a3e68cb1.
+
+**Verifiering**
+- Källkod och tester är incheckade på feature/calendar-reminder-sync.
+- Testerna är ännu inte körda i GitHub Actions; inget grönt CI-resultat hävdas för dessa commits.
+- Fysisk iPhone-testning och faktisk notisleverans återstår.
+- PR #11 förblir draft och har inte mergats.
+
+
+## 2026-11-28 – Reminder scheduler review follow-up
+- Corrected the shared-capacity regression test's calendar identifier interpolation so generated identifiers include each candidate index.
+- Prevented occurrence skip/delete flows from scheduling reminders after a failed repository persistence operation. The repository's rollback state is retained and no unnecessary notification reconciliation is started.
+- Verification: source review and GitHub content updates only. No local Xcode/Swift test run was available; latest CI status remains to be checked.
+- Files: `Tests/LocalReminderSchedulerTests.swift`, `Sources/Data/FamilyCalendarViewModel.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+
+
+## 2026-11-28 – deterministisk urval och granskning av notifieringsfel
+- Granskade schemaläggarens serialisering: varje `schedule`-/`clearAll`-operation väntar på föregående operation innan den läser/ändrar notifieringscentret. Behöll denna ordning.
+- Bekräftade att schemaläggaren försöker lägga till/uppdatera önskade notiser innan inaktuella Familjen-notiser tas bort. Om minst ett tillägg misslyckas avbryts städningen, så gamla fungerande notiser inte rensas bort i ett partiellt misslyckat varv.
+- Tog bort en oanvänd identifierarhjälpare.
+- Lade till regressionstester för deterministisk identifierarsortering vid lika utskickstid och för att de närmaste kandidaterna väljs även när indata kommer i omvänd ordning.
+- Berörda filer: `Sources/LocalReminderScheduler.swift`, `Tests/LocalReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: ändrade filer återhämtade från GitHub och granskade. Ingen lokal Swift/Xcode-körning; GitHub Actions visar ännu inga statusar eller workflow-runs för aktuell head.
+
+
+
+## 2026-11-28 – omschemaläggning även efter vanlig kalenderredigering
+- Kodgranskningen visade att `FamilyCalendarViewModel.save(...)` skrev kalenderposten direkt via repositoryt och returnerade efter lyckad lagring utan att anropa den lokala påminnelseschemaläggaren.
+- Följden var att ändrade datum, tider eller påminnelseintervall via det vanliga kalenderformuläret kunde lämna kvar gamla lokala notiser. Flödena för förekomstundantag och borttagning hade redan uttrycklig omschemaläggning.
+- Lade därför till samma `rescheduleLocalRemindersIfEnabled()` efter lyckad och beständig vanlig kalenderlagring. Misslyckad lagring returnerar fortsatt innan omschemaläggning, och avstängda lokala påminnelser lämnas orörda.
+- Berörd fil: `Sources/Data/FamilyCalendarViewModel.swift`.
+- Commit: `4a8601d7ffad09a85b111ccdc3cb15dd874034fb`.
+- Verifiering: kodväg granskad och ändringen incheckad på `feature/calendar-reminder-sync`. Ingen Swift/Xcode-körning; CI saknar ännu körning/status för tidigare head och måste kontrolleras mot den nya committen. Fysisk iPhone-verifiering återstår.
+
+
+## 2026-11-28 – kalenderkoppling följer status för hälsoärenden
+- Granskningen visade att hälsoärenden av typen vårdbesök/uppföljning behöll en kalenderpost även när status ändrades till genomfört eller avbokat. Det kunde lämna en missvisande kalenderpost och lokala påminnelser kopplade till ett avslutat ärende.
+- Ändrade synkroniseringen så att endast aktiva ärenden (planerat eller inväntar svar) har en länkad kalenderpost. Genomfört/avbokat ärende behålls i hälsohistoriken men dess kalenderpost tas bort och kalenderkopplingen nollställs.
+- Lade till regressionstest som verifierar att planerat besök skapar kalenderpost och att statusövergång till genomfört respektive avbokat tar bort kalenderposten utan att radera hälsoärendet.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: ändringar incheckade på `feature/calendar-reminder-sync`; ingen lokal Swift/Xcode-körning. CI-status för aktuell gren/head behöver inväntas. Ingen merge.
+
+
+## 2026-11-28 – avslutade hälsoärenden städar även fristående påminnelser
+- Fortsatt granskning av hälsoflödet visade att record-kopplade HealthReminder kunde leva kvar efter att ett ärende markerats genomfört eller avbokat, trots att kalenderposten togs bort.
+- Vid status genomfört/avbokat tas nu även påminnelser med targetType `record` och targetID för ärendet bort. Historikposten bevaras.
+- Rollback vid misslyckad lagring återställer även påminnelselistan.
+- Regressionstest tillagt för att kontrollera att record-påminnelsen försvinner både ur minnet och efter omladdning från disk.
+- Inställningstexten korrigerad: iOS frågar om notisbehörighet när användaren aktiverar lokala påminnelser första gången, inte vid första appstart.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Sources/FamilySettingsView.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: ändringarna incheckade på `feature/calendar-reminder-sync`. Ingen Swift/Xcode-körning; CI-status saknas för senaste head. Ingen merge och ingen IPA.
+
+
+
+## 2026-11-28 – kontroll av notisbehörighet när appen återgår till förgrunden
+- Granskningen visade att inställningsvyn schemalade om påminnelser när den öppnades, men inte kontrollerade om användaren hunnit återkalla notisbehörigheten i iOS-inställningarna. Den lokala inställningsflaggan kunde därför fortsätta visa påminnelser som aktiverade trots att iOS inte längre tillät notiser.
+- Inställningsvyn kontrollerar nu den faktiska notisbehörigheten vid öppning och när appen återgår till aktivt läge. Vid tillåten, provisorisk eller tillfällig behörighet synkroniseras schemat om mot aktuell familjedata. Vid nekad eller ännu ej bestämd behörighet stängs den lokala påminnelseflaggan av och Familjens gamla väntande/levererade notiser rensas.
+- Okänd framtida behörighetsstatus lämnar användarens flagga orörd och visar ett kontrollmeddelande.
+- Berörd fil: `Sources/FamilySettingsView.swift`.
+- Commit: `528ee16ff54393ca8298f6e8861912894a11eb74`.
+- Verifiering: kodändringen är incheckad på `feature/calendar-reminder-sync`. Ingen lokal Xcode/Swift-körning; CI för denna commit inväntas. Ingen fysisk iPhone-testning eller IPA.
+
+
+
+## 2026-11-28 – granskning av tidszoner, sommartid och levererade notiser
+- Granskade hur kalender- och hälsopåminnelser räknar fram utskickstid och hur den skickas till UserNotifications.
+- Kandidater använder ett absolut `Date`-värde. Påminnelseintervall dras av i sekunder från händelsens absoluta starttid; veckovis/månadsvis/årlig återkomst projiceras däremot med en gregoriansk `Calendar` i aktuell tidszon för att behålla lokal kalenderdag och klocktid.
+- Schemaläggaren bygger kompletta datumkomponenter (år, månad, dag, timme, minut, sekund) från det beräknade utskickstillfället och sätter uttryckligen både kalender och tidszon. Granskningen hittade därför ingen belagd DST-/tidszonsbugg som motiverar att byta till en annan triggerstrategi.
+- Befintliga levererade Familjen-notiser tas med i städningen. När utskickstiden passerat skapas inte längre kandidaten (den måste ligga efter `now`), och dess levererade notis tas därmed bort som inaktuell vid nästa lyckade schemaläggning. Önskade notiser rensas inte om ett tillägg misslyckas.
+- Inga kodändringar gjordes i denna granskning. DST-beteende över verkliga tidsomställningar och resor behöver fortfarande verifieras på enhet/simulator; denna kodläsning är inte ett runtime-test.
+- Berörda filer granskade: `Sources/LocalReminderScheduler.swift`, `Sources/Data/DashboardViewModel.swift`, `Tests/LocalReminderSchedulerTests.swift`.
+- Verifiering: endast källkodsgranskning. Ingen Swift/Xcode-körning; CI saknar fortfarande körning/status för aktuell head.
+
+
+
+## 2026-11-28 – notisbehörighet begärs först efter aktivt val
+- Fortsatt granskning av appens startflöde visade att `RootView` fortfarande begärde notisbehörighet automatiskt vid första appstart och slog på lokala påminnelser direkt om iOS gav tillstånd. Det stämde inte med inställningstexten eller det avsedda opt-in-flödet där användaren själv aktiverar påminnelser.
+- Tog bort den automatiska behörighetsbegäran från appstart. Behörighetsfrågan visas nu först när användaren slår på lokala påminnelser i Inställningar.
+- Appstarten behåller däremot en tyst avstämning för användare som redan aktiverat påminnelser: vid tillåten/provisorisk/tillfällig behörighet synkroniseras schemat, och vid nekad/ej bestämd behörighet stängs flaggan av och gamla Familjen-notiser rensas.
+- Berörd fil: `Sources/RootView.swift`.
+- Commit: `26ac91f40fb0de8132096a177ccf0d622734e299`.
+- Verifiering: kodväg granskad och filen incheckad. Ingen lokal Xcode/Swift-körning; CI för aktuell head inväntas. Fysisk iPhone-verifiering av att behörighetsdialogen endast visas efter aktivt val återstår.
+
+## 2026-11-28 – rullande kö för återkommande kalenderpåminnelser
+- Granskningen visade att schemaläggaren endast projicerade nästa förekomst per återkommande kalenderpost. Om appen inte öppnades igen efter att den påminnelsen skickats kunde kommande veckor sakna förhandsplanerade notiser.
+- Schemaläggaren bygger nu en rullande kö med upp till 12 kommande förekomster per återkommande serie. Varje iteration använder samma kalenderprojektion som appens översikt, vilket bevarar hanteringen av överhoppade datum och flyttade undantag utan att ändra vad kalendern visar.
+- Icke återkommande poster behåller tidigare beteende. Det gemensamma taket på 60 kalender- och hälsopåminnelser tillämpas fortsatt efter sammanslagning och sortering.
+- Lade till regressionstest som verifierar 12 unika veckoförekomster i kronologisk ordning.
+- Berörda filer: `Sources/LocalReminderScheduler.swift`, `Tests/LocalReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: kod och test är incheckade på `feature/calendar-reminder-sync`. Ingen lokal Swift/Xcode-körning; CI-resultat för aktuell head inväntas. Test på fysisk iPhone och faktisk notisleverans återstår. Ingen IPA byggd och ingen merge genomförd.
+
+## 2026-11-28 – stoppa notisomschemaläggning efter misslyckad lagring
+- Granskning av hälsorepositoryts transaktioner visade att FamilyStore alltid startade notisomschemaläggning efter ett mutationsanrop, även när LocalFamilyStore hade återställt data efter ett skrivfel.
+- Lade ett gemensamt skydd i FamilyStore så att notisomschemaläggning endast startar när repositoryts senaste persistensstatus är felfri. Skyddet gäller de kalender- och hälsomutationer som använder den gemensamma schemaläggningsmetoden.
+- Lade till ett fokuserat regressionstest för både lyckad och misslyckad persistensstatus.
+- Berörda filer: `Sources/Data/FamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: kod och test incheckade på `feature/calendar-reminder-sync`. Ingen lokal Swift/Xcode-körning; CI för senaste head inväntas. Ingen IPA eller fysisk enhetstestning.
+
+## 2026-11-28 – städa record-påminnelser när kalenderkopplad vårdtid avbokas
+- Hittade en livscykellucka: när en kalenderpost som representerar ett vårdbesök togs bort eller ändrades till en vanlig händelse markerades vårdposten som avbokad, men separata `HealthReminder` kopplade till vårdposten kunde ligga kvar.
+- Både borttagning och ändring av kalenderpost tar nu bort record-påminnelser för den avbokade vårdposten. Historikposten bevaras med status avbokad.
+- Lagringsrollback återställer även påminnelselistan om skrivningen misslyckas.
+- Lade till regressionstester för borttagning och typändring, inklusive kontroll efter omladdning för borttagningsfallet.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: källkod och tester incheckade; testinterpolation kontrollerad i GitHub-filen. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head ännu. Ingen IPA byggd.
+
+## 2026-11-28 – normalisera dubbletter av länkade hälsopåminnelser
+- Granskningen av receptförnyelse visade att upsert-funktionen bara uppdaterade eller tog bort den första påminnelsen för ett visst mål. Om äldre data eller import innehöll flera påminnelser med samma target kunde dubbletter därför överleva, även när receptet markerades som förnyat.
+- Upsert normaliserar nu varje länkad target till högst en aktiv påminnelse. När målet inte längre ska påminnas tas samtliga matchande påminnelser bort.
+- Lade till regressionstest som skapar en dubblett, verifierar att uppdatering lämnar en enda schemalagd påminnelse och att statusen förnyat tar bort den helt.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: kod och test incheckade och återhämtade från GitHub; interpolation kontrollerad. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head ännu.
+
+## 2026-11-28 – verifiering av recept- och läkemedelshämtningars livscykel
+- Granskade statusövergångar för receptförnyelse och läkemedelshämtning. Befintlig lagringslogik tar bort receptpåminnelser när status inte längre är aktiv och tar bort hämtningspåminnelser när uthämtningen markeras hämtad eller avbokad.
+- Bekräftade att borttagning av en läkemedelshämtning tar bort dess länkade påminnelser, medan borttagning av ett recept bevarar hämtningshistoriken genom att koppla loss den från receptet.
+- Lade till regressionstester för hämtad/avbokad läkemedelshämtning, borttagning av hämtning samt receptborttagning med bevarad uthämtningshistorik. Det tidigare testet för receptförnyelse verifierar också att länkade dubbletter normaliseras.
+- Inga produktionsändringar behövdes i dessa statusflöden efter granskningen; den enda produktionsändringen i denna del är normalisering av dubbletter per länkad target.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: testkällan återhämtad från GitHub och Swift-interpolation kontrollerad. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head ännu.
+
+## 2026-11-28 – blockera nya påminnelser för avslutade hälsomål
+- Granskningen av den publika lagringsvägen för HealthReminder hittade en lucka: valideringen kontrollerade att länkad post och familjemedlem fanns, men inte att målet fortfarande var aktivt. Det gick därför att lägga till en ny record-påminnelse för ett genomfört vårdbesök, en förnyelsepåminnelse för ett redan förnyat recept eller en hämtningspåminnelse för läkemedel som redan hämtats/avbokats.
+- Skärpte valideringen: record-påminnelser kräver status planerat/inväntar svar, receptpåminnelser kräver förnyelse due/requested och hämtningspåminnelser kräver status planned. Egna/custom-påminnelser påverkas inte.
+- Lade till regressionstest som försöker skapa alla tre inaktiva länktyperna och verifierar att ingen sparas, inte heller efter omladdning.
+- Berörda filer: Sources/Data/LocalFamilyStore.swift, Tests/HealthReminderSchedulerTests.swift, Documentation/DEVELOPMENT_LOG.md.
+- Verifiering: kod och test återhämtade från GitHub; testets Swift-interpolation kontrollerad. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head.
+
+## 2026-11-28 – konsekvent borttagning av familjemedlem och hälsodata
+- Dataintegritetsgranskningen hittade att borttagning av en familjemedlem endast tog bort medlemsprofilen och rensade kalenderns personkopplingar. Hälsoposter, recept, läkemedelshämtningar, hälsoprofilinformation och påminnelser kunde därför ligga kvar med ett memberID som inte längre fanns.
+- Borttagning av en icke-ägande medlem tar nu bort den medlemmens personliga hälsodata och tillhörande påminnelser i samma persistenta transaktion. Kalenderhistorik som inte är ett länkat vårdbesök bevaras, men personkoppling och ansvarig tas bort. Kalenderposten som endast skapats av ett länkat vårdbesök tas bort tillsammans med hälsoposten.
+- Rollback vid misslyckad lagring återställer alla berörda samlingar. FamilyStore schemalägger om lokala notiser efter medlemsborttagning så att gamla notiser försvinner.
+- Bekräftelsedialogen beskriver nu uttryckligen att personens hälsouppgifter, vårdbesök, recept och läkemedelshämtningar också tas bort.
+- Lade till regressionstest som verifierar borttagning av personliga hälsodata och notiser, bevarad övrig kalenderhistorik samt resultat efter omladdning.
+- Berörda filer: Sources/Data/LocalFamilyStore.swift, Sources/Data/FamilyStore.swift, Sources/FamilyMembersView.swift, Tests/LocalFamilyStoreTests.swift, Documentation/DEVELOPMENT_LOG.md.
+- Verifiering: kod/test/dokumentation återhämtade och kontrollerade via GitHub. Ingen lokal Swift/Xcode-körning; CI för aktuell head inväntas.
+
+## 2026-11-28 – korrigera Swift-keypath i återkomsttest
+- Källkodsgranskning av den senaste PR-headen hittade ett extra escapetecken i keypath-uttrycket i testet för 12 kommande veckoförekomster. Det skulle ge ett Swift-kompileringsfel innan testet kunde köras.
+- Korrigerade uttrycket till `candidates.map(\\.id)` i `Tests/LocalReminderSchedulerTests.swift`.
+- Commit: `9dafbd77e10abc396e4541ec2f2a748310e85393`.
+- Verifiering: uppdaterad fil återhämtas och kontrolleras från GitHub. Ingen lokal Swift/Xcode-körning; CI för den nya head-commiten måste inväntas. Ingen IPA och ingen merge.
+
+## 2026-11-28 – städa presentkopplingar vid borttagning av familjemedlem
+- Granskningen av profilborttagning hittade två kvarvarande referensproblem: presentidéer kunde ligga kvar med ett borttaget memberID, och julklappar kunde behålla en ansvarig person som inte längre fanns.
+- Vid borttagning tas nu presentidéer för profilen bort. Julklapparnas historik och mottagare bevaras, men ansvarig koppling nollställs när den pekar på den borttagna profilen.
+- Båda samlingarna ingår nu i samma rollback-snapshot som övrig medlemsdata. Ett misslyckat skrivförsök återställer presentidéer och julklappsansvar tillsammans med profilen.
+- Lade till regressionstest för lyckad borttagning/omladdning samt separat test för rollback vid persistensfel.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/LocalFamilyStoreTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: källkod och test har uppdaterats via GitHub och ska återhämtas för kontroll. Ingen lokal Swift/Xcode-körning; CI för senaste head inväntas. Ingen IPA och ingen merge.
+
+## 2026-11-28 – hålla presentidéer synkroniserade med födelsedagar
+- Fortsatt granskning av kalenderhistorik visade att presentidéer kunde ligga kvar när deras födelsedagspost raderades eller ändrades till en vanlig kalenderaktivitet.
+- Rensar nu presentidéer kopplade till födelsedagsposten när posten tas bort eller konverteras till annan aktivitetstyp. Redigering av datum/titel medan posten fortfarande är en födelsedag behåller idéerna.
+- Presentidéerna ingår i rollback-snapshot för både kalenderredigering och borttagning.
+- Lade till regressionstest för borttagning av födelsedag och konvertering till vanlig aktivitet.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/LocalFamilyStoreTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: ändringar återhämtas och granskas via GitHub. Ingen lokal Swift/Xcode-körning; CI för aktuell head inväntas. Ingen IPA och ingen merge.
+
+## 2026-11-28 – transaktionssäker presenthantering och födelsedagskopplingar
+- Fortsatt granskning hittade att `deleteItem` tog bort presentidéer i minnet men inte återställde dem om snapshot-skrivningen misslyckades. Rollback återställer nu även presentidéerna.
+- Tog bort en redundant rollback-tilldelning i `saveCalendarItem`.
+- `addGiftIdea` och `addChristmasGift` återställer nu sina samlingar om lagringen misslyckas, i linje med befintliga update/delete-operationer.
+- Presentidéer måste nu tillhöra en medlem som faktiskt är kopplad till födelsedagsposten. När födelsedagens medlemskoppling ändras rensas idéer för tidigare/ej längre kopplade medlemmar.
+- Lade till regressionstester för misslyckad födelsedagsradering, misslyckad skapning av presentidé/julklapp samt ändrad medlemskoppling.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/LocalFamilyStoreTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: källkod, testfall och dokumentation har återhämtats från GitHub och kontrollerats på filnivå. Ingen lokal Xcode/Swift-körning; aktuell CI är inte verifierad. Ingen IPA och ingen merge.
+
+## 2026-11-28 – transaktionssäker profilskapning och tydlig lagringsfeedback
+- Granskning av familjeprofilernas CRUD-flöde visade att `addChild` och `addMember` lade till profiler i minnet även om snapshot-skrivningen misslyckades. Båda operationerna återställer nu medlemslistan vid skrivfel.
+- Familjeinställningarnas vy visar nu lagringsfelet vid misslyckad profilskapning eller borttagning i stället för att visa ett falskt framgångsmeddelande. Inmatningen behålls när skapningen misslyckas.
+- Lade till regressionstest som verifierar rollback för både barn- och vuxenprofil när lagringen blockeras.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Sources/FamilyMembersView.swift`, `Tests/LocalFamilyStoreTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: uppdaterade filer återhämtas och granskas via GitHub. Ingen lokal Xcode/Swift-körning; CI för senaste head inväntas. Ingen IPA och ingen merge.
+
+## 2026-11-28 – atomisk uppdatering av familjeprofil
+- Profilredigeraren sparade tidigare namn och ikon i två separata skrivningar. Vid ett tillfälligt lagringsfel kunde endast en av ändringarna bli beständig. Införde updateMemberProfile som validerar och sparar båda fälten i en enda transaktion med rollback.
+- Profilredigeraren använder nu den atomiska metoden.
+- Lade till regressionstest för lyckad uppdatering och rollback av både namn och ikon vid skrivfel.
+- Berörda filer: Sources/Data/LocalFamilyStore.swift, Sources/FamilyMembersView.swift, Tests/LocalFamilyStoreTests.swift, Documentation/DEVELOPMENT_LOG.md.
+- Verifiering: filer hämtas och granskas via GitHub. Ingen lokal Xcode/Swift-körning; aktuell CI är inte verifierad. Ingen IPA och ingen merge.
+
+## 2026-11-28 – koppla atomisk profilredigering genom repository-lagret
+- Granskning av lagergränsen visade att den nya atomiska updateMemberProfile-metoden först fanns i LocalFamilyStore men saknades i FamilyRepository-kontraktet och FamilyStore-fasaden. Det hade orsakat ett kompileringsfel i profilvyn.
+- Lade till metoden i FamilyRepository och exponerade den via FamilyStore, som därefter uppdaterar publicerat UI-tillstånd genom refresh.
+- Berörda filer: Sources/Data/FamilyRepository.swift, Sources/Data/FamilyStore.swift, Sources/Data/LocalFamilyStore.swift, Sources/FamilyMembersView.swift, Tests/LocalFamilyStoreTests.swift, Documentation/DEVELOPMENT_LOG.md.
+- Verifiering: kontrakt, fasad och anrop har hämtats tillbaka från GitHub och jämförts. Ingen lokal Xcode/Swift-körning; CI för senaste head inväntas. Ingen IPA och ingen merge.
+
+## 2026-11-28 – integritetsskydd för privata hälsoärenden i lokala notiser
+- Fortsatt granskning hittade att privata hälsoärenden filtrerades bort från kalender- och dashboardvyerna men fortfarande kunde skickas till den lokala notisschemaläggaren via den gemensamma kalenderlistan.
+- Lade till en gemensam filtreringsfunktion i LocalReminderScheduler som exkluderar kalenderposter länkade till hälsoärenden med visibility .personal.
+- Gjorde privateHealthCalendarIDs till ett obligatoriskt argument för schemaläggning så att varje anrop måste ta ställning till privata kalenderkopplingar.
+- Uppdaterade samtliga nuvarande produktionsanrop i FamilyStore, FamilyCalendarViewModel, FamilySettingsView och RootView. HealthReminders fortsätter schemaläggas enligt sina egna inställningar.
+- Lade till regressionstest som bekräftar att en privat vårdpost inte genererar en lokal kalendernotis medan en vanlig familjeaktivitet fortfarande gör det.
+- Berörda filer: Sources/LocalReminderScheduler.swift, Sources/Data/FamilyStore.swift, Sources/Data/FamilyCalendarViewModel.swift, Sources/FamilySettingsView.swift, Sources/RootView.swift, Tests/LocalReminderSchedulerTests.swift, Documentation/DEVELOPMENT_LOG.md.
+- Verifiering: samtliga kända produktionsanrop och de uppdaterade filerna har hämtats tillbaka från GitHub och kontrollerats på källkodsnivå. Ingen lokal Xcode/Swift-körning; CI för senaste head är inte verifierad. Ingen IPA och ingen merge.
+
+
+## 2026-11-28 – regressionstäckning för månadsdatum och skottår
+- Fortsatt granskning av återkommande kalenderpåminnelser med fokus på månadsserier som startar den 29:e–31:a och årliga serier som startar den 29 februari.
+- Lade till test som följer en månadsserie från 31 januari genom samtliga 12 månader. Det verifierar att korta månader klampar datumet (exempelvis 28 februari) men att serien återgår till ursprungsdagen när månaden tillåter det (31 mars).
+- Lade till test av en årlig 29-februari-serie genom den rullande 12-förekomstkön: 28 februari under icke-skottår och 29 februari under skottår.
+- Produktionslogiken ändrades inte eftersom källkodsgranskningen inte visade något belagt fel i dessa två datumregler.
+- Berörd fil: `Tests/LocalReminderSchedulerTests.swift`.
+- Verifiering: testfall och keypaths kontrollerade genom återhämtning från GitHub. Ingen lokal Swift/Xcode-körning; CI-status för den senaste head-commiten är ännu inte verifierad. Ingen IPA och ingen merge.
+
+
+## 2026-11-28 – bevara identiteten för flyttade återkommande tillfällen
+- Granskningen av återkommande undantag hittade ett konkret fel: ett flyttat tillfälle visades som en vanlig engångshändelse eftersom den projicerade posten tappade seriens återkomstfrekvens. Därmed kunde dialogen för borttagning erbjuda borttagning av hela serien i stället för bara tillfället.
+- Samma identitetsförlust gjorde att ett flyttat tillfälle kunde hoppas över med sitt nya datum, trots att undantaget måste knytas till ursprungsdatumet i serien. Det kunde lämna den flyttade posten kvar eller påverka fel förekomst.
+- Lade till det valfria, bakåtkompatibla fältet `recurrenceOccurrenceDate` på `FamilyItem`. Projektionen sätter nu både återkomstfrekvens och ursprungligt förekomstdatum på normala och flyttade förekomster.
+- Kalenderredigeraren skickar ursprungsdatumet när ett redan flyttat tillfälle redigeras igen. Borttagning av en flyttad förekomst tar bort dess override och sparar i stället ett skip-undantag mot ursprungsdatumet. Båda listorna återställs tillsammans om lagringen misslyckas.
+- Lade till regressionstester för identiteten i projektionen, borttagning av ett flyttat tillfälle, beständighet efter omladdning och rollback vid skrivfel.
+- Berörda filer: `Sources/Domain/FamilyModels.swift`, `Sources/Data/DashboardViewModel.swift`, `Sources/Data/LocalFamilyStore.swift`, `Sources/FamilyCalendarView.swift`, `Tests/LocalFamilyStoreTests.swift`.
+- Verifiering: uppdaterade filer och anrop återhämtade från GitHub och granskade på källkodsnivå. Ingen lokal Swift/Xcode-körning; CI för aktuell head är inte verifierad. Ingen IPA och ingen merge.
+
+## 2026-11-28 – regressionstäckning för flera flyttade tillfällen i notiskön
+- Utökade granskningen av återkommande undantag med en serie som har två separata flyttade tillfällen och en vanlig förekomst mellan dem.
+- Lade till test som kontrollerar att notiskön behåller kronologisk ordning, använder respektive flyttat datum och bevarar ursprungsdatumet för båda undantagen. Testet kontrollerar även att den vanliga förekomsten mellan undantagen inte försvinner.
+- Ingen produktionskod ändrades eftersom den granskade sekvenseringen hanterar dessa skilda datum korrekt.
+- Berörd fil: `Tests/LocalReminderSchedulerTests.swift`.
+- Verifiering: testet är incheckat på `feature/calendar-reminder-sync`. Ingen lokal Xcode/Swift-körning; CI för aktuell head är inte verifierad. Ingen IPA och ingen merge.
+
+## 2026-11-28 – bevara veckoseriernas klockslag efter sommartidsomställning
+- Reproducerade ett fel i veckovis återkomst med tidszonen Europe/Stockholm: när ett ankarklockslag 02:30 hamnade i vårens DST-gap normaliserades den förekomsten till 03:30. Nästa förekomster beräknades tidigare från föregående förekomst och kunde därför fortsätta på 03:30 permanent.
+- Ändrade veckoberäkningen så att nästa förekomst alltid räknas från seriens ursprungliga startdatum och veckoförskjutning. En förekomst som inte existerar lokalt på omställningsdagen kan fortfarande normaliseras av Foundation, men den efterföljande veckan återgår till seriens ursprungliga väggklockslag.
+- Lade till ett valfritt tidszonsargument i projektionsfunktionen för deterministiska tester och ett regressionstest för 21–28 mars–4 april 2027 i Europe/Stockholm.
+- Berörda filer: `Sources/Data/DashboardViewModel.swift`, `Tests/LocalReminderSchedulerTests.swift`.
+- Verifiering: felet reproducerat med Swift 6.2.1/Foundation på Linux före ändringen. Kod, test och dokumentation incheckade på `feature/calendar-reminder-sync`; fulla iOS/Xcode-tester kan inte köras i denna miljö. CI för aktuell head måste kontrolleras. Ingen IPA och ingen merge.
+
+## 2026-11-28 – omplanera notiser efter tidszonsändring och återgång till appen
+- Granskade `LocalReminderScheduler`: notiser byggs som engångs-`UNCalendarNotificationTrigger` med uttryckliga lokala kalenderkomponenter och aktuell tidszon. En tidszonsändring kräver därför att väntande påminnelser räknas om från familjens sparade kalenderdata.
+- Flyttade inte schemaläggningen till en ny parallell tjänst. Utökade i stället `FamilyTabShell` så att tidigare aktiverade notiser synkroniseras vid appstart, när appen åter blir aktiv och vid `NSSystemTimeZoneDidChange`. Befintlig scheduler serialiserar operationer och behåller sin rollback-/felhantering.
+- Inställningssidans befintliga aktiverings- och behörighetsflöde är oförändrat. Ingen ny behörighetsdialog introduceras.
+- Berörd fil: `Sources/RootView.swift`.
+- Verifiering: källan uppdaterad på `feature/calendar-reminder-sync`. Ingen Xcode-miljö finns tillgänglig här; SwiftUI-livscykel, Foundation-notifikationen och faktisk omplanering måste verifieras i iOS-simulator/enhet. Ingen IPA och ingen merge.
+
+
+## 2026-11-28 – granskning av levererade och inaktuella lokala notiser
+- Granskade hela schemaläggningsflödet för väntande och levererade notiser, inklusive stabila identifierare, gemensam kapacitetsgräns, uppdatering av befintliga requests och borttagning av föråldrade Familjen-ID:n.
+- Bekräftade att både väntande och levererade notiser ingår i samma städning. Notiser som inte längre motsvarar en önskad kalender- eller hälsopåminnelse tas bort, medan andra appars notiser lämnas orörda.
+- Bekräftade att städningen sker först efter att samtliga önskade notiser har lagts till utan fel. Om någon add misslyckas behålls gamla requests, vilket prioriterar att inte förlora fungerande påminnelser vid ett tillfälligt fel.
+- Granskningen identifierade inget verifierat produktionsfel som motiverar ändring av denna logik. Ingen produktionskod ändrades.
+- Berörd fil: `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: scheduler- och testkällor återhämtade från aktuell GitHub-branch och granskade. GitHub combined status och tillgänglig PR-workflow-listning saknar checks för head `0b433aedf3ff6c8248d0bf4943fb257e1f7e65d7`. Ingen lokal Xcode/SwiftUI-körning, ingen IPA och ingen merge.
+
+
+## 2026-11-28 – åtgärda obligatoriskt argument i kalenderns notisuppdatering
+- GitHub Actions för head `7e8fa1cfb42ad306488641a0b8d4ff6040f3207c` misslyckades i både simulator- och iPhone-bygget: `FamilyCalendarView.swift` anropade `LocalReminderScheduler.schedule` utan det numera obligatoriska argumentet `privateHealthCalendarIDs`.
+- Flyttade kalenderns vyanrop till den befintliga samordnade metoden i `FamilyCalendarViewModel`. Den använder repositoryts fullständiga kalender- och hälsopåminnelsedata och skickar med privata kalender-ID:n, så att hälsopåminnelser inte tappas bort och privata vårdbesök fortsatt filtreras.
+- Gjorde view model-metoden tillgänglig för kalender-vyn i stället för att duplicera scheduler-anrop och riskera att nya obligatoriska argument missas igen.
+- Berörda filer: `Sources/Data/FamilyCalendarViewModel.swift`, `Sources/FamilyCalendarView.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: GitHub Actions-run 932 reproducerade felet på exakt head; båda jobbloggarna pekade på samma saknade argument på rad 704. Korrigeringen är incheckad men ännu inte verifierad av en ny CI-körning. Ingen IPA och ingen merge.
+
+
+## 2026-11-28 – komplettera och verifiera anropskedjan för kalendernotiser
+- Slutförde korrigeringen efter CI-fyndet: kalender-vyn använder nu FamilyCalendarViewModels gemensamma `rescheduleLocalRemindersIfEnabled()` i stället för att anropa schedulern direkt.
+- Den gemensamma vägen inkluderar kalenderposter, health reminders och privata hälso-ID:n. Det förhindrar att kalenderredigering oavsiktligt ersätter hela kön med enbart kalendernotiser eller kringgår integritetsfiltret.
+- Ändrade metodens åtkomst från private till intern så att vyn kan återanvända den.
+- Berörda filer: `Sources/FamilyCalendarView.swift`, `Sources/Data/FamilyCalendarViewModel.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: båda uppdaterade källfilerna återhämtade från aktuell branch och kontrollerade; det gamla direkta anropet är ersatt. En ny CI-körning behövs för att verifiera kompilering och tester. Ingen IPA och ingen merge.
+
+
+## 2026-11-28 – korrigera förväntningar i kalenderpåminnelsernas regressionstester
+- Exakt-head CI-run #935 körde 136 XCTest och identifierade sju assertion-fel i tre testfall. Övriga tester i körningen passerade.
+- Analysen visade att produktionslogiken gav rätt resultat: två flyttade serieundantag ska båda ersätta sina ursprungliga datum och sorteras efter de nya påminnelsetiderna; obsolete-ID:n returneras deterministiskt sorterade; en årlig 29-februari-serie ska återgå till 29 februari under skottåren 2028, 2032 och 2036.
+- Rättade därför endast testförväntningarna i `Tests/LocalReminderSchedulerTests.swift`. Ingen produktionskod ändrades.
+- CI-run #935:s separata iPhone-jobb byggde och paketerade en unsigned IPA och laddade upp artefakten. Simulatorjobbet stoppades av de felaktiga testförväntningarna före simulatorbygget.
+- Berörda filer: `Tests/LocalReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Testresultat före rättelse: 136 tester, 7 assertion-fel i 3 testfall. Efter rättelsen krävs ny CI-körning; inget nytt testresultat eller IPA från den nya headen är ännu verifierat.
+- Commit med testkorrigering: `cefb21ec4a5d061558ee18a33f75c72ccfe4af13`. Ingen merge; PR #11 är fortsatt Draft.

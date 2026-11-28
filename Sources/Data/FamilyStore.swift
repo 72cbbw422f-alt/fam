@@ -61,7 +61,11 @@ final class FamilyStore: ObservableObject {
     func addMember(name: String, role: MemberRole = .member) { repository.addMember(name: name, role: role); refresh() }
     func renameMember(id: UUID, name: String) { repository.renameMember(id: id, name: name); refresh() }
     func updateMemberSymbol(id: UUID, symbolName: String?) { repository.updateMemberSymbol(id: id, symbolName: symbolName); refresh() }
-    func deleteMember(id: UUID) { repository.deleteMember(id: id); refresh() }
+    func updateMemberProfile(id: UUID, name: String, symbolName: String?) {
+        repository.updateMemberProfile(id: id, name: name, symbolName: symbolName)
+        refresh()
+    }
+    func deleteMember(id: UUID) { repository.deleteMember(id: id); refresh(); rescheduleHealthReminders() }
     func renameChild(id: UUID, name: String) { repository.renameChild(id: id, name: name); refresh() }
     func deleteChild(id: UUID) { repository.deleteChild(id: id); refresh() }
     func saveItem(id: UUID?, title: String, details: String?, startsAt: Date, kind: FamilyItemKind,
@@ -148,14 +152,20 @@ final class FamilyStore: ObservableObject {
         rescheduleHealthReminders()
     }
 
+    static func shouldRescheduleReminders(afterPersistenceError error: String?) -> Bool {
+        error == nil
+    }
+
     private func rescheduleHealthReminders() {
+        guard Self.shouldRescheduleReminders(afterPersistenceError: persistenceError) else { return }
         guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
         Task {
             await LocalReminderScheduler.schedule(
                 for: items,
                 skipping: skippedOccurrences,
                 overrides: occurrenceOverrides,
-                healthReminders: healthReminders
+                healthReminders: healthReminders,
+                privateHealthCalendarIDs: Set(healthRecords.filter { $0.visibility == .personal }.compactMap(\.calendarItemID))
             )
         }
     }

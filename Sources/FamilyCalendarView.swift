@@ -655,7 +655,7 @@ struct FamilyCalendarView: View {
             FamilyItemEditor(item: editingItem, members: model.members, singleOccurrence: editingSingleOccurrence, initialKind: selectedKind) { title, details, location, latitude, longitude, date, kind, memberIDs, isForEveryone, responsibleMemberID, recurrenceFrequency, reminderOffsets in
                 if editingSingleOccurrence, let item = editingItem {
                     return await model.saveOccurrenceOverride(
-                        seriesID: item.id, occurrenceDate: item.startsAt, title: title,
+                        seriesID: item.id, occurrenceDate: item.recurrenceOccurrenceDate ?? item.startsAt, title: title,
                         details: details, location: location, latitude: latitude, longitude: longitude, startsAt: date, kind: kind,
                         memberIDs: memberIDs, isForEveryone: isForEveryone,
                         responsibleMemberID: responsibleMemberID, reminderOffsets: reminderOffsets
@@ -697,12 +697,7 @@ struct FamilyCalendarView: View {
     }
 
     private func refreshLocalReminders() async {
-        guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
-        await LocalReminderScheduler.schedule(
-            for: model.sourceItems,
-            skipping: model.skippedOccurrences,
-            overrides: model.occurrenceOverrides
-        )
+        await model.rescheduleLocalRemindersIfEnabled()
     }
 
     private func filterChip(_ title: String, kind: FamilyItemKind?) -> some View {

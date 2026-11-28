@@ -526,14 +526,96 @@ final class LocalFamilyStoreTests: XCTestCase {
         ).first)
         XCTAssertEqual(edited.title, "Veckomöte – flyttat")
         XCTAssertEqual(edited.startsAt, changedOccurrence.startsAt)
+        XCTAssertEqual(edited.recurrenceFrequency, .weekly)
+        XCTAssertEqual(edited.recurrenceOccurrenceDate, anchor)
 
         let following = try XCTUnwrap(DashboardViewModel.project(
             [series], from: nextWeek, overrides: [override]
         ).first)
         XCTAssertEqual(following.title, "Veckomöte")
         XCTAssertEqual(following.startsAt, nextWeek)
+        XCTAssertEqual(following.recurrenceFrequency, .weekly)
+        XCTAssertEqual(following.recurrenceOccurrenceDate, nextWeek)
         XCTAssertEqual(series.startsAt, anchor)
         XCTAssertEqual(series.recurrenceFrequency, .weekly)
+    }
+
+
+    func testSkippingMovedRecurringOccurrenceUsesOriginalSeriesDate() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let originalDate = Date(timeIntervalSince1970: 1_800_000_000)
+        store.saveCalendarItem(
+            id: nil, title: "Veckomöte", details: nil, startsAt: originalDate,
+            kind: .event, memberIDs: [], isForEveryone: true,
+            responsibleMemberID: nil, recurring: false, reminderOffsets: [],
+            recurrenceFrequency: .weekly
+        )
+        let series = try XCTUnwrap(store.items.first)
+        let movedDate = originalDate.addingTimeInterval(2 * 86_400)
+        var overrideItem = series
+        overrideItem.title = "Veckomöte – flyttat"
+        overrideItem.startsAt = movedDate
+        store.saveOccurrenceOverride(
+            seriesID: series.id, occurrenceDate: originalDate, item: overrideItem
+        )
+        let movedOccurrence = try XCTUnwrap(DashboardViewModel.project(
+            store.items, from: originalDate, overrides: store.occurrenceOverrides
+        ).first)
+        XCTAssertEqual(movedOccurrence.recurrenceOccurrenceDate, originalDate)
+        XCTAssertEqual(movedOccurrence.recurrenceFrequency, .weekly)
+
+        store.skipOccurrence(of: movedOccurrence)
+
+        XCTAssertTrue(store.occurrenceOverrides.isEmpty)
+        XCTAssertEqual(store.skippedOccurrences.count, 1)
+        XCTAssertEqual(store.skippedOccurrences.first?.seriesID, series.id)
+        XCTAssertEqual(store.skippedOccurrences.first?.occurrenceDate, originalDate)
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.occurrenceOverrides.isEmpty)
+        XCTAssertEqual(reloaded.skippedOccurrences.first?.occurrenceDate, originalDate)
+        let projected = DashboardViewModel.project(
+            reloaded.items, from: originalDate,
+            skipping: reloaded.skippedOccurrences, overrides: reloaded.occurrenceOverrides
+        )
+        XCTAssertNotEqual(projected.first?.startsAt, movedDate)
+        XCTAssertEqual(projected.first?.startsAt, originalDate.addingTimeInterval(7 * 86_400))
+    }
+
+    func testFailedSkipOfMovedOccurrenceRollsBackSkipAndOverride() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let originalDate = Date(timeIntervalSince1970: 1_800_000_000)
+        store.saveCalendarItem(
+            id: nil, title: "Veckomöte", details: nil, startsAt: originalDate,
+            kind: .event, memberIDs: [], isForEveryone: true,
+            responsibleMemberID: nil, recurring: false, reminderOffsets: [],
+            recurrenceFrequency: .weekly
+        )
+        let series = try XCTUnwrap(store.items.first)
+        let movedDate = originalDate.addingTimeInterval(2 * 86_400)
+        var overrideItem = series
+        overrideItem.title = "Veckomöte – flyttat"
+        overrideItem.startsAt = movedDate
+        store.saveOccurrenceOverride(
+            seriesID: series.id, occurrenceDate: originalDate, item: overrideItem
+        )
+        let movedOccurrence = try XCTUnwrap(DashboardViewModel.project(
+            store.items, from: originalDate, overrides: store.occurrenceOverrides
+        ).first)
+        let originalOverrides = store.occurrenceOverrides
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+        store.skipOccurrence(of: movedOccurrence)
+
+        XCTAssertTrue(store.skippedOccurrences.isEmpty)
+        XCTAssertEqual(store.occurrenceOverrides, originalOverrides)
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
     }
 
     func testCorruptedSnapshotIsPreservedForRecovery() throws {
@@ -1171,6 +1253,310 @@ final class LocalFamilyStoreTests: XCTestCase {
 
         let reloadedAgain = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
         XCTAssertEqual(reloadedAgain.favoriteShoppingItemTitles, ["Mjölk"])
+    }
+
+
+    func testDeletingMemberRemovesOwnedHealthDataAndRemindersButKeepsCalendarHistory() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Barn")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+        let owner = try XCTUnwrap(store.members.first { $0.role == .owner })
+        let future = Date().addingTimeInterval(86_400)
+
+        let record = HealthRecord(
+            familyID: try XCTUnwrap(store.family?.id), memberID: child.id,
+            type: .appointment, title: "Barnets vårdbesök", startsAt: future,
+            reminderOffsets: [3600]
+        )
+        store.saveHealthRecord(record)
+        let savedRecord = try XCTUnwrap(store.healthRecords.first)
+        let linkedCalendarID = try XCTUnwrap(savedRecord.calendarItemID)
+        let prescription = HealthPrescription(
+            familyID: try XCTUnwrap(store.family?.id), memberID: child.id,
+            medicationName: "Barnets medicin", renewalDueAt: future, renewalStatus: .due
+        )
+        store.saveHealthPrescription(prescription)
+        let pickup = MedicationPickup(
+            familyID: try XCTUnwrap(store.family?.id), memberID: child.id,
+            prescriptionID: prescription.id, medicationName: "Barnets medicin", dueAt: future
+        )
+        store.saveMedicationPickup(pickup)
+        let profile = HealthProfileInformation(
+            familyID: try XCTUnwrap(store.family?.id), memberID: child.id,
+            type: .allergy, title: "Allergi", details: "Exempel"
+        )
+        store.saveHealthProfileInformation(profile)
+        let customReminder = HealthReminder(
+            familyID: try XCTUnwrap(store.family?.id), memberID: child.id,
+            targetType: .custom, title: "Egen påminnelse", firesAt: future
+        )
+        store.saveHealthReminder(customReminder)
+        store.saveCalendarItem(
+            id: nil, title: "Familjeaktivitet", details: nil, startsAt: future,
+            kind: .event, memberIDs: [child.id, owner.id], isForEveryone: false,
+            responsibleMemberID: owner.id, recurring: false, reminderOffsets: []
+        )
+        let ordinaryCalendarID = try XCTUnwrap(store.items.first { $0.title == "Familjeaktivitet" }?.id)
+
+        store.deleteMember(id: child.id)
+
+        XCTAssertFalse(store.members.contains { $0.id == child.id })
+        XCTAssertTrue(store.healthRecords.isEmpty)
+        XCTAssertTrue(store.healthPrescriptions.isEmpty)
+        XCTAssertTrue(store.medicationPickups.isEmpty)
+        XCTAssertTrue(store.healthProfileInformation.isEmpty)
+        XCTAssertFalse(store.healthReminders.contains { $0.memberID == child.id })
+        XCTAssertFalse(store.items.contains { $0.id == linkedCalendarID })
+        XCTAssertEqual(store.items.first(where: { $0.id == ordinaryCalendarID })?.memberIDs, [owner.id])
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.healthRecords.isEmpty)
+        XCTAssertTrue(reloaded.healthPrescriptions.isEmpty)
+        XCTAssertTrue(reloaded.medicationPickups.isEmpty)
+        XCTAssertTrue(reloaded.healthProfileInformation.isEmpty)
+        XCTAssertFalse(reloaded.healthReminders.contains { $0.memberID == child.id })
+        XCTAssertTrue(reloaded.items.contains { $0.id == ordinaryCalendarID })
+    }
+
+
+    func testDeletingMemberCleansGiftIdeasAndClearsChristmasGiftAssignment() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+        let future = Date().addingTimeInterval(86_400)
+
+        store.saveItem(
+            id: nil, title: "Cleo", details: nil, startsAt: future,
+            kind: .birthday, memberID: child.id, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+        store.addGiftIdea(memberID: child.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+        store.addChristmasGift(
+            recipient: "Cleo", title: "Julklapp", note: nil, responsibleMemberID: child.id
+        )
+        XCTAssertEqual(store.giftIdeas.count, 1)
+        XCTAssertEqual(store.christmasGifts.first?.responsibleMemberID, child.id)
+
+        store.deleteMember(id: child.id)
+
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        XCTAssertEqual(store.christmasGifts.count, 1)
+        XCTAssertNil(store.christmasGifts.first?.responsibleMemberID)
+        XCTAssertTrue(store.items.contains { $0.id == birthday.id }, "Birthday calendar history should remain")
+
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.giftIdeas.isEmpty)
+        XCTAssertEqual(reloaded.christmasGifts.count, 1)
+        XCTAssertNil(reloaded.christmasGifts.first?.responsibleMemberID)
+        XCTAssertTrue(reloaded.items.contains { $0.id == birthday.id })
+    }
+
+    func testFailedMemberDeletionRollsBackGiftDataAndAssignments() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+        let birthdayDate = Date().addingTimeInterval(86_400)
+        store.saveItem(
+            id: nil, title: "Cleo", details: nil, startsAt: birthdayDate,
+            kind: .birthday, memberID: child.id, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+        store.addGiftIdea(memberID: child.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+        store.addChristmasGift(
+            recipient: "Cleo", title: "Julklapp", note: nil, responsibleMemberID: child.id
+        )
+        let originalGiftIdeas = store.giftIdeas
+        let originalChristmasGifts = store.christmasGifts
+        let originalMembers = store.members
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+
+        store.deleteMember(id: child.id)
+
+        XCTAssertEqual(store.members, originalMembers)
+        XCTAssertEqual(store.giftIdeas, originalGiftIdeas)
+        XCTAssertEqual(store.christmasGifts, originalChristmasGifts)
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
+    }
+
+
+    func testDeletingBirthdayRemovesItsGiftIdeas() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+        store.saveItem(
+            id: nil, title: "Cleo", details: nil, startsAt: Date().addingTimeInterval(86_400),
+            kind: .birthday, memberID: child.id, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+        store.addGiftIdea(memberID: child.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+        XCTAssertEqual(store.giftIdeas.count, 1)
+
+        store.deleteItem(birthday)
+
+        XCTAssertFalse(store.items.contains { $0.id == birthday.id })
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.giftIdeas.isEmpty)
+    }
+
+    func testConvertingBirthdayToOrdinaryEventRemovesItsGiftIdeas() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+        let date = Date().addingTimeInterval(86_400)
+        store.saveItem(
+            id: nil, title: "Cleo", details: nil, startsAt: date,
+            kind: .birthday, memberID: child.id, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+        store.addGiftIdea(memberID: child.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+
+        store.saveCalendarItem(
+            id: birthday.id, title: "Familjeträff", details: nil, startsAt: date,
+            kind: .event, memberIDs: [child.id], isForEveryone: false,
+            responsibleMemberID: nil, recurring: false, reminderOffsets: []
+        )
+
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        XCTAssertEqual(store.items.first?.kind, .event)
+    }
+
+
+    func testFailedBirthdayDeletionRestoresGiftIdeas() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+        store.saveItem(
+            id: nil, title: "Cleo", details: nil, startsAt: Date().addingTimeInterval(86_400),
+            kind: .birthday, memberID: child.id, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+        store.addGiftIdea(memberID: child.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+        let originalIdeas = store.giftIdeas
+        let originalItems = store.items
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+        store.deleteItem(birthday)
+
+        XCTAssertEqual(store.giftIdeas, originalIdeas)
+        XCTAssertEqual(store.items, originalItems)
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testFailedGiftIdeaAndChristmasGiftCreationRollBackInMemoryState() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+        store.saveItem(
+            id: nil, title: "Cleo", details: nil, startsAt: Date().addingTimeInterval(86_400),
+            kind: .birthday, memberID: child.id, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+
+        store.addGiftIdea(memberID: child.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+        store.addChristmasGift(
+            recipient: "Cleo", title: "Julklapp", note: nil, responsibleMemberID: child.id
+        )
+
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        XCTAssertTrue(store.christmasGifts.isEmpty)
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
+    }
+
+
+    func testChangingBirthdayMemberRemovesGiftIdeasForPreviousMember() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        store.addChild(name: "Tuva-Li")
+        let children = store.members.filter { $0.role == .child }
+        let first = try XCTUnwrap(children.first)
+        let second = try XCTUnwrap(children.last)
+        let date = Date().addingTimeInterval(86_400)
+        store.saveCalendarItem(
+            id: nil, title: "Cleo", details: nil, startsAt: date,
+            kind: .birthday, memberIDs: [first.id], isForEveryone: false,
+            responsibleMemberID: nil, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+        store.addGiftIdea(memberID: first.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+        XCTAssertEqual(store.giftIdeas.count, 1)
+
+        store.saveCalendarItem(
+            id: birthday.id, title: "Tuva-Li", details: nil, startsAt: date,
+            kind: .birthday, memberIDs: [second.id], isForEveryone: false,
+            responsibleMemberID: nil, recurring: true, reminderOffsets: []
+        )
+
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        store.addGiftIdea(memberID: first.id, birthdayItemID: birthday.id, title: "Fel person", note: nil)
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        store.addGiftIdea(memberID: second.id, birthdayItemID: birthday.id, title: "Rätt person", note: nil)
+        XCTAssertEqual(store.giftIdeas.map(\.memberID), [second.id])
+    }
+
+
+    func testFailedFamilyMemberCreationRollsBackChildAndAdultProfiles() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let originalMembers = store.members
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+
+        store.addChild(name: "Cleo")
+        store.addMember(name: "Villemo", role: .member)
+
+        XCTAssertEqual(store.members, originalMembers)
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
+    }
+
+
+    func testMemberProfileNameAndSymbolUpdateAtomicallyAndRollBackOnFailure() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+
+        store.updateMemberProfile(id: child.id, name: "Cleo Andersson", symbolName: "star.fill")
+        let updated = try XCTUnwrap(store.members.first { $0.id == child.id })
+        XCTAssertEqual(updated.displayName, "Cleo Andersson")
+        XCTAssertEqual(updated.symbolName, "star.fill")
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+        store.updateMemberProfile(id: child.id, name: "Nytt namn", symbolName: "heart.fill")
+
+        let rolledBack = try XCTUnwrap(store.members.first { $0.id == child.id })
+        XCTAssertEqual(rolledBack.displayName, "Cleo Andersson")
+        XCTAssertEqual(rolledBack.symbolName, "star.fill")
+        XCTAssertNotNil(store.persistenceError)
     }
 
 }

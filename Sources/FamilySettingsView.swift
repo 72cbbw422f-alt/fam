@@ -9,6 +9,7 @@ private struct FamilyReminderOption: Identifiable {
 }
 
 struct FamilySettingsView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var store = FamilyStore.shared
     @AppStorage("familjen.localRemindersEnabled") private var localRemindersEnabled = false
     @State private var defaultReminderOffsets = [24 * 60 * 60, 60 * 60]
@@ -32,7 +33,7 @@ struct FamilySettingsView: View {
                 )) {
                     Label("Lokala påminnelser", systemImage: "bell.badge")
                         .font(.body.weight(.medium))
-                    Text("Påminnelser visas på den här iPhonen. De delas inte med andra familjemedlemmars enheter. Du får frågan om notiser första gången du startar Familjen.")
+                    Text("Påminnelser visas på den här iPhonen. De delas inte med andra familjemedlemmars enheter. Du får frågan om notiser när du aktiverar påminnelser första gången.")
                         .font(.caption)
                         .foregroundStyle(FamiljenTheme.muted)
                 }
@@ -117,14 +118,11 @@ struct FamilySettingsView: View {
         .task {
             defaultReminderOffsets = UserDefaults.standard.array(forKey: "familjen.defaultReminderOffsets") as? [Int]
                 ?? [24 * 60 * 60, 60 * 60]
-            if localRemindersEnabled {
-                await LocalReminderScheduler.schedule(
-                    for: store.items,
-                    skipping: store.skippedOccurrences,
-                    overrides: store.occurrenceOverrides,
-                    healthReminders: store.healthReminders
-                )
-            }
+            await reconcileReminderAuthorization()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await reconcileReminderAuthorization() }
         }
     }
 
@@ -136,6 +134,32 @@ struct FamilySettingsView: View {
         }
         defaultReminderOffsets.sort(by: >)
         UserDefaults.standard.set(defaultReminderOffsets, forKey: "familjen.defaultReminderOffsets")
+    }
+
+    @MainActor
+    private func reconcileReminderAuthorization() async {
+        guard localRemindersEnabled, !isUpdatingReminders else { return }
+        isUpdatingReminders = true
+        defer { isUpdatingReminders = false }
+
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        switch settings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            await LocalReminderScheduler.schedule(
+                for: store.items,
+                skipping: store.skippedOccurrences,
+                overrides: store.occurrenceOverrides,
+                healthReminders: store.healthReminders,
+                privateHealthCalendarIDs: Set(store.healthRecords.filter { $0.visibility == .personal }.compactMap(\.calendarItemID))
+            )
+            reminderStatus = "Påminnelser är aktiverade på den här enheten."
+        case .denied, .notDetermined:
+            localRemindersEnabled = false
+            await LocalReminderScheduler.clearAll()
+            reminderStatus = "Notisbehörighet saknas. Aktivera notiser för Familjen i iOS-inställningarna och slå sedan på påminnelser igen."
+        @unknown default:
+            reminderStatus = "Kunde inte kontrollera notisbehörigheten. Kontrollera iOS-inställningarna."
+        }
     }
 
     @MainActor
@@ -156,7 +180,8 @@ struct FamilySettingsView: View {
                 for: store.items,
                 skipping: store.skippedOccurrences,
                 overrides: store.occurrenceOverrides,
-                    healthReminders: store.healthReminders
+                healthReminders: store.healthReminders,
+                privateHealthCalendarIDs: Set(store.healthRecords.filter { $0.visibility == .personal }.compactMap(\.calendarItemID))
             )
             reminderStatus = "Påminnelser är aktiverade på den här enheten."
         } else {

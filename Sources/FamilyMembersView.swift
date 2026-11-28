@@ -70,19 +70,31 @@ struct FamilyMembersView: View {
         .sheet(isPresented: $showingEditor, onDismiss: { editingChild = nil }) {
             if let editingChild {
                 MemberProfileEditor(member: editingChild) { newName, symbolName in
-                    FamilyStore.shared.renameMember(id: editingChild.id, name: newName)
-                    FamilyStore.shared.updateMemberSymbol(id: editingChild.id, symbolName: symbolName)
+                    let store = FamilyStore.shared
+                    store.updateMemberProfile(id: editingChild.id, name: newName, symbolName: symbolName)
                     loadMembers()
-                    return FamilyStore.shared.persistenceError == nil
+                    return store.persistenceError == nil
                 }
             }
         }
         .confirmationDialog(childToDelete?.role == .child ? "Ta bort barnprofilen?" : "Ta bort vuxenprofilen?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
             Button("Ta bort", role: .destructive) {
-                if let childToDelete { FamilyStore.shared.deleteMember(id: childToDelete.id); loadMembers() }
+                if let childToDelete {
+                    let store = FamilyStore.shared
+                    store.deleteMember(id: childToDelete.id)
+                    loadMembers()
+                    if let persistenceError = store.persistenceError {
+                        errorMessage = persistenceError
+                        infoMessage = nil
+                    } else {
+                        errorMessage = nil
+                        infoMessage = "Familjeprofilen har tagits bort."
+                    }
+                    self.childToDelete = nil
+                }
             }
             Button("Avbryt", role: .cancel) { childToDelete = nil }
-        } message: { Text("Profilen tas bort. Kalenderhändelserna finns kvar, men kopplingen till profilen rensas.") }
+        } message: { Text("Profilen och dess personliga hälsouppgifter, vårdbesök, recept och läkemedelshämtningar tas bort. Övriga kalenderhändelser finns kvar, men kopplingen till profilen rensas.") }
     }
 
     private func loadMembers() {
@@ -95,15 +107,33 @@ struct FamilyMembersView: View {
     private func addChild() {
         let clean = newChildName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 80 else { errorMessage = "Ange ett namn på högst 80 tecken."; return }
-        FamilyStore.shared.addChild(name: clean)
-        newChildName = ""; infoMessage = "Barnprofilen har lagts till."; loadMembers()
+        let store = FamilyStore.shared
+        store.addChild(name: clean)
+        loadMembers()
+        if let persistenceError = store.persistenceError {
+            errorMessage = persistenceError
+            infoMessage = nil
+        } else {
+            newChildName = ""
+            errorMessage = nil
+            infoMessage = "Barnprofilen har lagts till."
+        }
     }
 
     private func addAdult() {
         let clean = newAdultName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 80 else { errorMessage = "Namnet får vara högst 80 tecken."; return }
-        FamilyStore.shared.addMember(name: clean, role: .member)
-        newAdultName = ""; infoMessage = "Vuxenprofilen har lagts till."; loadMembers()
+        let store = FamilyStore.shared
+        store.addMember(name: clean, role: .member)
+        loadMembers()
+        if let persistenceError = store.persistenceError {
+            errorMessage = persistenceError
+            infoMessage = nil
+        } else {
+            newAdultName = ""
+            errorMessage = nil
+            infoMessage = "Vuxenprofilen har lagts till."
+        }
     }
 }
 

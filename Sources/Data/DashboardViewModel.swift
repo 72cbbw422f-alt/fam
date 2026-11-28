@@ -67,9 +67,10 @@ final class DashboardViewModel: ObservableObject {
     }
 
     static func project(_ source: [FamilyItem], from date: Date, skipping exceptions: [FamilyOccurrenceException] = [],
-                        overrides: [FamilyOccurrenceOverride] = []) -> [FamilyItem] {
+                        overrides: [FamilyOccurrenceOverride] = [],
+                        timeZone: TimeZone = .current) -> [FamilyItem] {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .current
+        calendar.timeZone = timeZone
 
         return source.compactMap { item in
             let frequency = item.recurrenceFrequency == .none && item.isRecurringYearly
@@ -98,10 +99,11 @@ final class DashboardViewModel: ObservableObject {
                 return item.startsAt >= date ? item : nil
             case .weekly:
                 let interval = calendar.dateComponents([.day], from: item.startsAt, to: date).day ?? 0
-                let weeks = max(0, (interval + 6) / 7)
+                var weeks = max(0, (interval + 6) / 7)
                 next = calendar.date(byAdding: .day, value: weeks * 7, to: item.startsAt)
                 while let candidate = next, candidate < date {
-                    next = calendar.date(byAdding: .day, value: 7, to: candidate)
+                    weeks += 1
+                    next = calendar.date(byAdding: .day, value: weeks * 7, to: item.startsAt)
                 }
             case .monthly:
                 let current = calendar.dateComponents([.year, .month], from: date)
@@ -133,7 +135,12 @@ final class DashboardViewModel: ObservableObject {
                 case .none:
                     return nil
                 case .weekly:
-                    return calendar.date(byAdding: .day, value: 7, to: occurrence)
+                    // Always derive the next week from the series anchor. Adding
+                    // seven days to a normalized DST-gap occurrence (for example
+                    // 02:30 becoming 03:30) would otherwise preserve the drift.
+                    let elapsedDays = calendar.dateComponents([.day], from: item.startsAt, to: occurrence).day ?? 0
+                    let nextWeek = max(0, elapsedDays / 7 + 1)
+                    return calendar.date(byAdding: .day, value: nextWeek * 7, to: item.startsAt)
                 case .monthly:
                     guard let firstOfNextMonth = calendar.date(byAdding: .month, value: 1,
                                                                  to: calendar.dateInterval(of: .month, for: occurrence)?.start ?? occurrence) else {
@@ -160,11 +167,18 @@ final class DashboardViewModel: ObservableObject {
 
                 if let matchingOverride {
                     if matchingOverride.item.startsAt >= date {
-                        projectedCandidates.append(matchingOverride.item)
+                        var projectedOverride = matchingOverride.item
+                        projectedOverride.recurrenceFrequency = frequency
+                        projectedOverride.isRecurringYearly = frequency == .yearly
+                        projectedOverride.recurrenceOccurrenceDate = matchingOverride.occurrenceDate
+                        projectedCandidates.append(projectedOverride)
                     }
                 } else if !isSkipped {
                     var projected = item
                     projected.startsAt = occurrence
+                    projected.recurrenceFrequency = frequency
+                    projected.isRecurringYearly = frequency == .yearly
+                    projected.recurrenceOccurrenceDate = occurrence
                     projectedCandidates.append(projected)
                     break
                 }
@@ -180,7 +194,11 @@ final class DashboardViewModel: ObservableObject {
             projectedCandidates.append(contentsOf: overrides.compactMap { override in
                 guard override.seriesID == item.id,
                       override.item.startsAt >= date else { return nil }
-                return override.item
+                var projectedOverride = override.item
+                projectedOverride.recurrenceFrequency = frequency
+                projectedOverride.isRecurringYearly = frequency == .yearly
+                projectedOverride.recurrenceOccurrenceDate = override.occurrenceDate
+                return projectedOverride
             })
             return projectedCandidates.min { $0.startsAt < $1.startsAt }
         }.sorted { $0.startsAt < $1.startsAt }

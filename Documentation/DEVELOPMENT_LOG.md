@@ -1374,3 +1374,11 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till regressionstest för lyckad borttagning/omladdning samt separat test för rollback vid persistensfel.
 - Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/LocalFamilyStoreTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: källkod och test har uppdaterats via GitHub och ska återhämtas för kontroll. Ingen lokal Swift/Xcode-körning; CI för senaste head inväntas. Ingen IPA och ingen merge.
+
+## 2026-11-28 – hålla presentidéer synkroniserade med födelsedagar
+- Fortsatt granskning av kalenderhistorik visade att presentidéer kunde ligga kvar när deras födelsedagspost raderades eller ändrades till en vanlig kalenderaktivitet.
+- Rensar nu presentidéer kopplade till födelsedagsposten när posten tas bort eller konverteras till annan aktivitetstyp. Redigering av datum/titel medan posten fortfarande är en födelsedag behåller idéerna.
+- Presentidéerna ingår i rollback-snapshot för både kalenderredigering och borttagning.
+- Lade till regressionstest för borttagning av födelsedag och konvertering till vanlig aktivitet.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/LocalFamilyStoreTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: ändringar återhämtas och granskas via GitHub. Ingen lokal Swift/Xcode-körning; CI för aktuell head inväntas. Ingen IPA och ingen merge.

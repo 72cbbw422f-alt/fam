@@ -1329,3 +1329,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till regressionstester för borttagning och typändring, inklusive kontroll efter omladdning för borttagningsfallet.
 - Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: källkod och tester incheckade; testinterpolation kontrollerad i GitHub-filen. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head ännu. Ingen IPA byggd.
+
+## 2026-11-28 – normalisera dubbletter av länkade hälsopåminnelser
+- Granskningen av receptförnyelse visade att upsert-funktionen bara uppdaterade eller tog bort den första påminnelsen för ett visst mål. Om äldre data eller import innehöll flera påminnelser med samma target kunde dubbletter därför överleva, även när receptet markerades som förnyat.
+- Upsert normaliserar nu varje länkad target till högst en aktiv påminnelse. När målet inte längre ska påminnas tas samtliga matchande påminnelser bort.
+- Lade till regressionstest som skapar en dubblett, verifierar att uppdatering lämnar en enda schemalagd påminnelse och att statusen förnyat tar bort den helt.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: kod och test incheckade och återhämtade från GitHub; interpolation kontrollerad. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head ännu.

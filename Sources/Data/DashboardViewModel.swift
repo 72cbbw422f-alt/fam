@@ -187,7 +187,11 @@ final class DashboardViewModel: ObservableObject {
             projectedCandidates.append(contentsOf: overrides.compactMap { override in
                 guard override.seriesID == item.id,
                       override.item.startsAt >= date else { return nil }
-                return override.item
+                var projectedOverride = override.item
+                projectedOverride.recurrenceFrequency = frequency
+                projectedOverride.isRecurringYearly = frequency == .yearly
+                projectedOverride.recurrenceOccurrenceDate = override.occurrenceDate
+                return projectedOverride
             })
             return projectedCandidates.min { $0.startsAt < $1.startsAt }
         }.sorted { $0.startsAt < $1.startsAt }

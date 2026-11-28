@@ -268,7 +268,7 @@ final class HealthReminderSchedulerTests: XCTestCase {
 
     func testPrescriptionRenewalUpsertDeduplicatesAndClearsAllLinkedReminders() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FamiljenPrescriptionReminder-\\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("FamiljenPrescriptionReminder-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))

@@ -550,12 +550,17 @@ final class LocalFamilyStoreTests: XCTestCase {
         )
         let series = try XCTUnwrap(store.items.first)
         let movedDate = originalDate.addingTimeInterval(2 * 86_400)
-        var movedOccurrence = series
-        movedOccurrence.title = "Veckomöte – flyttat"
-        movedOccurrence.startsAt = movedDate
+        var overrideItem = series
+        overrideItem.title = "Veckomöte – flyttat"
+        overrideItem.startsAt = movedDate
         store.saveOccurrenceOverride(
-            seriesID: series.id, occurrenceDate: originalDate, item: movedOccurrence
+            seriesID: series.id, occurrenceDate: originalDate, item: overrideItem
         )
+        let movedOccurrence = try XCTUnwrap(DashboardViewModel.project(
+            store.items, from: originalDate, overrides: store.occurrenceOverrides
+        ).first)
+        XCTAssertEqual(movedOccurrence.recurrenceOccurrenceDate, originalDate)
+        XCTAssertEqual(movedOccurrence.recurrenceFrequency, .weekly)
 
         store.skipOccurrence(of: movedOccurrence)
 
@@ -588,12 +593,15 @@ final class LocalFamilyStoreTests: XCTestCase {
         )
         let series = try XCTUnwrap(store.items.first)
         let movedDate = originalDate.addingTimeInterval(2 * 86_400)
-        var movedOccurrence = series
-        movedOccurrence.title = "Veckomöte – flyttat"
-        movedOccurrence.startsAt = movedDate
+        var overrideItem = series
+        overrideItem.title = "Veckomöte – flyttat"
+        overrideItem.startsAt = movedDate
         store.saveOccurrenceOverride(
-            seriesID: series.id, occurrenceDate: originalDate, item: movedOccurrence
+            seriesID: series.id, occurrenceDate: originalDate, item: overrideItem
         )
+        let movedOccurrence = try XCTUnwrap(DashboardViewModel.project(
+            store.items, from: originalDate, overrides: store.occurrenceOverrides
+        ).first)
         let originalOverrides = store.occurrenceOverrides
 
         try FileManager.default.removeItem(at: directory)

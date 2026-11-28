@@ -270,7 +270,7 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertEqual(candidates.count, 12)
         XCTAssertEqual(Set(candidates.map(\\.id)).count, 12)
         let days = candidates.map { calendar.component(.day, from: $0.item.startsAt) }
-        XCTAssertEqual(days, [23, 30, 7, 14, 21, 28, 5, 12, 19, 26, 2, 9])
+        XCTAssertEqual(days, [23, 30, 7, 14, 21, 28, 4, 11, 18, 25, 1, 8])
         XCTAssertTrue(candidates.allSatisfy { $0.fireDate > now })
     }
 

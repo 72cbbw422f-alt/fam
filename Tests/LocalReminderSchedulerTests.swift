@@ -305,4 +305,43 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertFalse(candidates.contains { $0.item.title == "Privat läkarbesök" })
     }
 
+    func testMonthlyRecurringItemReturnsToAnchorDayAfterShortMonths() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 1, day: 31, hour: 8)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 1, day: 1, hour: 7)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Månadsrutin",
+            details: nil, startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+            isRecurringYearly: false, reminderOffsets: [0], recurrenceFrequency: .monthly)
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
+
+        XCTAssertEqual(candidates.count, 12)
+        let components = candidates.map {
+            calendar.dateComponents([.year, .month, .day], from: $0.item.startsAt)
+        }
+        XCTAssertEqual(components.map(\\.month), Array(1...12))
+        XCTAssertEqual(components.map(\\.day), [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+    }
+
+    func testYearlyLeapDayRecurrenceReturnsToFebruary29InLeapYear() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(year: 2024, month: 2, day: 29, hour: 9)))
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 1, day: 1, hour: 8)))
+        let item = FamilyItem(id: UUID(), familyID: UUID(), title: "Årsdag",
+            details: nil, startsAt: anchor, endsAt: nil, kind: .birthday, memberID: nil,
+            isRecurringYearly: true, reminderOffsets: [0], recurrenceFrequency: .yearly)
+
+        let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
+
+        XCTAssertEqual(candidates.count, 2)
+        let components = candidates.map {
+            calendar.dateComponents([.year, .month, .day], from: $0.item.startsAt)
+        }
+        XCTAssertEqual(components.map(\\.year), [2027, 2028])
+        XCTAssertEqual(components.map(\\.month), [2, 2])
+        XCTAssertEqual(components.map(\\.day), [28, 29])
+    }
+
 }

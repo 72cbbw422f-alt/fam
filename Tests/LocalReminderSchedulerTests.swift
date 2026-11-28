@@ -201,6 +201,45 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertEqual(selected.filter { $0.identifier.hasPrefix("familjen-item-") }.count, 59)
     }
 
+    func testSharedCapacitySelectionUsesIdentifierAsDeterministicTieBreaker() {
+        let fireDate = Date(timeIntervalSince1970: 1_800_000_060)
+        let calendarCandidates = [
+            (identifier: "calendar-c", fireDate: fireDate),
+            (identifier: "calendar-a", fireDate: fireDate)
+        ]
+        let healthCandidates = [
+            (identifier: "health-b", fireDate: fireDate)
+        ]
+
+        let selected = LocalReminderScheduler.selectCandidates(
+            calendar: calendarCandidates,
+            health: healthCandidates,
+            limit: 3,
+            fireDate: { $0.fireDate },
+            identifier: { $0.identifier }
+        )
+
+        XCTAssertEqual(selected.map(\\.identifier), ["calendar-a", "calendar-c", "health-b"])
+    }
+
+    func testSharedCapacitySelectionKeepsNearestCandidatesRegardlessOfInputOrder() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let calendarCandidates = (0..<70).reversed().map { index in
+            (identifier: "calendar-\\(index)", fireDate: now.addingTimeInterval(TimeInterval(index + 10)))
+        }
+        let selected = LocalReminderScheduler.selectCandidates(
+            calendar: calendarCandidates,
+            health: [],
+            limit: 5,
+            fireDate: { $0.fireDate },
+            identifier: { $0.identifier }
+        )
+
+        XCTAssertEqual(selected.map(\\.identifier), [
+            "calendar-0", "calendar-1", "calendar-2", "calendar-3", "calendar-4"
+        ])
+    }
+
     func testSharedCapacitySelectionReturnsNoCandidatesForZeroLimit() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let candidates = [(identifier: "candidate", fireDate: now.addingTimeInterval(60))]

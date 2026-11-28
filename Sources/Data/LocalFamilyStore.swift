@@ -126,6 +126,15 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         guard members.contains(where: { $0.id == id && $0.role != .owner }) else { return }
         let previousMembers = members
         let previousItems = items
+        let previousHealthRecords = healthRecords
+        let previousPrescriptions = healthPrescriptions
+        let previousPickups = medicationPickups
+        let previousProfileInformation = healthProfileInformation
+        let previousReminders = healthReminders
+        let removedRecordIDs = Set(healthRecords.filter { $0.memberID == id }.map(\.id))
+        let removedPrescriptionIDs = Set(healthPrescriptions.filter { $0.memberID == id }.map(\.id))
+        let removedPickupIDs = Set(medicationPickups.filter { $0.memberID == id }.map(\.id))
+
         members.removeAll { $0.id == id }
         // Keep calendar history when a profile is removed; only clear its assignment.
         for index in items.indices {
@@ -134,9 +143,30 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                 items[index].responsibleMemberID = nil
             }
         }
+        // Health data is member-owned and cannot remain valid without its required member.
+        // Remove the profile's health data and linked reminders as one transaction.
+        healthRecords.removeAll { $0.memberID == id }
+        items.removeAll { item in removedRecordIDs.contains(where: { recordID in
+            previousHealthRecords.first(where: { $0.id == recordID })?.calendarItemID == item.id
+        }) }
+        healthPrescriptions.removeAll { $0.memberID == id }
+        medicationPickups.removeAll { $0.memberID == id }
+        healthProfileInformation.removeAll { $0.memberID == id }
+        healthReminders.removeAll { reminder in
+            reminder.memberID == id
+                || (reminder.targetType == .record && reminder.targetID.map(removedRecordIDs.contains) == true)
+                || (reminder.targetType == .prescriptionRenewal && reminder.targetID.map(removedPrescriptionIDs.contains) == true)
+                || (reminder.targetType == .medicationPickup && reminder.targetID.map(removedPickupIDs.contains) == true)
+        }
+
         if !saveToDisk() {
             members = previousMembers
             items = previousItems
+            healthRecords = previousHealthRecords
+            healthPrescriptions = previousPrescriptions
+            medicationPickups = previousPickups
+            healthProfileInformation = previousProfileInformation
+            healthReminders = previousReminders
         }
     }
 

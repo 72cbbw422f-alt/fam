@@ -1231,3 +1231,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Testerna är ännu inte körda i GitHub Actions; inget grönt CI-resultat hävdas för dessa commits.
 - Fysisk iPhone-testning och faktisk notisleverans återstår.
 - PR #11 förblir draft och har inte mergats.
+
+
+## 2026-11-28 – Reminder scheduler review follow-up
+- Corrected the shared-capacity regression test's calendar identifier interpolation so generated identifiers include each candidate index.
+- Prevented occurrence skip/delete flows from scheduling reminders after a failed repository persistence operation. The repository's rollback state is retained and no unnecessary notification reconciliation is started.
+- Verification: source review and GitHub content updates only. No local Xcode/Swift test run was available; latest CI status remains to be checked.
+- Files: `Tests/LocalReminderSchedulerTests.swift`, `Sources/Data/FamilyCalendarViewModel.swift`, `Documentation/DEVELOPMENT_LOG.md`.

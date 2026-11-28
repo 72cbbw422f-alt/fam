@@ -1429,3 +1429,13 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Produktionslogiken ändrades inte eftersom källkodsgranskningen inte visade något belagt fel i dessa två datumregler.
 - Berörd fil: `Tests/LocalReminderSchedulerTests.swift`.
 - Verifiering: testfall och keypaths kontrollerade genom återhämtning från GitHub. Ingen lokal Swift/Xcode-körning; CI-status för den senaste head-commiten är ännu inte verifierad. Ingen IPA och ingen merge.
+
+
+## 2026-11-28 – bevara identiteten för flyttade återkommande tillfällen
+- Granskningen av återkommande undantag hittade ett konkret fel: ett flyttat tillfälle visades som en vanlig engångshändelse eftersom den projicerade posten tappade seriens återkomstfrekvens. Därmed kunde dialogen för borttagning erbjuda borttagning av hela serien i stället för bara tillfället.
+- Samma identitetsförlust gjorde att ett flyttat tillfälle kunde hoppas över med sitt nya datum, trots att undantaget måste knytas till ursprungsdatumet i serien. Det kunde lämna den flyttade posten kvar eller påverka fel förekomst.
+- Lade till det valfria, bakåtkompatibla fältet `recurrenceOccurrenceDate` på `FamilyItem`. Projektionen sätter nu både återkomstfrekvens och ursprungligt förekomstdatum på normala och flyttade förekomster.
+- Kalenderredigeraren skickar ursprungsdatumet när ett redan flyttat tillfälle redigeras igen. Borttagning av en flyttad förekomst tar bort dess override och sparar i stället ett skip-undantag mot ursprungsdatumet. Båda listorna återställs tillsammans om lagringen misslyckas.
+- Lade till regressionstester för identiteten i projektionen, borttagning av ett flyttat tillfälle, beständighet efter omladdning och rollback vid skrivfel.
+- Berörda filer: `Sources/Domain/FamilyModels.swift`, `Sources/Data/DashboardViewModel.swift`, `Sources/Data/LocalFamilyStore.swift`, `Sources/FamilyCalendarView.swift`, `Tests/LocalFamilyStoreTests.swift`.
+- Verifiering: uppdaterade filer och anrop återhämtade från GitHub och granskade på källkodsnivå. Ingen lokal Swift/Xcode-körning; CI för aktuell head är inte verifierad. Ingen IPA och ingen merge.

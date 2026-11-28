@@ -1460,3 +1460,12 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Inställningssidans befintliga aktiverings- och behörighetsflöde är oförändrat. Ingen ny behörighetsdialog introduceras.
 - Berörd fil: `Sources/RootView.swift`.
 - Verifiering: källan uppdaterad på `feature/calendar-reminder-sync`. Ingen Xcode-miljö finns tillgänglig här; SwiftUI-livscykel, Foundation-notifikationen och faktisk omplanering måste verifieras i iOS-simulator/enhet. Ingen IPA och ingen merge.
+
+
+## 2026-11-28 – granskning av levererade och inaktuella lokala notiser
+- Granskade hela schemaläggningsflödet för väntande och levererade notiser, inklusive stabila identifierare, gemensam kapacitetsgräns, uppdatering av befintliga requests och borttagning av föråldrade Familjen-ID:n.
+- Bekräftade att både väntande och levererade notiser ingår i samma städning. Notiser som inte längre motsvarar en önskad kalender- eller hälsopåminnelse tas bort, medan andra appars notiser lämnas orörda.
+- Bekräftade att städningen sker först efter att samtliga önskade notiser har lagts till utan fel. Om någon add misslyckas behålls gamla requests, vilket prioriterar att inte förlora fungerande påminnelser vid ett tillfälligt fel.
+- Granskningen identifierade inget verifierat produktionsfel som motiverar ändring av denna logik. Ingen produktionskod ändrades.
+- Berörd fil: `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: scheduler- och testkällor återhämtade från aktuell GitHub-branch och granskade. GitHub combined status och tillgänglig PR-workflow-listning saknar checks för head `0b433aedf3ff6c8248d0bf4943fb257e1f7e65d7`. Ingen lokal Xcode/SwiftUI-körning, ingen IPA och ingen merge.

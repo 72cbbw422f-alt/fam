@@ -212,8 +212,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let previousSkippedOccurrences = skippedOccurrences
         let previousOccurrenceOverrides = occurrenceOverrides
         let previousHealthRecords = healthRecords
+        let previousGiftIdeas = giftIdeas
         let previousHealthReminders = healthReminders
         if let id, let index = items.firstIndex(where: { $0.id == id }) {
+            let previousKind = items[index].kind
             let previousSeriesStart = items[index].startsAt
             let previousFrequency = items[index].recurrenceFrequency
             items[index].title = clean
@@ -229,6 +231,9 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             items[index].recurrenceFrequency = recurrenceFrequency == .none && recurring ? .yearly : recurrenceFrequency
             items[index].isRecurringYearly = items[index].recurrenceFrequency == .yearly
             items[index].reminderOffsets = reminderOffsets
+            if previousKind == .birthday && kind != .birthday {
+                giftIdeas.removeAll { $0.birthdayItemID == id }
+            }
             if previousSeriesStart != startsAt || previousFrequency != items[index].recurrenceFrequency {
                 skippedOccurrences.removeAll { $0.seriesID == id }
                 occurrenceOverrides.removeAll { $0.seriesID == id }
@@ -268,20 +273,26 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         }
         if !saveToDisk() {
             items = previousItems
+            giftIdeas = previousGiftIdeas
             skippedOccurrences = previousSkippedOccurrences
             occurrenceOverrides = previousOccurrenceOverrides
             healthRecords = previousHealthRecords
             healthReminders = previousHealthReminders
+            giftIdeas = previousGiftIdeas
         }
     }
 
     func deleteItem(_ item: FamilyItem) {
         let previousItems = items
+        let previousGiftIdeas = giftIdeas
         let previousSkippedOccurrences = skippedOccurrences
         let previousOccurrenceOverrides = occurrenceOverrides
         let previousHealthRecords = healthRecords
         let previousHealthReminders = healthReminders
         items.removeAll { $0.id == item.id }
+        if item.kind == .birthday {
+            giftIdeas.removeAll { $0.birthdayItemID == item.id }
+        }
         skippedOccurrences.removeAll { $0.seriesID == item.id }
         occurrenceOverrides.removeAll { $0.seriesID == item.id }
         // A calendar deletion cancels the linked health appointment but keeps its history.

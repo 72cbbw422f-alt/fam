@@ -1420,3 +1420,12 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till regressionstest som bekräftar att en privat vårdpost inte genererar en lokal kalendernotis medan en vanlig familjeaktivitet fortfarande gör det.
 - Berörda filer: Sources/LocalReminderScheduler.swift, Sources/Data/FamilyStore.swift, Sources/Data/FamilyCalendarViewModel.swift, Sources/FamilySettingsView.swift, Sources/RootView.swift, Tests/LocalReminderSchedulerTests.swift, Documentation/DEVELOPMENT_LOG.md.
 - Verifiering: samtliga kända produktionsanrop och de uppdaterade filerna har hämtats tillbaka från GitHub och kontrollerats på källkodsnivå. Ingen lokal Xcode/Swift-körning; CI för senaste head är inte verifierad. Ingen IPA och ingen merge.
+
+
+## 2026-11-28 – regressionstäckning för månadsdatum och skottår
+- Fortsatt granskning av återkommande kalenderpåminnelser med fokus på månadsserier som startar den 29:e–31:a och årliga serier som startar den 29 februari.
+- Lade till test som följer en månadsserie från 31 januari genom samtliga 12 månader. Det verifierar att korta månader klampar datumet (exempelvis 28 februari) men att serien återgår till ursprungsdagen när månaden tillåter det (31 mars).
+- Lade till test av en årlig 29-februari-serie genom den rullande 12-förekomstkön: 28 februari under icke-skottår och 29 februari under skottår.
+- Produktionslogiken ändrades inte eftersom källkodsgranskningen inte visade något belagt fel i dessa två datumregler.
+- Berörd fil: `Tests/LocalReminderSchedulerTests.swift`.
+- Verifiering: testfall och keypaths kontrollerade genom återhämtning från GitHub. Ingen lokal Swift/Xcode-körning; CI-status för den senaste head-commiten är ännu inte verifierad. Ingen IPA och ingen merge.

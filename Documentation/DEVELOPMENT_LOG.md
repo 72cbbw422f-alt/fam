@@ -1393,8 +1393,15 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Verifiering: källkod, testfall och dokumentation har återhämtats från GitHub och kontrollerats på filnivå. Ingen lokal Xcode/Swift-körning; aktuell CI är inte verifierad. Ingen IPA och ingen merge.
 
 ## 2026-11-28 – transaktionssäker profilskapning och tydlig lagringsfeedback
-- Granskning av familjeprofilernas CRUD-flöde visade att \`addChild\` och \`addMember\` lade till profiler i minnet även om snapshot-skrivningen misslyckades. Båda operationerna återställer nu medlemslistan vid skrivfel.
+- Granskning av familjeprofilernas CRUD-flöde visade att `addChild` och `addMember` lade till profiler i minnet även om snapshot-skrivningen misslyckades. Båda operationerna återställer nu medlemslistan vid skrivfel.
 - Familjeinställningarnas vy visar nu lagringsfelet vid misslyckad profilskapning eller borttagning i stället för att visa ett falskt framgångsmeddelande. Inmatningen behålls när skapningen misslyckas.
 - Lade till regressionstest som verifierar rollback för både barn- och vuxenprofil när lagringen blockeras.
-- Berörda filer: \`Sources/Data/LocalFamilyStore.swift\`, \`Sources/FamilyMembersView.swift\`, \`Tests/LocalFamilyStoreTests.swift\`, \`Documentation/DEVELOPMENT_LOG.md\`.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Sources/FamilyMembersView.swift`, `Tests/LocalFamilyStoreTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: uppdaterade filer återhämtas och granskas via GitHub. Ingen lokal Xcode/Swift-körning; CI för senaste head inväntas. Ingen IPA och ingen merge.
+
+## 2026-11-28 – atomisk uppdatering av familjeprofil
+- Profilredigeraren sparade tidigare namn och ikon i två separata skrivningar. Vid ett tillfälligt lagringsfel kunde endast en av ändringarna bli beständig. Införde updateMemberProfile som validerar och sparar båda fälten i en enda transaktion med rollback.
+- Profilredigeraren använder nu den atomiska metoden.
+- Lade till regressionstest för lyckad uppdatering och rollback av både namn och ikon vid skrivfel.
+- Berörda filer: Sources/Data/LocalFamilyStore.swift, Sources/FamilyMembersView.swift, Tests/LocalFamilyStoreTests.swift, Documentation/DEVELOPMENT_LOG.md.
+- Verifiering: filer hämtas och granskas via GitHub. Ingen lokal Xcode/Swift-körning; aktuell CI är inte verifierad. Ingen IPA och ingen merge.

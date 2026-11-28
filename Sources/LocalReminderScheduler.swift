@@ -159,7 +159,7 @@ enum LocalReminderScheduler {
                          skipping exceptions: [FamilyOccurrenceException] = [],
                          overrides: [FamilyOccurrenceOverride] = [],
                          healthReminders: [HealthReminder] = [],
-                         privateHealthCalendarIDs: Set<UUID> = []) async {
+                         privateHealthCalendarIDs: Set<UUID>) async {
         let previous = operationTask
         let current = Task { @MainActor in
             await previous?.value

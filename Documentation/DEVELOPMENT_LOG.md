@@ -1485,3 +1485,13 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Ändrade metodens åtkomst från private till intern så att vyn kan återanvända den.
 - Berörda filer: `Sources/FamilyCalendarView.swift`, `Sources/Data/FamilyCalendarViewModel.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: båda uppdaterade källfilerna återhämtade från aktuell branch och kontrollerade; det gamla direkta anropet är ersatt. En ny CI-körning behövs för att verifiera kompilering och tester. Ingen IPA och ingen merge.
+
+
+## 2026-11-28 – korrigera förväntningar i kalenderpåminnelsernas regressionstester
+- Exakt-head CI-run #935 körde 136 XCTest och identifierade sju assertion-fel i tre testfall. Övriga tester i körningen passerade.
+- Analysen visade att produktionslogiken gav rätt resultat: två flyttade serieundantag ska båda ersätta sina ursprungliga datum och sorteras efter de nya påminnelsetiderna; obsolete-ID:n returneras deterministiskt sorterade; en årlig 29-februari-serie ska återgå till 29 februari under skottåren 2028, 2032 och 2036.
+- Rättade därför endast testförväntningarna i `Tests/LocalReminderSchedulerTests.swift`. Ingen produktionskod ändrades.
+- CI-run #935:s separata iPhone-jobb byggde och paketerade en unsigned IPA och laddade upp artefakten. Simulatorjobbet stoppades av de felaktiga testförväntningarna före simulatorbygget.
+- Berörda filer: `Tests/LocalReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Testresultat före rättelse: 136 tester, 7 assertion-fel i 3 testfall. Efter rättelsen krävs ny CI-körning; inget nytt testresultat eller IPA från den nya headen är ännu verifierat.
+- Commit med testkorrigering: `cefb21ec4a5d061558ee18a33f75c72ccfe4af13`. Ingen merge; PR #11 är fortsatt Draft.

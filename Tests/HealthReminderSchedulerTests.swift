@@ -265,4 +265,51 @@ final class HealthReminderSchedulerTests: XCTestCase {
         XCTAssertFalse(store.healthReminders.contains(where: { $0.id == reminder.id }))
     }
 
+
+    func testPrescriptionRenewalUpsertDeduplicatesAndClearsAllLinkedReminders() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenPrescriptionReminder-\\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let familyID = try XCTUnwrap(store.family?.id)
+        let memberID = try XCTUnwrap(store.members.first?.id)
+        let prescriptionID = UUID()
+        let prescription = HealthPrescription(
+            id: prescriptionID, familyID: familyID, memberID: memberID,
+            medicationName: "Läkemedel", renewalDueAt: Date().addingTimeInterval(86_400),
+            renewalStatus: .due
+        )
+        store.saveHealthPrescription(prescription)
+        XCTAssertEqual(store.healthReminders.filter {
+            $0.targetType == .prescriptionRenewal && $0.targetID == prescriptionID
+        }.count, 1)
+
+        let duplicate = HealthReminder(
+            familyID: familyID, memberID: memberID, targetType: .prescriptionRenewal,
+            targetID: prescriptionID, title: "Gammal dubblett",
+            firesAt: Date().addingTimeInterval(172_800)
+        )
+        store.saveHealthReminder(duplicate)
+        XCTAssertEqual(store.healthReminders.filter {
+            $0.targetType == .prescriptionRenewal && $0.targetID == prescriptionID
+        }.count, 2)
+
+        var rescheduled = try XCTUnwrap(store.healthPrescriptions.first)
+        rescheduled.renewalDueAt = Date().addingTimeInterval(259_200)
+        store.saveHealthPrescription(rescheduled)
+        let linked = store.healthReminders.filter {
+            $0.targetType == .prescriptionRenewal && $0.targetID == prescriptionID
+        }
+        XCTAssertEqual(linked.count, 1)
+        XCTAssertEqual(linked.first?.firesAt, rescheduled.renewalDueAt)
+
+        rescheduled.renewalStatus = .renewed
+        store.saveHealthPrescription(rescheduled)
+        XCTAssertFalse(store.healthReminders.contains {
+            $0.targetType == .prescriptionRenewal && $0.targetID == prescriptionID
+        })
+    }
+
 }

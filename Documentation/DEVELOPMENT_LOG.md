@@ -1411,3 +1411,12 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till metoden i FamilyRepository och exponerade den via FamilyStore, som därefter uppdaterar publicerat UI-tillstånd genom refresh.
 - Berörda filer: Sources/Data/FamilyRepository.swift, Sources/Data/FamilyStore.swift, Sources/Data/LocalFamilyStore.swift, Sources/FamilyMembersView.swift, Tests/LocalFamilyStoreTests.swift, Documentation/DEVELOPMENT_LOG.md.
 - Verifiering: kontrakt, fasad och anrop har hämtats tillbaka från GitHub och jämförts. Ingen lokal Xcode/Swift-körning; CI för senaste head inväntas. Ingen IPA och ingen merge.
+
+## 2026-11-28 – integritetsskydd för privata hälsoärenden i lokala notiser
+- Fortsatt granskning hittade att privata hälsoärenden filtrerades bort från kalender- och dashboardvyerna men fortfarande kunde skickas till den lokala notisschemaläggaren via den gemensamma kalenderlistan.
+- Lade till en gemensam filtreringsfunktion i LocalReminderScheduler som exkluderar kalenderposter länkade till hälsoärenden med visibility .personal.
+- Gjorde privateHealthCalendarIDs till ett obligatoriskt argument för schemaläggning så att varje anrop måste ta ställning till privata kalenderkopplingar.
+- Uppdaterade samtliga nuvarande produktionsanrop i FamilyStore, FamilyCalendarViewModel, FamilySettingsView och RootView. HealthReminders fortsätter schemaläggas enligt sina egna inställningar.
+- Lade till regressionstest som bekräftar att en privat vårdpost inte genererar en lokal kalendernotis medan en vanlig familjeaktivitet fortfarande gör det.
+- Berörda filer: Sources/LocalReminderScheduler.swift, Sources/Data/FamilyStore.swift, Sources/Data/FamilyCalendarViewModel.swift, Sources/FamilySettingsView.swift, Sources/RootView.swift, Tests/LocalReminderSchedulerTests.swift, Documentation/DEVELOPMENT_LOG.md.
+- Verifiering: samtliga kända produktionsanrop och de uppdaterade filerna har hämtats tillbaka från GitHub och kontrollerats på källkodsnivå. Ingen lokal Xcode/Swift-körning; CI för senaste head är inte verifierad. Ingen IPA och ingen merge.

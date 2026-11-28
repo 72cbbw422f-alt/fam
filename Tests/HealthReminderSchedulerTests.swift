@@ -190,4 +190,12 @@ final class HealthReminderSchedulerTests: XCTestCase {
 
         XCTAssertEqual(obsolete, ["familjen-health-health-2"])
     }
+
+    func testReminderReconciliationRequiresSuccessfulPersistence() {
+        XCTAssertTrue(FamilyStore.shouldRescheduleReminders(afterPersistenceError: nil))
+        XCTAssertFalse(FamilyStore.shouldRescheduleReminders(
+            afterPersistenceError: "Ändringen kunde inte sparas."
+        ))
+    }
+
 }

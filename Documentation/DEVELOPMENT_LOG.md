@@ -1285,3 +1285,14 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Berörd fil: `Sources/FamilySettingsView.swift`.
 - Commit: `528ee16ff54393ca8298f6e8861912894a11eb74`.
 - Verifiering: kodändringen är incheckad på `feature/calendar-reminder-sync`. Ingen lokal Xcode/Swift-körning; CI för denna commit inväntas. Ingen fysisk iPhone-testning eller IPA.
+
+
+
+## 2026-11-28 – granskning av tidszoner, sommartid och levererade notiser
+- Granskade hur kalender- och hälsopåminnelser räknar fram utskickstid och hur den skickas till UserNotifications.
+- Kandidater använder ett absolut `Date`-värde. Påminnelseintervall dras av i sekunder från händelsens absoluta starttid; veckovis/månadsvis/årlig återkomst projiceras däremot med en gregoriansk `Calendar` i aktuell tidszon för att behålla lokal kalenderdag och klocktid.
+- Schemaläggaren bygger kompletta datumkomponenter (år, månad, dag, timme, minut, sekund) från det beräknade utskickstillfället och sätter uttryckligen både kalender och tidszon. Granskningen hittade därför ingen belagd DST-/tidszonsbugg som motiverar att byta till en annan triggerstrategi.
+- Befintliga levererade Familjen-notiser tas med i städningen. När utskickstiden passerat skapas inte längre kandidaten (den måste ligga efter `now`), och dess levererade notis tas därmed bort som inaktuell vid nästa lyckade schemaläggning. Önskade notiser rensas inte om ett tillägg misslyckas.
+- Inga kodändringar gjordes i denna granskning. DST-beteende över verkliga tidsomställningar och resor behöver fortfarande verifieras på enhet/simulator; denna kodläsning är inte ett runtime-test.
+- Berörda filer granskade: `Sources/LocalReminderScheduler.swift`, `Sources/Data/DashboardViewModel.swift`, `Tests/LocalReminderSchedulerTests.swift`.
+- Verifiering: endast källkodsgranskning. Ingen Swift/Xcode-körning; CI saknar fortfarande körning/status för aktuell head.

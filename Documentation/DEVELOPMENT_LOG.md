@@ -1439,3 +1439,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till regressionstester för identiteten i projektionen, borttagning av ett flyttat tillfälle, beständighet efter omladdning och rollback vid skrivfel.
 - Berörda filer: `Sources/Domain/FamilyModels.swift`, `Sources/Data/DashboardViewModel.swift`, `Sources/Data/LocalFamilyStore.swift`, `Sources/FamilyCalendarView.swift`, `Tests/LocalFamilyStoreTests.swift`.
 - Verifiering: uppdaterade filer och anrop återhämtade från GitHub och granskade på källkodsnivå. Ingen lokal Swift/Xcode-körning; CI för aktuell head är inte verifierad. Ingen IPA och ingen merge.
+
+## 2026-11-28 – regressionstäckning för flera flyttade tillfällen i notiskön
+- Utökade granskningen av återkommande undantag med en serie som har två separata flyttade tillfällen och en vanlig förekomst mellan dem.
+- Lade till test som kontrollerar att notiskön behåller kronologisk ordning, använder respektive flyttat datum och bevarar ursprungsdatumet för båda undantagen. Testet kontrollerar även att den vanliga förekomsten mellan undantagen inte försvinner.
+- Ingen produktionskod ändrades eftersom den granskade sekvenseringen hanterar dessa skilda datum korrekt.
+- Berörd fil: `Tests/LocalReminderSchedulerTests.swift`.
+- Verifiering: testet är incheckat på `feature/calendar-reminder-sync`. Ingen lokal Xcode/Swift-körning; CI för aktuell head är inte verifierad. Ingen IPA och ingen merge.

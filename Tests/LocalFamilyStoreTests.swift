@@ -1433,7 +1433,7 @@ final class LocalFamilyStoreTests: XCTestCase {
         store.addGiftIdea(memberID: first.id, birthdayItemID: birthday.id, title: "Fel person", note: nil)
         XCTAssertTrue(store.giftIdeas.isEmpty)
         store.addGiftIdea(memberID: second.id, birthdayItemID: birthday.id, title: "Rätt person", note: nil)
-        XCTAssertEqual(store.giftIdeas.map(\\.memberID), [second.id])
+        XCTAssertEqual(store.giftIdeas.map(\.memberID), [second.id])
     }
 
 }

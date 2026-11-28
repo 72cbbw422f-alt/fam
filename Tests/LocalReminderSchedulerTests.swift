@@ -335,13 +335,13 @@ final class LocalReminderSchedulerTests: XCTestCase {
 
         let candidates = LocalReminderScheduler.makeCandidates(for: [item], now: now)
 
-        XCTAssertEqual(candidates.count, 2)
+        XCTAssertEqual(candidates.count, 12)
         let components = candidates.map {
             calendar.dateComponents([.year, .month, .day], from: $0.item.startsAt)
         }
-        XCTAssertEqual(components.map(\.year), [2027, 2028])
-        XCTAssertEqual(components.map(\.month), [2, 2])
-        XCTAssertEqual(components.map(\.day), [28, 29])
+        XCTAssertEqual(components.map(\.year), Array(2027...2038))
+        XCTAssertEqual(components.map(\.month), Array(repeating: 2, count: 12))
+        XCTAssertEqual(components.map(\.day), [28, 29] + Array(repeating: 28, count: 10))
     }
 
 }

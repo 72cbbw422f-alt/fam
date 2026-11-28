@@ -1436,4 +1436,22 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(store.giftIdeas.map(\.memberID), [second.id])
     }
 
+
+    func testFailedFamilyMemberCreationRollsBackChildAndAdultProfiles() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let originalMembers = store.members
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+
+        store.addChild(name: "Cleo")
+        store.addMember(name: "Villemo", role: .member)
+
+        XCTAssertEqual(store.members, originalMembers)
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
+    }
+
 }

@@ -126,6 +126,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         guard members.contains(where: { $0.id == id && $0.role != .owner }) else { return }
         let previousMembers = members
         let previousItems = items
+        let previousGiftIdeas = giftIdeas
+        let previousChristmasGifts = christmasGifts
         let previousHealthRecords = healthRecords
         let previousPrescriptions = healthPrescriptions
         let previousPickups = medicationPickups
@@ -136,6 +138,12 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let removedPickupIDs = Set(medicationPickups.filter { $0.memberID == id }.map(\.id))
 
         members.removeAll { $0.id == id }
+        // Gift ideas belong to the member/birthday pair and cannot outlive that profile.
+        giftIdeas.removeAll { $0.memberID == id }
+        // Keep Christmas gift history, but clear an assignment to the removed member.
+        for index in christmasGifts.indices where christmasGifts[index].responsibleMemberID == id {
+            christmasGifts[index].responsibleMemberID = nil
+        }
         // Keep calendar history when a profile is removed; only clear its assignment.
         for index in items.indices {
             items[index].memberIDs.removeAll { $0 == id }
@@ -162,6 +170,8 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         if !saveToDisk() {
             members = previousMembers
             items = previousItems
+            giftIdeas = previousGiftIdeas
+            christmasGifts = previousChristmasGifts
             healthRecords = previousHealthRecords
             healthPrescriptions = previousPrescriptions
             medicationPickups = previousPickups

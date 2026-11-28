@@ -1265,3 +1265,13 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till regressionstest som verifierar att planerat besök skapar kalenderpost och att statusövergång till genomfört respektive avbokat tar bort kalenderposten utan att radera hälsoärendet.
 - Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: ändringar incheckade på `feature/calendar-reminder-sync`; ingen lokal Swift/Xcode-körning. CI-status för aktuell gren/head behöver inväntas. Ingen merge.
+
+
+## 2026-11-28 – avslutade hälsoärenden städar även fristående påminnelser
+- Fortsatt granskning av hälsoflödet visade att record-kopplade HealthReminder kunde leva kvar efter att ett ärende markerats genomfört eller avbokat, trots att kalenderposten togs bort.
+- Vid status genomfört/avbokat tas nu även påminnelser med targetType `record` och targetID för ärendet bort. Historikposten bevaras.
+- Rollback vid misslyckad lagring återställer även påminnelselistan.
+- Regressionstest tillagt för att kontrollera att record-påminnelsen försvinner både ur minnet och efter omladdning från disk.
+- Inställningstexten korrigerad: iOS frågar om notisbehörighet när användaren aktiverar lokala påminnelser första gången, inte vid första appstart.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Sources/FamilySettingsView.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: ändringarna incheckade på `feature/calendar-reminder-sync`. Ingen Swift/Xcode-körning; CI-status saknas för senaste head. Ingen merge och ingen IPA.

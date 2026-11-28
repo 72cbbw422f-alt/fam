@@ -1446,3 +1446,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Ingen produktionskod ändrades eftersom den granskade sekvenseringen hanterar dessa skilda datum korrekt.
 - Berörd fil: `Tests/LocalReminderSchedulerTests.swift`.
 - Verifiering: testet är incheckat på `feature/calendar-reminder-sync`. Ingen lokal Xcode/Swift-körning; CI för aktuell head är inte verifierad. Ingen IPA och ingen merge.
+
+## 2026-11-28 – bevara veckoseriernas klockslag efter sommartidsomställning
+- Reproducerade ett fel i veckovis återkomst med tidszonen Europe/Stockholm: när ett ankarklockslag 02:30 hamnade i vårens DST-gap normaliserades den förekomsten till 03:30. Nästa förekomster beräknades tidigare från föregående förekomst och kunde därför fortsätta på 03:30 permanent.
+- Ändrade veckoberäkningen så att nästa förekomst alltid räknas från seriens ursprungliga startdatum och veckoförskjutning. En förekomst som inte existerar lokalt på omställningsdagen kan fortfarande normaliseras av Foundation, men den efterföljande veckan återgår till seriens ursprungliga väggklockslag.
+- Lade till ett valfritt tidszonsargument i projektionsfunktionen för deterministiska tester och ett regressionstest för 21–28 mars–4 april 2027 i Europe/Stockholm.
+- Berörda filer: `Sources/Data/DashboardViewModel.swift`, `Tests/LocalReminderSchedulerTests.swift`.
+- Verifiering: felet reproducerat med Swift 6.2.1/Foundation på Linux före ändringen. Kod, test och dokumentation incheckade på `feature/calendar-reminder-sync`; fulla iOS/Xcode-tester kan inte köras i denna miljö. CI för aktuell head måste kontrolleras. Ingen IPA och ingen merge.

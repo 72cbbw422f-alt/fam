@@ -1321,3 +1321,11 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Lade till ett fokuserat regressionstest för både lyckad och misslyckad persistensstatus.
 - Berörda filer: `Sources/Data/FamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: kod och test incheckade på `feature/calendar-reminder-sync`. Ingen lokal Swift/Xcode-körning; CI för senaste head inväntas. Ingen IPA eller fysisk enhetstestning.
+
+## 2026-11-28 – städa record-påminnelser när kalenderkopplad vårdtid avbokas
+- Hittade en livscykellucka: när en kalenderpost som representerar ett vårdbesök togs bort eller ändrades till en vanlig händelse markerades vårdposten som avbokad, men separata `HealthReminder` kopplade till vårdposten kunde ligga kvar.
+- Både borttagning och ändring av kalenderpost tar nu bort record-påminnelser för den avbokade vårdposten. Historikposten bevaras med status avbokad.
+- Lagringsrollback återställer även påminnelselistan om skrivningen misslyckas.
+- Lade till regressionstester för borttagning och typändring, inklusive kontroll efter omladdning för borttagningsfallet.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/HealthReminderSchedulerTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: källkod och tester incheckade; testinterpolation kontrollerad i GitHub-filen. Ingen lokal Swift/Xcode-körning och inget CI-resultat för aktuell head ännu. Ingen IPA byggd.

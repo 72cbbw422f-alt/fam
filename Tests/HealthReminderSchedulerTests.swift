@@ -316,7 +316,7 @@ final class HealthReminderSchedulerTests: XCTestCase {
     func testCompletedOrCancelledMedicationPickupRemovesLinkedReminder() throws {
         for status in [MedicationPickupStatus.collected, .cancelled] {
             let directory = FileManager.default.temporaryDirectory
-                .appendingPathComponent("FamiljenPickupStatus-\\(UUID().uuidString)", isDirectory: true)
+                .appendingPathComponent("FamiljenPickupStatus-\(UUID().uuidString)", isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             defer { try? FileManager.default.removeItem(at: directory) }
             let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
@@ -344,7 +344,7 @@ final class HealthReminderSchedulerTests: XCTestCase {
 
     func testDeletingMedicationPickupRemovesLinkedReminder() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FamiljenPickupDelete-\\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("FamiljenPickupDelete-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
@@ -370,7 +370,7 @@ final class HealthReminderSchedulerTests: XCTestCase {
 
     func testDeletingPrescriptionPreservesPickupHistoryAndRemovesRenewalReminder() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("FamiljenPrescriptionDelete-\\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("FamiljenPrescriptionDelete-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))

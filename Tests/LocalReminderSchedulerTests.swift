@@ -300,8 +300,8 @@ final class LocalReminderSchedulerTests: XCTestCase {
         )
         let candidates = LocalReminderScheduler.makeCandidates(for: visible, now: now)
 
-        XCTAssertEqual(visible.map(\\.id), [sharedID])
-        XCTAssertEqual(candidates.map(\\.item.id), [sharedID])
+        XCTAssertEqual(visible.map(\.id), [sharedID])
+        XCTAssertEqual(candidates.map(\.item.id), [sharedID])
         XCTAssertFalse(candidates.contains { $0.item.title == "Privat läkarbesök" })
     }
 

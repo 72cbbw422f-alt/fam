@@ -345,6 +345,43 @@ final class LocalReminderSchedulerTests: XCTestCase {
         XCTAssertFalse(candidates.contains { $0.item.title == "Privat läkarbesök" })
     }
 
+    func testWeeklyRecurrenceReturnsToAnchorWallTimeAfterSpringDSTGap() throws {
+        let stockholm = try XCTUnwrap(TimeZone(identifier: "Europe/Stockholm"))
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = stockholm
+        let anchor = try XCTUnwrap(calendar.date(from: DateComponents(
+            year: 2027, month: 3, day: 21, hour: 2, minute: 30
+        )))
+        let firstSearch = anchor.addingTimeInterval(1)
+        let first = try XCTUnwrap(DashboardViewModel.project(
+            [FamilyItem(id: UUID(), familyID: UUID(), title: "Söndagsmöte", details: nil,
+                startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+                isRecurringYearly: false, reminderOffsets: [0],
+                recurrenceFrequency: .weekly)],
+            from: firstSearch,
+            timeZone: stockholm
+        ).first)
+        let firstComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute],
+                                                        from: first.startsAt)
+        XCTAssertEqual(firstComponents.day, 28)
+        XCTAssertEqual(firstComponents.hour, 3) // 02:30 does not exist on spring-forward day.
+
+        let second = try XCTUnwrap(DashboardViewModel.project(
+            [FamilyItem(id: first.id, familyID: first.familyID, title: "Söndagsmöte", details: nil,
+                startsAt: anchor, endsAt: nil, kind: .event, memberID: nil,
+                isRecurringYearly: false, reminderOffsets: [0],
+                recurrenceFrequency: .weekly)],
+            from: first.startsAt.addingTimeInterval(1),
+            timeZone: stockholm
+        ).first)
+        let secondComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute],
+                                                         from: second.startsAt)
+        XCTAssertEqual(secondComponents.day, 4)
+        XCTAssertEqual(secondComponents.month, 4)
+        XCTAssertEqual(secondComponents.hour, 2)
+        XCTAssertEqual(secondComponents.minute, 30)
+    }
+
     func testMonthlyRecurringItemReturnsToAnchorDayAfterShortMonths() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .current

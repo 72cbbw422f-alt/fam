@@ -360,12 +360,39 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             deleteItem(item)
             return
         }
-        guard !skippedOccurrences.contains(where: {
-            $0.seriesID == item.id && Calendar.current.isDate($0.occurrenceDate, inSameDayAs: item.startsAt)
-        }) else { return }
-        let previous = skippedOccurrences
-        skippedOccurrences.append(FamilyOccurrenceException(seriesID: item.id, occurrenceDate: item.startsAt))
-        if !saveToDisk() { skippedOccurrences = previous }
+
+        let calendar = Calendar.current
+        // A moved occurrence is displayed at its new date, but its exception
+        // must be stored against the original date in the recurring series.
+        let matchingOverride = occurrenceOverrides.first {
+            $0.seriesID == item.id
+                && calendar.isDate($0.item.startsAt, inSameDayAs: item.startsAt)
+        }
+        let originalOccurrenceDate = matchingOverride?.occurrenceDate ?? item.startsAt
+        let alreadySkipped = skippedOccurrences.contains {
+            $0.seriesID == item.id
+                && calendar.isDate($0.occurrenceDate, inSameDayAs: originalOccurrenceDate)
+        }
+        guard matchingOverride != nil || !alreadySkipped else { return }
+
+        let previousSkippedOccurrences = skippedOccurrences
+        let previousOccurrenceOverrides = occurrenceOverrides
+        if matchingOverride != nil {
+            occurrenceOverrides.removeAll {
+                $0.seriesID == item.id
+                    && calendar.isDate($0.occurrenceDate, inSameDayAs: originalOccurrenceDate)
+            }
+        }
+        if !alreadySkipped {
+            skippedOccurrences.append(FamilyOccurrenceException(
+                seriesID: item.id, occurrenceDate: originalOccurrenceDate
+            ))
+        }
+
+        if !saveToDisk() {
+            skippedOccurrences = previousSkippedOccurrences
+            occurrenceOverrides = previousOccurrenceOverrides
+        }
     }
 
     func addShoppingItem(_ title: String) {

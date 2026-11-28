@@ -126,7 +126,7 @@ final class FamilyCalendarViewModel: ObservableObject {
 
     /// Occurrence edits and exceptions are written directly through the repository,
     /// so they must explicitly refresh the device's pending local reminders.
-    private func rescheduleLocalRemindersIfEnabled() async {
+    func rescheduleLocalRemindersIfEnabled() async {
         guard UserDefaults.standard.bool(forKey: "familjen.localRemindersEnabled") else { return }
         await LocalReminderScheduler.schedule(
             for: store.items,

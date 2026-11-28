@@ -1469,3 +1469,11 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Granskningen identifierade inget verifierat produktionsfel som motiverar ändring av denna logik. Ingen produktionskod ändrades.
 - Berörd fil: `Documentation/DEVELOPMENT_LOG.md`.
 - Verifiering: scheduler- och testkällor återhämtade från aktuell GitHub-branch och granskade. GitHub combined status och tillgänglig PR-workflow-listning saknar checks för head `0b433aedf3ff6c8248d0bf4943fb257e1f7e65d7`. Ingen lokal Xcode/SwiftUI-körning, ingen IPA och ingen merge.
+
+
+## 2026-11-28 – åtgärda obligatoriskt argument i kalenderns notisuppdatering
+- GitHub Actions för head `7e8fa1cfb42ad306488641a0b8d4ff6040f3207c` misslyckades i både simulator- och iPhone-bygget: `FamilyCalendarView.swift` anropade `LocalReminderScheduler.schedule` utan det numera obligatoriska argumentet `privateHealthCalendarIDs`.
+- Flyttade kalenderns vyanrop till den befintliga samordnade metoden i `FamilyCalendarViewModel`. Den använder repositoryts fullständiga kalender- och hälsopåminnelsedata och skickar med privata kalender-ID:n, så att hälsopåminnelser inte tappas bort och privata vårdbesök fortsatt filtreras.
+- Gjorde view model-metoden tillgänglig för kalender-vyn i stället för att duplicera scheduler-anrop och riskera att nya obligatoriska argument missas igen.
+- Berörda filer: `Sources/Data/FamilyCalendarViewModel.swift`, `Sources/FamilyCalendarView.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: GitHub Actions-run 932 reproducerade felet på exakt head; båda jobbloggarna pekade på samma saknade argument på rad 704. Korrigeringen är incheckad men ännu inte verifierad av en ny CI-körning. Ingen IPA och ingen merge.

@@ -407,4 +407,56 @@ final class HealthReminderSchedulerTests: XCTestCase {
         XCTAssertTrue(reloaded.healthReminders.contains { $0.id == pickupReminder.id })
     }
 
+
+    func testInactiveHealthTargetsCannotReceiveNewLinkedReminders() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FamiljenInactiveTargets-\\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        let familyID = try XCTUnwrap(store.family?.id)
+        let memberID = try XCTUnwrap(store.members.first?.id)
+        let future = Date().addingTimeInterval(86_400)
+
+        let record = HealthRecord(
+            familyID: familyID, memberID: memberID, type: .appointment,
+            title: "Avslutat besök", startsAt: future, status: .completed
+        )
+        store.saveHealthRecord(record)
+        let prescription = HealthPrescription(
+            familyID: familyID, memberID: memberID, medicationName: "Förnyat recept",
+            renewalDueAt: future, renewalStatus: .renewed
+        )
+        store.saveHealthPrescription(prescription)
+        let pickup = MedicationPickup(
+            familyID: familyID, memberID: memberID, medicationName: "Redan uthämtat",
+            dueAt: future, status: .collected
+        )
+        store.saveMedicationPickup(pickup)
+
+        let invalidReminders = [
+            HealthReminder(
+                familyID: familyID, memberID: memberID, targetType: .record,
+                targetID: record.id, title: "Ska inte läggas till", firesAt: future
+            ),
+            HealthReminder(
+                familyID: familyID, memberID: memberID, targetType: .prescriptionRenewal,
+                targetID: prescription.id, title: "Ska inte läggas till", firesAt: future
+            ),
+            HealthReminder(
+                familyID: familyID, memberID: memberID, targetType: .medicationPickup,
+                targetID: pickup.id, title: "Ska inte läggas till", firesAt: future
+            )
+        ]
+
+        for reminder in invalidReminders {
+            store.saveHealthReminder(reminder)
+        }
+
+        XCTAssertTrue(store.healthReminders.isEmpty)
+        let reloaded = LocalFamilyStore(fileURL: directory.appendingPathComponent("snapshot.json"))
+        XCTAssertTrue(reloaded.healthReminders.isEmpty)
+    }
+
 }

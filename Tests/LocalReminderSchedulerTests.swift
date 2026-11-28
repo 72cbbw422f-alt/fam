@@ -219,13 +219,13 @@ final class LocalReminderSchedulerTests: XCTestCase {
             identifier: { $0.identifier }
         )
 
-        XCTAssertEqual(selected.map(\\.identifier), ["calendar-a", "calendar-c", "health-b"])
+        XCTAssertEqual(selected.map(\.identifier), ["calendar-a", "calendar-c", "health-b"])
     }
 
     func testSharedCapacitySelectionKeepsNearestCandidatesRegardlessOfInputOrder() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let calendarCandidates = (0..<70).reversed().map { index in
-            (identifier: "calendar-\\(index)", fireDate: now.addingTimeInterval(TimeInterval(index + 10)))
+            (identifier: "calendar-\(index)", fireDate: now.addingTimeInterval(TimeInterval(index + 10)))
         }
         let selected = LocalReminderScheduler.selectCandidates(
             calendar: calendarCandidates,
@@ -235,7 +235,7 @@ final class LocalReminderSchedulerTests: XCTestCase {
             identifier: { $0.identifier }
         )
 
-        XCTAssertEqual(selected.map(\\.identifier), [
+        XCTAssertEqual(selected.map(\.identifier), [
             "calendar-0", "calendar-1", "calendar-2", "calendar-3", "calendar-4"
         ])
     }

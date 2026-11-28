@@ -1384,10 +1384,10 @@ Familjen är en native SwiftUI-app med Scandinavian Premium / Modern iOS-uttryck
 - Verifiering: ändringar återhämtas och granskas via GitHub. Ingen lokal Swift/Xcode-körning; CI för aktuell head inväntas. Ingen IPA och ingen merge.
 
 ## 2026-11-28 – transaktionssäker presenthantering och födelsedagskopplingar
-- Fortsatt granskning hittade att \`deleteItem\` tog bort presentidéer i minnet men inte återställde dem om snapshot-skrivningen misslyckades. Rollback återställer nu även presentidéerna.
-- Tog bort en redundant rollback-tilldelning i \`saveCalendarItem\`.
-- \`addGiftIdea\` och \`addChristmasGift\` återställer nu sina samlingar om lagringen misslyckas, i linje med befintliga update/delete-operationer.
+- Fortsatt granskning hittade att `deleteItem` tog bort presentidéer i minnet men inte återställde dem om snapshot-skrivningen misslyckades. Rollback återställer nu även presentidéerna.
+- Tog bort en redundant rollback-tilldelning i `saveCalendarItem`.
+- `addGiftIdea` och `addChristmasGift` återställer nu sina samlingar om lagringen misslyckas, i linje med befintliga update/delete-operationer.
 - Presentidéer måste nu tillhöra en medlem som faktiskt är kopplad till födelsedagsposten. När födelsedagens medlemskoppling ändras rensas idéer för tidigare/ej längre kopplade medlemmar.
 - Lade till regressionstester för misslyckad födelsedagsradering, misslyckad skapning av presentidé/julklapp samt ändrad medlemskoppling.
-- Berörda filer: \`Sources/Data/LocalFamilyStore.swift\`, \`Tests/LocalFamilyStoreTests.swift\`, \`Documentation/DEVELOPMENT_LOG.md\`.
-- Verifiering: senaste källkod och tester ska hämtas från GitHub och granskas. Ingen lokal Xcode/Swift-körning; CI för senaste head inväntas. Ingen IPA och ingen merge.
+- Berörda filer: `Sources/Data/LocalFamilyStore.swift`, `Tests/LocalFamilyStoreTests.swift`, `Documentation/DEVELOPMENT_LOG.md`.
+- Verifiering: källkod, testfall och dokumentation har återhämtats från GitHub och kontrollerats på filnivå. Ingen lokal Xcode/Swift-körning; aktuell CI är inte verifierad. Ingen IPA och ingen merge.

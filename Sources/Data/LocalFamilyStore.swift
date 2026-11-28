@@ -233,6 +233,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             items[index].reminderOffsets = reminderOffsets
             if previousKind == .birthday && kind != .birthday {
                 giftIdeas.removeAll { $0.birthdayItemID == id }
+            } else if kind == .birthday {
+                // A gift idea must belong to a person still assigned to this birthday.
+                giftIdeas.removeAll {
+                    $0.birthdayItemID == id && !validMemberIDs.contains($0.memberID)
+                }
             }
             if previousSeriesStart != startsAt || previousFrequency != items[index].recurrenceFrequency {
                 skippedOccurrences.removeAll { $0.seriesID == id }
@@ -412,7 +417,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func addGiftIdea(memberID: UUID, birthdayItemID: UUID, title: String, note: String?) {
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard members.contains(where: { $0.id == memberID }),
-              items.contains(where: { $0.id == birthdayItemID && $0.kind == .birthday }),
+              items.contains(where: {
+                  $0.id == birthdayItemID && $0.kind == .birthday
+                      && !$0.isForEveryone && $0.memberIDs.contains(memberID)
+              }),
               !clean.isEmpty, clean.count <= 160 else { return }
         let cleanNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
         let previous = giftIdeas
@@ -424,7 +432,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
     func updateGiftIdea(_ idea: GiftIdea) {
         guard let index = giftIdeas.firstIndex(where: { $0.id == idea.id }),
               members.contains(where: { $0.id == idea.memberID }),
-              items.contains(where: { $0.id == idea.birthdayItemID && $0.kind == .birthday }) else { return }
+              items.contains(where: {
+                  $0.id == idea.birthdayItemID && $0.kind == .birthday
+                      && !$0.isForEveryone && $0.memberIDs.contains(idea.memberID)
+              }) else { return }
         let clean = idea.title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 160 else { return }
         let previous = giftIdeas[index]

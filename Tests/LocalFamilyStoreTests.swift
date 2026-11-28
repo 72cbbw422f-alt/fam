@@ -1352,4 +1352,55 @@ final class LocalFamilyStoreTests: XCTestCase {
         XCTAssertEqual(store.items.first?.kind, .event)
     }
 
+
+    func testFailedBirthdayDeletionRestoresGiftIdeas() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+        store.saveItem(
+            id: nil, title: "Cleo", details: nil, startsAt: Date().addingTimeInterval(86_400),
+            kind: .birthday, memberID: child.id, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+        store.addGiftIdea(memberID: child.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+        let originalIdeas = store.giftIdeas
+        let originalItems = store.items
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+        store.deleteItem(birthday)
+
+        XCTAssertEqual(store.giftIdeas, originalIdeas)
+        XCTAssertEqual(store.items, originalItems)
+        XCTAssertNotNil(store.persistenceError)
+    }
+
+    func testFailedGiftIdeaAndChristmasGiftCreationRollBackInMemoryState() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        store.createFamily(name: "Familjen", ownerName: "Niklas")
+        store.addChild(name: "Cleo")
+        let child = try XCTUnwrap(store.members.first { $0.role == .child })
+        store.saveItem(
+            id: nil, title: "Cleo", details: nil, startsAt: Date().addingTimeInterval(86_400),
+            kind: .birthday, memberID: child.id, recurring: true, reminderOffsets: []
+        )
+        let birthday = try XCTUnwrap(store.items.first { $0.kind == .birthday })
+
+        try FileManager.default.removeItem(at: directory)
+        try Data("blocking file".utf8).write(to: directory)
+
+        store.addGiftIdea(memberID: child.id, birthdayItemID: birthday.id, title: "Bok", note: nil)
+        store.addChristmasGift(
+            recipient: "Cleo", title: "Julklapp", note: nil, responsibleMemberID: child.id
+        )
+
+        XCTAssertTrue(store.giftIdeas.isEmpty)
+        XCTAssertTrue(store.christmasGifts.isEmpty)
+        XCTAssertNotNil(store.persistenceError)
+        XCTAssertEqual(try String(contentsOf: directory, encoding: .utf8), "blocking file")
+    }
+
 }

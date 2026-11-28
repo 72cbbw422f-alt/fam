@@ -469,6 +469,10 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         updated.updatedAt = .now
         let previousRecords = healthRecords
         let previousItems = items
+        let previousReminders = healthReminders
+        if updated.status == .completed || updated.status == .cancelled {
+            healthReminders.removeAll { $0.targetType == .record && $0.targetID == updated.id }
+        }
         if (updated.type == .appointment || updated.type == .followUp)
             && updated.status != .completed && updated.status != .cancelled {
             let calendarID = updated.calendarItemID ?? UUID()
@@ -501,6 +505,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         if !saveToDisk() {
             healthRecords = previousRecords
             items = previousItems
+            healthReminders = previousReminders
         }
     }
 

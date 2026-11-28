@@ -99,10 +99,11 @@ final class DashboardViewModel: ObservableObject {
                 return item.startsAt >= date ? item : nil
             case .weekly:
                 let interval = calendar.dateComponents([.day], from: item.startsAt, to: date).day ?? 0
-                let weeks = max(0, (interval + 6) / 7)
+                var weeks = max(0, (interval + 6) / 7)
                 next = calendar.date(byAdding: .day, value: weeks * 7, to: item.startsAt)
                 while let candidate = next, candidate < date {
-                    next = calendar.date(byAdding: .day, value: 7, to: candidate)
+                    weeks += 1
+                    next = calendar.date(byAdding: .day, value: weeks * 7, to: item.startsAt)
                 }
             case .monthly:
                 let current = calendar.dateComponents([.year, .month], from: date)

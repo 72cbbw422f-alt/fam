@@ -82,7 +82,7 @@ struct FamilyMembersView: View {
                 if let childToDelete { FamilyStore.shared.deleteMember(id: childToDelete.id); loadMembers() }
             }
             Button("Avbryt", role: .cancel) { childToDelete = nil }
-        } message: { Text("Profilen tas bort. Kalenderhändelserna finns kvar, men kopplingen till profilen rensas.") }
+        } message: { Text("Profilen och dess personliga hälsouppgifter, vårdbesök, recept och läkemedelshämtningar tas bort. Övriga kalenderhändelser finns kvar, men kopplingen till profilen rensas.") }
     }
 
     private func loadMembers() {

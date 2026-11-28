@@ -172,6 +172,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let previousSkippedOccurrences = skippedOccurrences
         let previousOccurrenceOverrides = occurrenceOverrides
         let previousHealthRecords = healthRecords
+        let previousHealthReminders = healthReminders
         if let id, let index = items.firstIndex(where: { $0.id == id }) {
             let previousSeriesStart = items[index].startsAt
             let previousFrequency = items[index].recurrenceFrequency
@@ -203,9 +204,11 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
                     healthRecords[healthIndex].longitude = longitude
                     healthRecords[healthIndex].updatedAt = .now
                 } else {
+                    let healthRecordID = healthRecords[healthIndex].id
                     healthRecords[healthIndex].calendarItemID = nil
                     healthRecords[healthIndex].status = .cancelled
                     healthRecords[healthIndex].updatedAt = .now
+                    healthReminders.removeAll { $0.targetType == .record && $0.targetID == healthRecordID }
                 }
             }
         } else {
@@ -228,6 +231,7 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
             skippedOccurrences = previousSkippedOccurrences
             occurrenceOverrides = previousOccurrenceOverrides
             healthRecords = previousHealthRecords
+            healthReminders = previousHealthReminders
         }
     }
 
@@ -236,20 +240,24 @@ final class LocalFamilyStore: ObservableObject, FamilyRepository {
         let previousSkippedOccurrences = skippedOccurrences
         let previousOccurrenceOverrides = occurrenceOverrides
         let previousHealthRecords = healthRecords
+        let previousHealthReminders = healthReminders
         items.removeAll { $0.id == item.id }
         skippedOccurrences.removeAll { $0.seriesID == item.id }
         occurrenceOverrides.removeAll { $0.seriesID == item.id }
         // A calendar deletion cancels the linked health appointment but keeps its history.
         for index in healthRecords.indices where healthRecords[index].calendarItemID == item.id {
+            let healthRecordID = healthRecords[index].id
             healthRecords[index].calendarItemID = nil
             healthRecords[index].status = .cancelled
             healthRecords[index].updatedAt = .now
+            healthReminders.removeAll { $0.targetType == .record && $0.targetID == healthRecordID }
         }
         if !saveToDisk() {
             items = previousItems
             skippedOccurrences = previousSkippedOccurrences
             occurrenceOverrides = previousOccurrenceOverrides
             healthRecords = previousHealthRecords
+            healthReminders = previousHealthReminders
         }
     }
 
